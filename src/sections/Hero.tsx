@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { heroStats, heroSteps } from "../data/content";
+import heroImage from "../assets/images/hero-japan-journey.jpg";
 
 export function Hero() {
   return (
@@ -89,34 +90,41 @@ export function Hero() {
           className="relative"
         >
           <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-brand-red/10 to-brand-navy/10 blur-2xl -z-10" />
-          <div className="relative rounded-3xl bg-gradient-to-b from-brand-navy to-brand-navy-deep p-8 md:p-9 text-white overflow-hidden min-h-[420px] flex flex-col justify-between shadow-2xl shadow-brand-navy/20">
-            <svg viewBox="0 0 400 420" className="absolute inset-0 w-full h-full opacity-40" preserveAspectRatio="none">
-              <path d="M -20 60 C 100 20, 180 100, 420 50" stroke="#E61935" strokeWidth="1.5" fill="none" opacity="0.5" />
-              <path d="M -20 160 C 120 220, 220 120, 420 190" stroke="#FFB3C6" strokeWidth="1.5" fill="none" opacity="0.4" />
-              <path d="M -20 320 C 140 280, 240 380, 420 330" stroke="#E61935" strokeWidth="1.5" fill="none" opacity="0.3" />
-            </svg>
+          <div className="relative rounded-3xl overflow-hidden min-h-[460px] shadow-2xl shadow-brand-navy/20">
+            <img
+              src={heroImage}
+              alt="Calon peserta Harunokaze bersiap menuju Jepang"
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-brand-navy-deep via-brand-navy-deep/40 to-transparent" />
 
-            <div className="relative z-10">
-              <span className="text-xs font-bold uppercase tracking-widest text-brand-sakura">Alur singkat peserta</span>
-              <h3 className="font-display text-xl font-bold mt-3">Satu jalur, banyak titik dukungan</h3>
+            <div className="absolute top-6 left-6 inline-flex items-center gap-2 rounded-full bg-white/15 backdrop-blur-md px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-white">
+              <Sparkles size={14} className="text-brand-sakura" />
+              Perjalananmu dimulai di sini
             </div>
 
-            <div className="relative z-10 flex flex-col gap-4 mt-8">
-              {heroSteps.map((step) => (
-                <div
-                  key={step.label}
-                  className={`flex items-center gap-3 text-sm transition-colors ${
-                    step.active ? "text-white font-semibold" : "text-white/55"
-                  }`}
-                >
-                  <span
-                    className={`h-2 w-2 rounded-full shrink-0 ${
-                      step.active ? "bg-brand-red shadow-[0_0_0_4px_rgba(230,25,53,0.25)]" : "bg-white/30"
-                    }`}
-                  />
-                  {step.label}
+            <div className="absolute bottom-0 inset-x-0 p-6 md:p-7">
+              <div className="rounded-2xl bg-brand-navy-deep/70 backdrop-blur-md border border-white/10 p-6">
+                <span className="text-xs font-bold uppercase tracking-widest text-brand-sakura">Alur singkat peserta</span>
+                <h3 className="font-display text-lg font-bold text-white mt-2">Satu jalur, banyak titik dukungan</h3>
+                <div className="flex flex-col gap-3 mt-5">
+                  {heroSteps.map((step) => (
+                    <div
+                      key={step.label}
+                      className={`flex items-center gap-3 text-sm transition-colors ${
+                        step.active ? "text-white font-semibold" : "text-white/55"
+                      }`}
+                    >
+                      <span
+                        className={`h-2 w-2 rounded-full shrink-0 ${
+                          step.active ? "bg-brand-red shadow-[0_0_0_4px_rgba(230,25,53,0.25)]" : "bg-white/30"
+                        }`}
+                      />
+                      {step.label}
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
           </div>
         </motion.div>

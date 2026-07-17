@@ -2,6 +2,15 @@ import { Quote } from "lucide-react";
 import { SectionHeading } from "../components/SectionHeading";
 import { Reveal } from "../components/Reveal";
 import { alumniStories } from "../data/content";
+import alumni1 from "../assets/images/alumni-1.jpg";
+import alumni2 from "../assets/images/alumni-2.jpg";
+import alumni3 from "../assets/images/alumni-3.jpg";
+
+const photos: Record<string, string> = {
+  "alumni-1": alumni1,
+  "alumni-2": alumni2,
+  "alumni-3": alumni3,
+};
 
 export function Alumni() {
   return (
@@ -21,7 +30,11 @@ export function Alumni() {
                 <Quote size={22} className="text-brand-red" />
                 <p className="text-lg font-medium leading-relaxed flex-1">"{story.quote}"</p>
                 <div className="flex items-center gap-3 text-sm text-white/50">
-                  <div className="h-9 w-9 rounded-full bg-gradient-to-br from-brand-red to-brand-sakura shrink-0" />
+                  <img
+                    src={photos[story.photo]}
+                    alt={story.who}
+                    className="h-10 w-10 rounded-full object-cover shrink-0 ring-2 ring-white/10"
+                  />
                   {story.who}
                 </div>
               </div>

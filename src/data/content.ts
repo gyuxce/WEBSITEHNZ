@@ -176,14 +176,17 @@ export const alumniStories = [
   {
     quote: "Prosesnya jelas dari awal — saya tahu harus siap apa sebelum berangkat.",
     who: "Alumni Program Konstruksi",
+    photo: "alumni-1",
   },
   {
     quote: "Pendampingan setelah sampai di Jepang benar-benar membantu adaptasi awal.",
     who: "Alumni Program Kaigo",
+    photo: "alumni-2",
   },
   {
     quote: "Pemetaan potensi di awal bikin saya lebih yakin pilih jalur yang tepat.",
     who: "Peserta Aktif",
+    photo: "alumni-3",
   },
 ];
 
