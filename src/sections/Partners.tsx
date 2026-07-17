@@ -16,7 +16,13 @@ export function Partners() {
 
         <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-8 items-stretch">
           <Reveal direction="left" className="rounded-2xl overflow-hidden min-h-[280px] relative">
-            <img src={trustImg} alt="Kemitraan resmi Harunokaze" className="absolute inset-0 h-full w-full object-cover" />
+            <img
+              src={trustImg}
+              alt="Kemitraan resmi Harunokaze"
+              loading="lazy"
+              decoding="async"
+              className="absolute inset-0 h-full w-full object-cover"
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-brand-navy-deep/70 via-transparent to-transparent" />
             <div className="absolute bottom-5 left-5 right-5 text-white text-sm font-semibold">
               Kemitraan resmi lintas lembaga Indonesia–Jepang

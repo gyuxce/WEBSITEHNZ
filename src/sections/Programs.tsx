@@ -1,5 +1,6 @@
 import { SectionHeading } from "../components/SectionHeading";
 import { Reveal } from "../components/Reveal";
+import { TiltCard } from "../components/TiltCard";
 import { programs } from "../data/content";
 import bahasaImg from "../assets/images/program-bahasa.jpg";
 import konstruksiImg from "../assets/images/program-konstruksi.jpg";
@@ -26,13 +27,15 @@ export function Programs() {
             const image = programImages[i];
             return (
               <Reveal key={program.title} delay={(i % 3) * 0.08}>
-                <div className="h-full flex flex-col rounded-2xl bg-white border border-brand-navy/8 overflow-hidden transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-brand-navy/8 hover:border-brand-red/20">
+                <TiltCard className="h-full flex flex-col rounded-2xl bg-white border border-brand-navy/8 overflow-hidden transition-shadow duration-300 hover:shadow-xl hover:shadow-brand-navy/8 hover:border-brand-red/20">
                   {image ? (
                     <div className="relative h-40 overflow-hidden">
                       <img
                         src={image}
                         alt={program.title}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        loading="lazy"
+                        decoding="async"
+                        className="h-full w-full object-cover"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-brand-navy-deep/50 to-transparent" />
                       <div className="absolute top-3 left-3 h-10 w-10 rounded-lg bg-white/90 backdrop-blur-sm flex items-center justify-center text-brand-red font-display font-bold">
@@ -51,7 +54,7 @@ export function Programs() {
                     <p className="text-sm text-brand-navy/55 leading-relaxed flex-1">{program.description}</p>
                     <div className="text-[11px] font-bold uppercase tracking-wider text-brand-red">{program.meta}</div>
                   </div>
-                </div>
+                </TiltCard>
               </Reveal>
             );
           })}

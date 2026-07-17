@@ -4,6 +4,9 @@ import { Footer } from "./components/Footer";
 import { SakuraField } from "./components/SakuraField";
 import { WhatsAppFab } from "./components/WhatsAppFab";
 import { Logo } from "./components/Logo";
+import { ScrollProgress } from "./components/ScrollProgress";
+import { TrustBadges } from "./components/TrustBadges";
+import { MobileCtaBar } from "./components/MobileCtaBar";
 import { Hero } from "./sections/Hero";
 import { Ecosystem } from "./sections/Ecosystem";
 import { Journey } from "./sections/Journey";
@@ -13,6 +16,7 @@ import { WhyUs } from "./sections/WhyUs";
 import { Partners } from "./sections/Partners";
 import { Alumni } from "./sections/Alumni";
 import { Faq } from "./sections/Faq";
+import { Location } from "./sections/Location";
 import { CtaSection } from "./sections/CtaSection";
 
 export default function App() {
@@ -29,7 +33,7 @@ export default function App() {
   }, []);
 
   return (
-    <div className="relative min-h-screen bg-brand-bg text-brand-navy font-sans overflow-x-hidden selection:bg-brand-red/20">
+    <div className="relative min-h-screen bg-brand-bg text-brand-navy font-sans overflow-x-hidden selection:bg-brand-red/20 pb-20 lg:pb-0">
       {showLoading && (
         <div
           className={`fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center transition-all duration-500 ${
@@ -52,6 +56,8 @@ export default function App() {
         </div>
       )}
 
+      <ScrollProgress />
+
       <div className="relative">
         <SakuraField className="fixed inset-0 z-0" />
 
@@ -59,6 +65,7 @@ export default function App() {
 
         <main className="relative z-10">
           <Hero />
+          <TrustBadges />
           <Ecosystem />
           <Journey />
           <Programs />
@@ -67,11 +74,13 @@ export default function App() {
           <Partners />
           <Alumni />
           <Faq />
+          <Location />
           <CtaSection />
         </main>
 
         <Footer />
         <WhatsAppFab />
+        <MobileCtaBar />
       </div>
     </div>
   );

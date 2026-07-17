@@ -13,10 +13,18 @@ const sizes = {
   "alumni-1.jpg": 320,
   "alumni-2.jpg": 320,
   "alumni-3.jpg": 320,
+  "activity-classroom.jpg": 800,
+  "activity-graduation.jpg": 800,
+  "activity-departure.jpg": 800,
+  "activity-orientation.jpg": 800,
+  "og-image.jpg": 1200,
 };
+
+const only = process.argv.slice(2);
 
 for (const file of readdirSync(dir)) {
   if (!file.endsWith(".jpg")) continue;
+  if (only.length > 0 && !only.includes(file)) continue;
   const inputPath = join(dir, file);
   const maxWidth = sizes[file] ?? 1200;
   const before = statSync(inputPath).size;

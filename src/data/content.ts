@@ -13,6 +13,13 @@ export const heroStats = [
   { value: "Digital", label: "Pemetaan & monitoring proses" },
 ];
 
+export const trustBadges = [
+  "Terdaftar Kemenaker RI",
+  "LPK & SO Resmi Bersertifikat",
+  "Jalur SSW & TITP Legal",
+  "Kemitraan Terverifikasi",
+];
+
 export const heroSteps = [
   { label: "Pemetaan & konsultasi awal", active: false },
   { label: "Pendidikan & pelatihan bahasa", active: true },
@@ -210,3 +217,16 @@ export const faqs = [
 ];
 
 export const whatsappUrl = "https://wa.me/message/DWVTJESHI2RQC1";
+
+export const galleryPhotos = [
+  { key: "activity-classroom", caption: "Kelas bahasa & diskusi kelompok" },
+  { key: "activity-orientation", caption: "Orientasi budaya & etika kerja Jepang" },
+  { key: "activity-graduation", caption: "Wisuda kelulusan peserta" },
+  { key: "activity-departure", caption: "Momen keberangkatan ke Jepang" },
+];
+
+export const officeInfo = {
+  addressNote: "Alamat lengkap kampus & kantor akan diinformasikan saat sesi konsultasi.",
+  city: "Sukabumi, Jawa Barat",
+  hours: "Senin–Sabtu, 08.00–17.00 WIB",
+};

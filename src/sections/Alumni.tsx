@@ -1,15 +1,26 @@
 import { Quote } from "lucide-react";
 import { SectionHeading } from "../components/SectionHeading";
 import { Reveal } from "../components/Reveal";
-import { alumniStories } from "../data/content";
+import { alumniStories, galleryPhotos } from "../data/content";
 import alumni1 from "../assets/images/alumni-1.jpg";
 import alumni2 from "../assets/images/alumni-2.jpg";
 import alumni3 from "../assets/images/alumni-3.jpg";
+import activityClassroom from "../assets/images/activity-classroom.jpg";
+import activityOrientation from "../assets/images/activity-orientation.jpg";
+import activityGraduation from "../assets/images/activity-graduation.jpg";
+import activityDeparture from "../assets/images/activity-departure.jpg";
 
 const photos: Record<string, string> = {
   "alumni-1": alumni1,
   "alumni-2": alumni2,
   "alumni-3": alumni3,
+};
+
+const galleryImages: Record<string, string> = {
+  "activity-classroom": activityClassroom,
+  "activity-orientation": activityOrientation,
+  "activity-graduation": activityGraduation,
+  "activity-departure": activityDeparture,
 };
 
 export function Alumni() {
@@ -23,6 +34,26 @@ export function Alumni() {
           light
         />
 
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-12">
+          {galleryPhotos.map((photo, i) => (
+            <Reveal key={photo.key} delay={i * 0.06}>
+              <div className="group relative rounded-xl overflow-hidden aspect-[4/3]">
+                <img
+                  src={galleryImages[photo.key]}
+                  alt={photo.caption}
+                  loading="lazy"
+                  decoding="async"
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-brand-navy-deep/85 via-transparent to-transparent" />
+                <div className="absolute bottom-2 left-2 right-2 text-[11px] font-medium text-white/85 leading-snug">
+                  {photo.caption}
+                </div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {alumniStories.map((story, i) => (
             <Reveal key={story.who} delay={i * 0.1}>
@@ -33,6 +64,8 @@ export function Alumni() {
                   <img
                     src={photos[story.photo]}
                     alt={story.who}
+                    loading="lazy"
+                    decoding="async"
                     className="h-10 w-10 rounded-full object-cover shrink-0 ring-2 ring-white/10"
                   />
                   {story.who}

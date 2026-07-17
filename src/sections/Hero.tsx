@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { heroStats, heroSteps } from "../data/content";
 import heroImage from "../assets/images/hero-japan-journey.jpg";
+import { CountUpStat } from "../components/CountUpStat";
 
 export function Hero() {
   return (
@@ -76,7 +77,7 @@ export function Hero() {
           >
             {heroStats.map((stat) => (
               <div key={stat.label}>
-                <div className="font-display font-extrabold text-2xl md:text-3xl text-brand-navy">{stat.value}</div>
+                <CountUpStat value={stat.value} className="font-display font-extrabold text-2xl md:text-3xl text-brand-navy" />
                 <div className="text-xs text-brand-navy/50 mt-1 leading-snug">{stat.label}</div>
               </div>
             ))}

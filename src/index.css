@@ -24,6 +24,10 @@ html {
   scroll-behavior: smooth;
 }
 
+section[id] {
+  scroll-margin-top: 88px;
+}
+
 body {
   background: var(--color-brand-bg);
   -webkit-font-smoothing: antialiased;

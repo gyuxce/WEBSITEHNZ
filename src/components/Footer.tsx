@@ -40,6 +40,7 @@ export function Footer() {
               <li><a href="#partner" className="hover:text-white transition-colors">Partner & Legalitas</a></li>
               <li><a href="#alumni" className="hover:text-white transition-colors">Alumni & Aktivitas</a></li>
               <li><a href="#faq" className="hover:text-white transition-colors">FAQ</a></li>
+              <li><a href="#lokasi" className="hover:text-white transition-colors">Lokasi & Kontak</a></li>
             </ul>
           </div>
 
