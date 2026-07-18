@@ -40,19 +40,7 @@ export default function App() {
             fade ? "opacity-0 scale-105 pointer-events-none" : "opacity-100"
           }`}
         >
-          <div className="animate-spin-slow mb-5">
-            <Logo layout="emblem" size={64} />
-          </div>
-          <div className="flex items-center font-display font-extrabold text-2xl tracking-widest text-brand-navy">
-            <span>春</span>
-            <span className="text-brand-red mx-1">の</span>
-            <span>風</span>
-          </div>
-          <p className="text-[10px] tracking-[0.25em] font-extrabold text-brand-navy uppercase mt-2 flex items-center">
-            <span>HARU</span>
-            <span className="text-brand-red mx-1.5">NO</span>
-            <span>KAZE</span>
-          </p>
+          <Logo layout="full" size={140} className="drop-shadow-sm" />
         </div>
       )}
 

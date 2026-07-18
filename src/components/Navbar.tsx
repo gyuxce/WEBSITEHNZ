@@ -33,9 +33,9 @@ export function Navbar() {
         scrolled ? "bg-white/85 backdrop-blur-lg shadow-[0_1px_0_0_rgba(15,34,64,0.08)]" : "bg-transparent"
       }`}
     >
-      <nav className="max-w-7xl mx-auto flex items-center justify-between px-6 md:px-10 py-4">
+      <nav className="max-w-7xl mx-auto flex items-center justify-between px-6 md:px-10 py-3">
         <a href="#top" onClick={() => handleNavClick("#top")} className="relative z-10">
-          <Logo size={38} />
+          <Logo layout="horizontal" size={56} />
         </a>
 
         <div className="hidden lg:flex items-center gap-9 text-sm font-semibold text-brand-navy/70">

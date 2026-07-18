@@ -18,7 +18,7 @@ export function Footer() {
       <div className="max-w-7xl mx-auto px-6 md:px-10 py-16">
         <div className="grid grid-cols-1 md:grid-cols-[1.4fr_1fr_1fr_1fr] gap-10 pb-12 border-b border-white/10">
           <div>
-            <Logo theme="light-text" className="mb-4" />
+            <Logo layout="horizontal" size={72} className="mb-4 brightness-110" />
             <p className="text-sm text-white/50 max-w-xs leading-relaxed">
               Ekosistem persiapan dan pengembangan karier Jepang, dari persiapan hingga kembali ke Indonesia.
             </p>
