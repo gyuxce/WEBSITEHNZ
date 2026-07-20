@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-red: #e61935;
+  --color-brand-red-hover: #c80d26;
+  --color-brand-red-soft: #fdeaec;
+  --color-brand-navy: #0f2240;
+  --color-brand-navy-light: #1e355a;
+  --color-brand-bg: #f8f9fa;
+  --color-brand-sakura: #ffb3c6;
+}
+
+body {
+  background: var(--color-brand-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgba(230, 25, 53, 0.2);
+  color: var(--color-brand-red);
+}

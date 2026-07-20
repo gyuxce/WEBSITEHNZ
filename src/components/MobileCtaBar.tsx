@@ -1,3 +1,5 @@
+import { portalUrl } from "../data/content";
+
 export function MobileCtaBar() {
   return (
     <div
@@ -12,7 +14,7 @@ export function MobileCtaBar() {
           Konsultasi
         </a>
         <a
-          href="#pemetaan"
+          href={`${portalUrl}/register`}
           className="flex-1 text-center rounded-full bg-brand-red px-4 py-3 text-sm font-bold text-white shadow-lg shadow-brand-red/25"
         >
           Mulai Pemetaan Potensi

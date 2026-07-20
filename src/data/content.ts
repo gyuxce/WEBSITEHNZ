@@ -1,3 +1,6 @@
+/** Portal pemetaan — set VITE_PORTAL_URL di production (mis. https://portal.harunokaze.id) */
+export const portalUrl = import.meta.env.VITE_PORTAL_URL ?? "http://localhost:5174";
+
 export const navLinks = [
   { href: "#ekosistem", label: "Ekosistem" },
   { href: "#tahapan", label: "Tahapan" },

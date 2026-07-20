@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { heroStats, heroSteps } from "../data/content";
+import { heroStats, heroSteps, portalUrl } from "../data/content";
 import heroImage from "../assets/images/hero-japan-journey.jpg";
 import { CountUpStat } from "../components/CountUpStat";
 
@@ -55,7 +55,7 @@ export function Hero() {
             className="mt-6 flex flex-wrap items-center gap-3"
           >
             <a
-              href="#pemetaan"
+              href={`${portalUrl}/register`}
               className="group inline-flex items-center gap-2 rounded-full bg-brand-red px-6 py-3 text-sm font-bold text-white shadow-lg shadow-brand-red/25 transition-all hover:bg-brand-red-hover hover:-translate-y-0.5 hover:shadow-xl hover:shadow-brand-red/30"
             >
               Mulai Pemetaan Potensi

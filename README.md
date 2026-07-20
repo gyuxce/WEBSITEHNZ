@@ -33,6 +33,21 @@ npm run dev
 
 Buka http://localhost:5173
 
+### Portal Pemetaan (calon siswa)
+
+Portal terpisah di folder `portal/` — auth, pembayaran, tes, sertifikat.
+
+```bash
+cd portal
+cp .env.example .env   # isi Supabase keys
+npm install
+npm run dev
+```
+
+Buka http://localhost:5174 — lihat `portal/README.md` untuk setup Supabase & Midtrans.
+
+Set `VITE_PORTAL_URL=http://localhost:5174` di root `.env` agar tombol CTA landing mengarah ke portal.
+
 ## Build Production
 
 ```bash

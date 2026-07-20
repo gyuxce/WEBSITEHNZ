@@ -1,0 +1,51 @@
+import { LogOut } from "lucide-react";
+import { Link, Outlet } from "react-router-dom";
+import { Logo } from "./Logo";
+import { useAuth } from "../contexts/AuthContext";
+
+export function PortalLayout() {
+  const { profile, signOut } = useAuth();
+
+  return (
+    <div className="min-h-screen bg-brand-bg">
+      <header className="sticky top-0 z-40 border-b border-brand-navy/8 bg-white/90 backdrop-blur-md">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+          <Logo />
+          <div className="flex items-center gap-4">
+            <span className="hidden sm:block text-sm text-brand-navy/60 font-medium">
+              {profile?.full_name}
+            </span>
+            <Link
+              to="/dashboard"
+              className="text-sm font-semibold text-brand-navy/70 hover:text-brand-red transition-colors"
+            >
+              Dashboard
+            </Link>
+            <button
+              type="button"
+              onClick={() => signOut()}
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-navy/50 hover:text-brand-red transition-colors"
+            >
+              <LogOut size={16} />
+              <span className="hidden sm:inline">Keluar</span>
+            </button>
+          </div>
+        </div>
+      </header>
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+        <Outlet />
+      </main>
+    </div>
+  );
+}
+
+export function AuthLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen bg-brand-bg flex flex-col items-center justify-center px-4 py-12">
+      <div className="mb-8">
+        <Logo />
+      </div>
+      <div className="w-full max-w-md">{children}</div>
+    </div>
+  );
+}

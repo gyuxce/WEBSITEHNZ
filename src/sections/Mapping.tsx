@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Check, Clock, Sparkle } from "lucide-react";
 import { Reveal } from "../components/Reveal";
-import { mappingPoints, mappingSteps } from "../data/content";
+import { mappingPoints, mappingSteps, portalUrl } from "../data/content";
 
 const statusStyles: Record<string, { label: string; className: string; icon: ReactNode }> = {
   done: { label: "Selesai", className: "bg-emerald-50 text-emerald-600", icon: <Check size={12} /> },
@@ -32,7 +32,7 @@ export function Mapping() {
             ))}
           </ul>
           <a
-            href="#kontak"
+            href={`${portalUrl}/register`}
             className="mt-8 inline-flex items-center gap-2 rounded-full bg-brand-navy px-7 py-3.5 text-sm font-bold text-white transition-all hover:bg-brand-navy-light hover:-translate-y-0.5"
           >
             Coba Pemetaan Potensi
