@@ -19,5 +19,5 @@ export const isSupabaseConfigured =
   Boolean(supabaseUrl && supabaseAnonKey && !supabaseUrl.includes("your-project"));
 
 export const PEMETAAN_PRICE = Number(import.meta.env.VITE_PEMETAAN_PRICE ?? 150000);
-export const LANDING_URL = import.meta.env.VITE_LANDING_URL ?? "http://localhost:5173";
+export const LANDING_URL = import.meta.env.VITE_LANDING_URL ?? "https://www.harunokaze.id";
 export const MIDTRANS_CLIENT_KEY = import.meta.env.VITE_MIDTRANS_CLIENT_KEY ?? "";

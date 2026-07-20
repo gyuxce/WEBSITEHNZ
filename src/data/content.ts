@@ -1,5 +1,6 @@
-/** Portal pemetaan — set VITE_PORTAL_URL di production (mis. https://portal.harunokaze.id) */
-export const portalUrl = import.meta.env.VITE_PORTAL_URL ?? "http://localhost:5174";
+/** Portal pemetaan — override via VITE_PORTAL_URL di Vercel */
+export const portalUrl =
+  import.meta.env.VITE_PORTAL_URL ?? "https://portal.harunokaze.id";
 
 export const navLinks = [
   { href: "#ekosistem", label: "Ekosistem" },

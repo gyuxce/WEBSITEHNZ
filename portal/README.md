@@ -18,9 +18,27 @@ Portal web calon siswa untuk daftar, bayar, tes, dan unduh sertifikat pemetaan p
 ### 1. Supabase
 
 1. Buat project di [supabase.com](https://supabase.com)
-2. Buka **SQL Editor** → paste & jalankan isi file:
+2. **Pastikan project tidak paused** — kalau ada banner "Project is paused", klik **Restore project** dulu
+3. Buka **SQL Editor** → paste & jalankan isi file:
    `supabase/migrations/20260720000000_initial_schema.sql`
-3. Di **Authentication → URL Configuration**, tambahkan:
+
+#### Error `cannot execute CREATE TABLE in a read-only transaction`?
+
+Jalankan **query ini dulu** (Run terpisah), lalu ulangi migration:
+
+```sql
+SELECT pg_is_in_recovery() AS database_readonly;
+SHOW default_transaction_read_only;
+SET default_transaction_read_only = off;
+```
+
+| Hasil | Arti | Solusi |
+|-------|------|--------|
+| `pg_is_in_recovery = true` | DB read-only | Project paused → **Restore** di dashboard |
+| Project paused / sleep | Free tier tidak aktif | Dashboard → **Restore project** |
+| Masih error | Branch/pooler issue | Buat **project Supabase baru**, ulangi migration |
+
+4. Di **Authentication → URL Configuration**, tambahkan:
    - Site URL: `http://localhost:5174`
    - Redirect URLs: `http://localhost:5174/reset-password`
 
