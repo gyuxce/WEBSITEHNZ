@@ -99,7 +99,7 @@ export function LanguageTestPage() {
 
     await refreshProfile();
     setSubmitting(false);
-    navigate("/dashboard");
+    navigate("/test/character");
   }, [sessionId, user, submitting, questions, answers, refreshProfile, navigate]);
 
   useEffect(() => {

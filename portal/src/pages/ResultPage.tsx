@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, Award, Download } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabase";
+import { buildCertificateHtml } from "../lib/certificateHtml";
 import type { Database } from "../lib/database.types";
 
 type Certificate = Database["public"]["Tables"]["certificates"]["Row"];
@@ -91,26 +92,14 @@ export function ResultPage() {
   const handleDownload = () => {
     if (!certificate || !profile) return;
 
-    const html = `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>Sertifikat Pemetaan Harunokaze</title>
-<style>
-  body { font-family: Georgia, serif; max-width: 800px; margin: 40px auto; padding: 40px; border: 3px solid #0f2240; }
-  h1 { color: #e61935; text-align: center; }
-  .code { text-align: center; color: #666; font-size: 14px; }
-  .name { text-align: center; font-size: 28px; margin: 24px 0; }
-  .score { text-align: center; font-size: 20px; }
-  .rec { margin-top: 32px; line-height: 1.6; }
-</style></head><body>
-  <h1>Harunokaze</h1>
-  <p style="text-align:center">Sertifikat Pemetaan Potensi</p>
-  <p class="code">${certificate.certificate_code}</p>
-  <p class="name"><strong>${profile.full_name}</strong></p>
-  <p class="score">Skor Tes Bahasa: <strong>${certificate.score}/100</strong></p>
-  <div class="rec"><strong>Rekomendasi:</strong><br/>${certificate.recommendation}</div>
-  <p style="margin-top:40px;text-align:center;font-size:12px;color:#888">
-    Diterbitkan: ${new Date(certificate.issued_at).toLocaleDateString("id-ID")}
-  </p>
-</body></html>`;
+    const html = buildCertificateHtml({
+      fullName: profile.full_name,
+      certificateCode: certificate.certificate_code,
+      score: certificate.score,
+      recommendation: certificate.recommendation,
+      issuedAt: certificate.issued_at,
+      programInterest: profile.program_interest,
+    });
 
     const blob = new Blob([html], { type: "text/html" });
     const url = URL.createObjectURL(blob);

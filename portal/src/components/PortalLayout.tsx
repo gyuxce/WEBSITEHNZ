@@ -1,25 +1,33 @@
-import { LogOut } from "lucide-react";
 import { Link, Outlet } from "react-router-dom";
+import { LogOut, LayoutDashboard } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { Logo } from "./Logo";
 import { useAuth } from "../contexts/AuthContext";
 
 export function PortalLayout() {
   const { profile, signOut } = useAuth();
+  const location = useLocation();
+  const onDashboard = location.pathname === "/dashboard";
 
   return (
     <div className="min-h-screen bg-brand-bg">
       <header className="sticky top-0 z-40 border-b border-brand-navy/8 bg-white/90 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Logo />
-          <div className="flex items-center gap-4">
+          <Logo homeHref="/dashboard" />
+          <div className="flex items-center gap-3 sm:gap-4">
             <span className="hidden sm:block text-sm text-brand-navy/60 font-medium">
               {profile?.full_name}
             </span>
             <Link
               to="/dashboard"
-              className="text-sm font-semibold text-brand-navy/70 hover:text-brand-red transition-colors"
+              className={`inline-flex items-center gap-1.5 text-sm font-semibold transition-colors rounded-full px-3 py-1.5 ${
+                onDashboard
+                  ? "bg-brand-red-soft text-brand-red"
+                  : "text-brand-navy/70 hover:text-brand-red"
+              }`}
             >
-              Dashboard
+              <LayoutDashboard size={16} />
+              <span className="hidden sm:inline">Beranda</span>
             </Link>
             <button
               type="button"

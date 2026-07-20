@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, CreditCard, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, CreditCard, ShieldCheck } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { PEMETAAN_PRICE, supabase, MIDTRANS_CLIENT_KEY } from "../lib/supabase";
 
@@ -81,6 +81,9 @@ export function PaymentPage() {
     setSandboxMode(false);
   };
 
+  const canStartLanguageTest =
+    progress?.payment_status === "verified" || progress?.language_test_status === "available";
+
   return (
     <div className="max-w-lg mx-auto">
       <Link to="/dashboard" className="inline-flex items-center gap-1.5 text-sm text-brand-navy/50 hover:text-brand-red mb-6">
@@ -105,9 +108,29 @@ export function PaymentPage() {
         </div>
 
         {isPaid ? (
-          <div className="flex items-center gap-3 rounded-xl bg-emerald-50 text-emerald-700 px-4 py-3 text-sm font-semibold">
-            <ShieldCheck size={20} />
-            Pembayaran sudah terverifikasi. Kamu bisa mulai tes bahasa.
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 rounded-xl bg-emerald-50 text-emerald-700 px-4 py-3 text-sm font-semibold">
+              <ShieldCheck size={20} />
+              Pembayaran berhasil! Tes bahasa sudah terbuka.
+            </div>
+            {canStartLanguageTest && progress?.language_test_status !== "completed" && (
+              <Link
+                to="/test/language"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-red text-white font-bold py-3.5 text-sm hover:bg-brand-red-hover transition-colors"
+              >
+                Lanjut ke Tes Bahasa
+                <ArrowRight size={18} />
+              </Link>
+            )}
+            {progress?.language_test_status === "completed" && (
+              <Link
+                to="/test/character"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-navy text-white font-bold py-3.5 text-sm hover:bg-brand-navy-light transition-colors"
+              >
+                Lanjut ke Tes Kepribadian
+                <ArrowRight size={18} />
+              </Link>
+            )}
           </div>
         ) : (
           <>

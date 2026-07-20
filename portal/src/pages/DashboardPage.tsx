@@ -10,7 +10,8 @@ const WHATSAPP_URL = "https://wa.me/message/DWVTJESHI2RQC1";
 export function DashboardPage() {
   const { profile, progress } = useAuth();
 
-  const paymentDone = progress?.payment_status === "verified";
+  const paymentDone =
+    progress?.payment_status === "verified" || progress?.payment_status === "paid";
   const languageDone = progress?.language_test_status === "completed";
   const characterDone = progress?.character_test_status === "completed";
   const resultDone = progress?.result_status === "completed";
@@ -19,6 +20,7 @@ export function DashboardPage() {
     <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
       <div className="lg:col-span-3 space-y-6">
         <div>
+          <p className="text-xs font-bold uppercase tracking-widest text-brand-red mb-1">Beranda</p>
           <h1 className="font-display font-extrabold text-2xl md:text-3xl text-brand-navy">
             Halo, {profile?.full_name?.split(" ")[0] ?? "Peserta"} 👋
           </h1>
