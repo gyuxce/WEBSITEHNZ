@@ -13,6 +13,12 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const supabase = createClient<Database>(
   supabaseUrl ?? "https://placeholder.supabase.co",
   supabaseAnonKey ?? "placeholder",
+  {
+    auth: {
+      detectSessionInUrl: true,
+      flowType: "pkce",
+    },
+  },
 );
 
 export const isSupabaseConfigured =

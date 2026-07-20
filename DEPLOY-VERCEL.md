@@ -45,17 +45,24 @@ VITE_MIDTRANS_CLIENT_KEY=
 
 ## Supabase Auth URLs
 
-**Authentication** → **URL Configuration** — tambahkan semua domain portal:
+**Authentication** → **URL Configuration** — wajib pakai URL portal production, **bukan localhost**:
+
+| Field | Isi |
+|-------|-----|
+| **Site URL** | `https://portal.harunokaze.id` (atau URL Vercel portal kamu) |
+| **Redirect URLs** | Tambahkan semua baris di bawah |
 
 ```
-https://portal.harunokaze.id
-https://<nama-portal>.vercel.app
+https://portal.harunokaze.id/**
+https://portal.harunokaze.id/dashboard
+https://portal.harunokaze.id/login
+https://portal.harunokaze.id/reset-password
+https://<nama-portal-kamu>.vercel.app/**
 ```
 
-| Field | Nilai |
-|-------|--------|
-| Site URL | `https://portal.harunokaze.id` |
-| Redirect URLs | `https://portal.harunokaze.id/reset-password` |
+Hapus atau jangan pakai `http://localhost:5174` di production.
+
+Kalau link konfirmasi email masih ke localhost → ganti **Site URL** lalu minta user daftar ulang, atau kirim ulang konfirmasi dari Supabase Dashboard.
 
 ---
 

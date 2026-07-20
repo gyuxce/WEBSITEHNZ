@@ -38,6 +38,7 @@ export function RegisterPage() {
       email: form.email,
       password: form.password,
       options: {
+        emailRedirectTo: `${window.location.origin}/dashboard`,
         data: {
           full_name: form.fullName,
           whatsapp: form.whatsapp,
