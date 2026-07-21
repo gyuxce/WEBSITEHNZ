@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Logo } from "./Logo";
-import { navLinks } from "../data/content";
+import { navLinks, portalUrl } from "../data/content";
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -30,7 +30,9 @@ export function Navbar() {
   return (
     <header
       className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
-        scrolled ? "bg-white/85 backdrop-blur-lg shadow-[0_1px_0_0_rgba(15,34,64,0.08)]" : "bg-transparent"
+        scrolled
+          ? "bg-white/85 backdrop-blur-lg shadow-[0_1px_0_0_rgba(15,34,64,0.08)]"
+          : "bg-transparent"
       }`}
     >
       <nav className="max-w-7xl mx-auto flex items-center justify-between px-6 md:px-10 py-3">
@@ -66,6 +68,12 @@ export function Navbar() {
           >
             Konsultasi
           </a>
+          <a
+            href={`${portalUrl}/register`}
+            className="inline-flex items-center gap-2 rounded-full bg-brand-red px-5 py-2.5 text-sm font-bold text-white transition-all hover:bg-brand-red-hover"
+          >
+            Mulai Pemetaan
+          </a>
         </div>
 
         <button
@@ -79,7 +87,9 @@ export function Navbar() {
 
       <div
         className={`lg:hidden fixed inset-0 top-[64px] bg-white transition-all duration-300 ${
-          open ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 -translate-y-4 pointer-events-none"
+          open
+            ? "opacity-100 translate-y-0 pointer-events-auto"
+            : "opacity-0 -translate-y-4 pointer-events-none"
         }`}
       >
         <div className="flex flex-col gap-1 px-6 py-8">
@@ -97,12 +107,18 @@ export function Navbar() {
             </a>
           ))}
           <a
+            href={`${portalUrl}/register`}
+            className="mt-6 rounded-full bg-brand-red px-6 py-3.5 text-center text-base font-bold text-white"
+          >
+            Mulai Pemetaan Potensi
+          </a>
+          <a
             href="#kontak"
             onClick={(e) => {
               e.preventDefault();
               handleNavClick("#kontak");
             }}
-            className="mt-6 rounded-full bg-brand-red px-6 py-3.5 text-center text-base font-bold text-white"
+            className="mt-3 rounded-full border border-brand-navy/15 px-6 py-3.5 text-center text-base font-semibold text-brand-navy"
           >
             Konsultasi Gratis
           </a>
