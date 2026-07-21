@@ -26,10 +26,14 @@ export function DashboardPage() {
           <p className="mb-1 text-xs font-bold uppercase tracking-widest text-brand-red">Beranda</p>
           <h1 className="font-display text-2xl font-extrabold text-brand-navy md:text-3xl">
             Halo, {profile?.full_name?.split(" ")[0] ?? "Peserta"}
+            {isAdmin ? (
+              <span className="ml-2 align-middle text-sm font-bold text-brand-red">(Admin)</span>
+            ) : null}
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-brand-navy/55">
-            Ikuti langkah pemetaan potensi. Setelah bayar, kerjakan Pimsleur. Papikostik &amp; CFIT
-            menyusul.
+            {isAdmin
+              ? "Akun staf: dashboard peserta tetap tampil di bawah. Buka menu Admin di header atau kartu Admin Pimsleur untuk melihat hasil semua peserta."
+              : "Ikuti langkah pemetaan potensi. Setelah bayar, kerjakan Pimsleur. Papikostik & CFIT menyusul."}
           </p>
         </div>
 
