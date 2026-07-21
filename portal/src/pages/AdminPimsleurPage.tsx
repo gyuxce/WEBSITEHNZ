@@ -4,10 +4,20 @@ import { ArrowLeft } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabase";
 import { PIMSLEUR_MAX_SCORE } from "../data/pimsleurQuestions";
-import type { PimsleurResult } from "../lib/database.types";
 
-type AdminRow = PimsleurResult & {
+type AdminRow = {
+  id: string;
+  user_id: string;
+  score_section2: number;
+  score_section3: number;
+  score_section4: number;
+  score_section5: number;
+  score_section6: number;
+  score_total: number;
+  grade: string;
+  completed_at: string;
   full_name: string;
+  email: string | null;
   whatsapp: string | null;
   city: string | null;
 };
@@ -22,10 +32,7 @@ export function AdminPimsleurPage() {
     if (authLoading || profile?.role !== "admin") return;
 
     async function load() {
-      const { data: results, error: qError } = await supabase
-        .from("pimsleur_results")
-        .select("*")
-        .order("completed_at", { ascending: false });
+      const { data, error: qError } = await supabase.rpc("admin_list_pimsleur_results");
 
       if (qError) {
         setError(qError.message);
@@ -33,21 +40,7 @@ export function AdminPimsleurPage() {
         return;
       }
 
-      const list = results ?? [];
-      const ids = [...new Set(list.map((r) => r.user_id))];
-      const { data: profiles } = ids.length
-        ? await supabase.from("profiles").select("id, full_name, whatsapp, city").in("id", ids)
-        : { data: [] };
-
-      const map = new Map((profiles ?? []).map((p) => [p.id, p]));
-      setRows(
-        list.map((r) => ({
-          ...r,
-          full_name: map.get(r.user_id)?.full_name ?? "—",
-          whatsapp: map.get(r.user_id)?.whatsapp ?? null,
-          city: map.get(r.user_id)?.city ?? null,
-        })),
-      );
+      setRows((data as AdminRow[]) ?? []);
       setLoading(false);
     }
 
@@ -64,14 +57,12 @@ export function AdminPimsleurPage() {
         to="/dashboard"
         className="mb-6 inline-flex items-center gap-1.5 text-sm text-brand-navy/50 hover:text-brand-red"
       >
-        <ArrowLeft size={16} /> Dashboard
+        <ArrowLeft size={16} /> Panel staf
       </Link>
 
-      <h1 className="font-display text-2xl font-extrabold text-brand-navy">
-        Admin — Hasil Pimsleur
-      </h1>
+      <h1 className="font-display text-2xl font-extrabold text-brand-navy">Hasil Pimsleur peserta</h1>
       <p className="mt-1 text-sm text-brand-navy/50">
-        Daftar peserta, skor per tahap, dan grade A–F.
+        Daftar peserta, skor tahap 2–6, dan grade A–F.
       </p>
 
       {loading || authLoading ? (
@@ -79,7 +70,14 @@ export function AdminPimsleurPage() {
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-red border-t-transparent" />
         </div>
       ) : error ? (
-        <p className="mt-6 text-sm text-brand-red">{error}</p>
+        <div className="mt-6 space-y-2">
+          <p className="text-sm text-brand-red">{error}</p>
+          <p className="text-xs text-brand-navy/50">
+            Jika error fungsi tidak ditemukan, jalankan migration{" "}
+            <code className="text-brand-navy/70">20260721180000_admin_pimsleur_rpc.sql</code> di
+            Supabase SQL Editor.
+          </p>
+        </div>
       ) : rows.length === 0 ? (
         <p className="mt-6 text-sm text-brand-navy/50">Belum ada hasil Pimsleur.</p>
       ) : (
@@ -99,9 +97,11 @@ export function AdminPimsleurPage() {
               {rows.map((row) => (
                 <tr key={row.id} className="border-b border-brand-navy/5 last:border-0">
                   <td className="px-4 py-3">
-                    <p className="font-semibold text-brand-navy">{row.full_name}</p>
+                    <p className="font-semibold text-brand-navy">{row.full_name || "—"}</p>
                     <p className="text-xs text-brand-navy/45">
-                      {row.city ?? "—"} · {row.whatsapp ?? "—"}
+                      {row.email ?? "—"}
+                      {row.whatsapp ? ` · ${row.whatsapp}` : ""}
+                      {row.city ? ` · ${row.city}` : ""}
                     </p>
                   </td>
                   <td className="px-4 py-3 font-bold text-brand-navy">

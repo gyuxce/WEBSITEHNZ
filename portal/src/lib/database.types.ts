@@ -228,7 +228,60 @@ export interface Database {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      is_admin: { Args: Record<string, never>; Returns: boolean };
+      admin_list_pimsleur_results: {
+        Args: Record<string, never>;
+        Returns: {
+          id: string;
+          user_id: string;
+          score_section2: number;
+          score_section3: number;
+          score_section4: number;
+          score_section5: number;
+          score_section6: number;
+          score_verbal: number;
+          score_audio: number;
+          score_total: number;
+          grade: string;
+          grade_label: string;
+          status_label: string;
+          recommendation: string;
+          duration_seconds: number | null;
+          completed_at: string;
+          full_name: string;
+          email: string | null;
+          whatsapp: string | null;
+          city: string | null;
+        }[];
+      };
+      admin_get_pimsleur_detail: {
+        Args: { p_user_id: string };
+        Returns: {
+          id: string;
+          user_id: string;
+          answers: Json;
+          score_section2: number;
+          score_section3: number;
+          score_section4: number;
+          score_section5: number;
+          score_section6: number;
+          score_verbal: number;
+          score_audio: number;
+          score_total: number;
+          grade: string;
+          grade_label: string;
+          status_label: string;
+          recommendation: string;
+          duration_seconds: number | null;
+          completed_at: string;
+          full_name: string;
+          email: string | null;
+          whatsapp: string | null;
+          city: string | null;
+        }[];
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };

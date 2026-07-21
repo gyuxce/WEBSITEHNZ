@@ -34,7 +34,7 @@ export function PortalLayout() {
               }`}
             >
               <LayoutDashboard size={16} />
-              <span className="hidden sm:inline">Beranda</span>
+              <span className="hidden sm:inline">{isAdmin ? "Panel" : "Beranda"}</span>
             </Link>
             {isAdmin ? (
               <Link

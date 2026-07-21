@@ -8,10 +8,24 @@ import {
   PIMSLEUR_MAX_SCORE,
   PIMSLEUR_SECTIONS,
 } from "../data/pimsleurQuestions";
-import type { PimsleurResult } from "../lib/database.types";
+import type { Json } from "../lib/database.types";
 
-type Detail = PimsleurResult & {
+type Detail = {
+  id: string;
+  user_id: string;
+  answers: Json;
+  score_section2: number;
+  score_section3: number;
+  score_section4: number;
+  score_section5: number;
+  score_section6: number;
+  score_total: number;
+  grade: string;
+  status_label: string;
+  recommendation: string;
+  completed_at: string;
   full_name: string;
+  email: string | null;
   whatsapp: string | null;
   city: string | null;
 };
@@ -27,13 +41,9 @@ export function AdminPimsleurDetailPage() {
     if (!userId || authLoading || profile?.role !== "admin") return;
 
     async function load() {
-      const { data, error: qError } = await supabase
-        .from("pimsleur_results")
-        .select("*")
-        .eq("user_id", userId!)
-        .order("completed_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const { data, error: qError } = await supabase.rpc("admin_get_pimsleur_detail", {
+        p_user_id: userId!,
+      });
 
       if (qError) {
         setError(qError.message);
@@ -41,24 +51,8 @@ export function AdminPimsleurDetailPage() {
         return;
       }
 
-      if (!data) {
-        setRow(null);
-        setLoading(false);
-        return;
-      }
-
-      const { data: p } = await supabase
-        .from("profiles")
-        .select("full_name, whatsapp, city")
-        .eq("id", userId!)
-        .maybeSingle();
-
-      setRow({
-        ...data,
-        full_name: p?.full_name ?? "—",
-        whatsapp: p?.whatsapp ?? null,
-        city: p?.city ?? null,
-      });
+      const first = Array.isArray(data) ? data[0] : data;
+      setRow((first as Detail) ?? null);
       setLoading(false);
     }
 
@@ -99,8 +93,11 @@ export function AdminPimsleurDetailPage() {
         <ArrowLeft size={16} /> Daftar hasil
       </Link>
 
-      <h1 className="font-display text-2xl font-extrabold text-brand-navy">{row.full_name}</h1>
+      <h1 className="font-display text-2xl font-extrabold text-brand-navy">
+        {row.full_name || "Peserta"}
+      </h1>
       <p className="mt-1 text-sm text-brand-navy/50">
+        {row.email ? `${row.email} · ` : ""}
         Grade {row.grade} · {row.score_total}/{PIMSLEUR_MAX_SCORE} · {row.status_label}
       </p>
 
