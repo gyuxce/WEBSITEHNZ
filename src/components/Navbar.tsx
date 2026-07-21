@@ -27,11 +27,13 @@ export function Navbar() {
     el?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const headerSolid = scrolled || open;
+
   return (
     <header
       className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? "bg-white/85 backdrop-blur-lg shadow-[0_1px_0_0_rgba(15,34,64,0.08)]"
+        headerSolid
+          ? "bg-white shadow-[0_1px_0_0_rgba(15,34,64,0.08)]"
           : "bg-transparent"
       }`}
     >
@@ -80,48 +82,54 @@ export function Navbar() {
           className="lg:hidden relative z-10 p-2 text-brand-navy"
           onClick={() => setOpen((v) => !v)}
           aria-label="Toggle menu"
+          aria-expanded={open}
         >
           {open ? <X size={26} /> : <Menu size={26} />}
         </button>
       </nav>
 
+      {/* Panel terpisah: bg solid putih, tidak pakai opacity parent header */}
       <div
-        className={`lg:hidden fixed inset-0 top-[64px] bg-white transition-all duration-300 ${
-          open
-            ? "opacity-100 translate-y-0 pointer-events-auto"
-            : "opacity-0 -translate-y-4 pointer-events-none"
+        className={`lg:hidden fixed inset-x-0 top-[64px] bottom-0 z-40 bg-white transition-transform duration-300 ease-out ${
+          open ? "translate-y-0 pointer-events-auto" : "-translate-y-2 pointer-events-none invisible"
         }`}
+        aria-hidden={!open}
       >
-        <div className="flex flex-col gap-1 px-6 py-8">
-          {navLinks.map((link) => (
+        <div className="flex h-full flex-col overflow-y-auto px-6 py-8">
+          <div className="flex flex-col gap-1">
+            {navLinks.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleNavClick(link.href);
+                }}
+                className="py-3.5 text-lg font-semibold text-brand-navy border-b border-brand-navy/10"
+              >
+                {link.label}
+              </a>
+            ))}
+          </div>
+
+          <div className="mt-8 flex flex-col gap-3">
             <a
-              key={link.href}
-              href={link.href}
+              href={`${portalUrl}/register`}
+              className="flex w-full items-center justify-center rounded-full bg-brand-red px-6 py-3.5 text-center text-sm font-bold text-white"
+            >
+              Mulai Pemetaan
+            </a>
+            <a
+              href="#kontak"
               onClick={(e) => {
                 e.preventDefault();
-                handleNavClick(link.href);
+                handleNavClick("#kontak");
               }}
-              className="py-3.5 text-lg font-semibold text-brand-navy border-b border-brand-navy/10"
+              className="flex w-full items-center justify-center rounded-full border border-brand-navy/15 bg-white px-6 py-3.5 text-center text-sm font-bold text-brand-navy"
             >
-              {link.label}
+              Konsultasi
             </a>
-          ))}
-          <a
-            href={`${portalUrl}/register`}
-            className="mt-6 rounded-full bg-brand-red px-6 py-3.5 text-center text-base font-bold text-white"
-          >
-            Mulai Pemetaan Potensi
-          </a>
-          <a
-            href="#kontak"
-            onClick={(e) => {
-              e.preventDefault();
-              handleNavClick("#kontak");
-            }}
-            className="mt-3 rounded-full border border-brand-navy/15 px-6 py-3.5 text-center text-base font-semibold text-brand-navy"
-          >
-            Konsultasi Gratis
-          </a>
+          </div>
         </div>
       </div>
     </header>
