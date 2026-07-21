@@ -9,9 +9,10 @@ Portal web calon siswa untuk daftar, bayar, tes, dan unduh sertifikat pemetaan p
 - Register / login / logout / lupa password
 - Dashboard progress 6 langkah
 - Pembayaran pemetaan (Midtrans + mode sandbox dev)
-- Tes bahasa (5 soal MCQ + timer)
-- Tes kepribadian (5 pertanyaan)
-- Hasil + unduh sertifikat HTML
+- **Tes Pimsleur** (aptitude bahasa, seksi 2–6, timer 25 menit, grade A–F)
+- Hasil Pimsleur + admin daftar/detail skor
+- Papikostik & CFIT: menyusul (belum dibuka)
+- Legacy sertifikat HTML masih ada di `/result/legacy`
 
 ## Setup
 
@@ -19,8 +20,11 @@ Portal web calon siswa untuk daftar, bayar, tes, dan unduh sertifikat pemetaan p
 
 1. Buat project di [supabase.com](https://supabase.com)
 2. **Pastikan project tidak paused** — kalau ada banner "Project is paused", klik **Restore project** dulu
-3. Buka **SQL Editor** → paste & jalankan isi file:
-   `supabase/migrations/20260720000000_initial_schema.sql`
+3. Buka **SQL Editor** → paste & jalankan isi file (berurutan):
+   - `supabase/migrations/20260720000000_initial_schema.sql`
+   - `supabase/migrations/20260721000000_pimsleur_results.sql`
+
+Untuk admin: set `profiles.role = 'admin'` pada user staf.
 
 #### Error `cannot execute CREATE TABLE in a read-only transaction`?
 

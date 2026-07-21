@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, CreditCard, FileCheck, MessageCircle, TestTube } from "lucide-react";
+import { ArrowRight, CreditCard, FileCheck, MessageCircle, Shield, TestTube } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { ProgressSteps } from "../components/ProgressSteps";
 import { LANDING_URL } from "../lib/supabase";
@@ -12,24 +12,28 @@ export function DashboardPage() {
 
   const paymentDone =
     progress?.payment_status === "verified" || progress?.payment_status === "paid";
-  const languageDone = progress?.language_test_status === "completed";
-  const characterDone = progress?.character_test_status === "completed";
-  const resultDone = progress?.result_status === "completed";
+  const pimsleurDone = progress?.language_test_status === "completed";
+  const resultAvailable =
+    progress?.result_status === "available" ||
+    progress?.result_status === "completed" ||
+    pimsleurDone;
+  const isAdmin = profile?.role === "admin";
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-      <div className="lg:col-span-3 space-y-6">
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
+      <div className="space-y-6 lg:col-span-3">
         <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-brand-red mb-1">Beranda</p>
-          <h1 className="font-display font-extrabold text-2xl md:text-3xl text-brand-navy">
-            Halo, {profile?.full_name?.split(" ")[0] ?? "Peserta"} 👋
+          <p className="mb-1 text-xs font-bold uppercase tracking-widest text-brand-red">Beranda</p>
+          <h1 className="font-display text-2xl font-extrabold text-brand-navy md:text-3xl">
+            Halo, {profile?.full_name?.split(" ")[0] ?? "Peserta"}
           </h1>
-          <p className="mt-2 text-brand-navy/55 text-sm leading-relaxed">
-            Ikuti langkah pemetaan potensi di bawah ini. Setiap tahap akan terbuka setelah tahap sebelumnya selesai.
+          <p className="mt-2 text-sm leading-relaxed text-brand-navy/55">
+            Ikuti langkah pemetaan potensi. Setelah bayar, kerjakan Pimsleur. Papikostik &amp; CFIT
+            menyusul.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <ActionCard
             icon={<CreditCard size={20} />}
             title="Pembayaran Pemetaan"
@@ -40,38 +44,56 @@ export function DashboardPage() {
           />
           <ActionCard
             icon={<TestTube size={20} />}
-            title="Tes Bahasa"
-            description="Tes bakat bahasa Jepang (5 soal)"
-            href="/test/language"
-            disabled={!paymentDone || languageDone}
-            cta={languageDone ? "Selesai" : "Mulai tes"}
+            title="Tes Pimsleur"
+            description="Aptitude bahasa · 25 menit · seksi 2–6"
+            href="/test/pimsleur"
+            disabled={!paymentDone || pimsleurDone}
+            cta={pimsleurDone ? "Selesai" : "Mulai tes"}
           />
           <ActionCard
             icon={<TestTube size={20} />}
-            title="Tes Kepribadian"
-            description="Kuesioner singkat kepribadian"
-            href="/test/character"
-            disabled={!languageDone || characterDone}
-            cta={characterDone ? "Selesai" : "Mulai tes"}
+            title="Papikostik"
+            description="Tes kepribadian — materi menyusul"
+            href="/dashboard"
+            disabled
+            cta="Segera hadir"
           />
           <ActionCard
             icon={<FileCheck size={20} />}
-            title="Hasil & Sertifikat"
-            description="Lihat skor dan unduh sertifikat"
-            href="/result"
-            disabled={!characterDone}
-            cta={resultDone ? "Lihat hasil" : "Belum tersedia"}
+            title="Hasil Pimsleur"
+            description="Skor per seksi, grade A–F, rekomendasi"
+            href="/result/pimsleur"
+            disabled={!resultAvailable}
+            cta={resultAvailable ? "Lihat hasil" : "Belum tersedia"}
           />
         </div>
 
-        {characterDone && (
-          <div className="rounded-2xl border border-brand-navy/8 bg-white p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex gap-3">
-              <MessageCircle className="text-brand-red shrink-0 mt-0.5" size={20} />
+        {isAdmin ? (
+          <Link
+            to="/admin/pimsleur"
+            className="flex items-center justify-between gap-3 rounded-2xl border border-brand-navy/8 bg-white p-5 hover:border-brand-red/20 hover:shadow-md"
+          >
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-red-soft text-brand-red">
+                <Shield size={20} />
+              </div>
               <div>
-                <p className="font-bold text-brand-navy text-sm">Konsultasi lanjutan (opsional)</p>
-                <p className="text-xs text-brand-navy/55 mt-1">
-                  Diskusikan hasil pemetaan dengan tim Harunokaze
+                <p className="text-sm font-bold text-brand-navy">Admin Pimsleur</p>
+                <p className="mt-1 text-xs text-brand-navy/50">Daftar peserta, skor, dan detail jawaban</p>
+              </div>
+            </div>
+            <ArrowRight size={16} className="text-brand-red" />
+          </Link>
+        ) : null}
+
+        {pimsleurDone ? (
+          <div className="flex flex-col justify-between gap-4 rounded-2xl border border-brand-navy/8 bg-white p-6 sm:flex-row sm:items-center">
+            <div className="flex gap-3">
+              <MessageCircle className="mt-0.5 shrink-0 text-brand-red" size={20} />
+              <div>
+                <p className="text-sm font-bold text-brand-navy">Konsultasi lanjutan (opsional)</p>
+                <p className="mt-1 text-xs text-brand-navy/55">
+                  Diskusikan hasil Pimsleur dengan tim Harunokaze
                 </p>
               </div>
             </div>
@@ -79,20 +101,20 @@ export function DashboardPage() {
               href={WHATSAPP_URL}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-brand-navy text-white text-sm font-bold px-5 py-2.5 hover:bg-brand-navy-light transition-colors shrink-0"
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-brand-navy px-5 py-2.5 text-sm font-bold text-white hover:bg-brand-navy-light"
             >
               Chat WhatsApp
               <ArrowRight size={16} />
             </a>
           </div>
-        )}
+        ) : null}
       </div>
 
       <div className="lg:col-span-2">
         <ProgressSteps progress={progress} />
         <a
           href={LANDING_URL}
-          className="mt-4 block text-center text-xs text-brand-navy/40 hover:text-brand-red transition-colors"
+          className="mt-4 block text-center text-xs text-brand-navy/40 transition-colors hover:text-brand-red"
         >
           ← Kembali ke website Harunokaze
         </a>
@@ -117,14 +139,14 @@ function ActionCard({
   cta: string;
 }) {
   const inner = (
-  <>
+    <>
       <div className="flex items-start gap-3">
-        <div className="h-10 w-10 rounded-xl bg-brand-red-soft text-brand-red flex items-center justify-center shrink-0">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-red-soft text-brand-red">
           {icon}
         </div>
         <div>
-          <p className="font-bold text-brand-navy text-sm">{title}</p>
-          <p className="text-xs text-brand-navy/50 mt-1">{description}</p>
+          <p className="text-sm font-bold text-brand-navy">{title}</p>
+          <p className="mt-1 text-xs text-brand-navy/50">{description}</p>
         </div>
       </div>
       <span
@@ -140,7 +162,7 @@ function ActionCard({
 
   if (disabled) {
     return (
-      <div className="rounded-2xl border border-brand-navy/8 bg-white/60 p-5 opacity-60 cursor-not-allowed">
+      <div className="cursor-not-allowed rounded-2xl border border-brand-navy/8 bg-white/60 p-5 opacity-60">
         {inner}
       </div>
     );
@@ -149,7 +171,7 @@ function ActionCard({
   return (
     <Link
       to={href}
-      className="rounded-2xl border border-brand-navy/8 bg-white p-5 hover:border-brand-red/20 hover:shadow-md transition-all"
+      className="rounded-2xl border border-brand-navy/8 bg-white p-5 transition-all hover:border-brand-red/20 hover:shadow-md"
     >
       {inner}
     </Link>

@@ -8,9 +8,11 @@ import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { PaymentPage } from "./pages/PaymentPage";
-import { LanguageTestPage } from "./pages/LanguageTestPage";
-import { CharacterTestPage } from "./pages/CharacterTestPage";
 import { ResultPage } from "./pages/ResultPage";
+import { PimsleurTestPage } from "./pages/PimsleurTestPage";
+import { PimsleurResultPage } from "./pages/PimsleurResultPage";
+import { AdminPimsleurPage } from "./pages/AdminPimsleurPage";
+import { AdminPimsleurDetailPage } from "./pages/AdminPimsleurDetailPage";
 
 export default function App() {
   return (
@@ -31,9 +33,15 @@ export default function App() {
             <Route element={<PortalLayout />}>
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/payment" element={<PaymentPage />} />
-              <Route path="/test/language" element={<LanguageTestPage />} />
-              <Route path="/test/character" element={<CharacterTestPage />} />
-              <Route path="/result" element={<ResultPage />} />
+              <Route path="/test/pimsleur" element={<PimsleurTestPage />} />
+              <Route path="/result/pimsleur" element={<PimsleurResultPage />} />
+              <Route path="/admin/pimsleur" element={<AdminPimsleurPage />} />
+              <Route path="/admin/pimsleur/:userId" element={<AdminPimsleurDetailPage />} />
+              {/* Legacy routes — digantikan Pimsleur / Papikostik */}
+              <Route path="/test/language" element={<Navigate to="/test/pimsleur" replace />} />
+              <Route path="/test/character" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/result" element={<Navigate to="/result/pimsleur" replace />} />
+              <Route path="/result/legacy" element={<ResultPage />} />
             </Route>
           </Route>
 

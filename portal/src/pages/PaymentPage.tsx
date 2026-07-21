@@ -111,23 +111,23 @@ export function PaymentPage() {
           <div className="space-y-4">
             <div className="flex items-center gap-3 rounded-xl bg-emerald-50 text-emerald-700 px-4 py-3 text-sm font-semibold">
               <ShieldCheck size={20} />
-              Pembayaran berhasil! Tes bahasa sudah terbuka.
+              Pembayaran berhasil! Tes Pimsleur sudah terbuka.
             </div>
             {canStartLanguageTest && progress?.language_test_status !== "completed" && (
               <Link
-                to="/test/language"
+                to="/test/pimsleur"
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-red text-white font-bold py-3.5 text-sm hover:bg-brand-red-hover transition-colors"
               >
-                Lanjut ke Tes Bahasa
+                Lanjut ke Tes Pimsleur
                 <ArrowRight size={18} />
               </Link>
             )}
             {progress?.language_test_status === "completed" && (
               <Link
-                to="/test/character"
+                to="/result/pimsleur"
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-navy text-white font-bold py-3.5 text-sm hover:bg-brand-navy-light transition-colors"
               >
-                Lanjut ke Tes Kepribadian
+                Lihat hasil Pimsleur
                 <ArrowRight size={18} />
               </Link>
             )}

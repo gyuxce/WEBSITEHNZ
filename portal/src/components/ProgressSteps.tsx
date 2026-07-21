@@ -20,16 +20,21 @@ function getStepStatus(stepKey: string, progress: UserProgress | null): StepStat
       if (progress.language_test_status === "completed") return "done";
       if (progress.language_test_status === "in_progress") return "active";
       if (progress.language_test_status === "available") return "active";
-      return progress.payment_status === "verified" ? "active" : "locked";
-    case "character":
-      if (progress.character_test_status === "completed") return "done";
-      if (progress.character_test_status === "in_progress") return "active";
-      if (progress.character_test_status === "available") return "active";
-      return progress.language_test_status === "completed" ? "active" : "locked";
+      return progress.payment_status === "verified" || progress.payment_status === "paid"
+        ? "active"
+        : "locked";
     case "result":
       if (progress.result_status === "completed") return "done";
       if (progress.result_status === "available") return "active";
-      return progress.character_test_status === "completed" ? "active" : "locked";
+      // Hasil Pimsleur tersedia setelah tes bahasa selesai (Papikostik belum wajib)
+      return progress.language_test_status === "completed" ? "active" : "locked";
+    case "character":
+      // Papikostik belum dibuka — tetap locked / coming soon
+      if (progress.character_test_status === "completed") return "done";
+      if (progress.character_test_status === "available" || progress.character_test_status === "in_progress") {
+        return "active";
+      }
+      return "locked";
     case "consultation":
       return progress.consultation_status === "completed" ? "done" : "optional";
     default:
