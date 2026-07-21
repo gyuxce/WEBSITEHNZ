@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, CreditCard, FileCheck, MessageCircle, Shield, TestTube } from "lucide-react";
+import { ArrowRight, CreditCard, FileCheck, MessageCircle, TestTube, Users } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { ProgressSteps } from "../components/ProgressSteps";
 import { LANDING_URL } from "../lib/supabase";
@@ -9,7 +9,69 @@ const WHATSAPP_URL = "https://wa.me/message/DWVTJESHI2RQC1";
 
 export function DashboardPage() {
   const { profile, progress } = useAuth();
+  const isAdmin = profile?.role === "admin";
 
+  if (isAdmin) {
+    return <AdminHome name={profile?.full_name?.split(" ")[0] ?? "Admin"} />;
+  }
+
+  return <ParticipantHome profileName={profile?.full_name?.split(" ")[0] ?? "Peserta"} progress={progress} />;
+}
+
+function AdminHome({ name }: { name: string }) {
+  return (
+    <div className="mx-auto max-w-3xl space-y-6">
+      <div>
+        <p className="mb-1 text-xs font-bold uppercase tracking-widest text-brand-red">Panel staf</p>
+        <h1 className="font-display text-2xl font-extrabold text-brand-navy md:text-3xl">
+          Halo, {name}
+        </h1>
+        <p className="mt-2 text-sm leading-relaxed text-brand-navy/55">
+          Ini beranda admin — khusus kelola hasil peserta. Menu pembayaran/tes peserta tidak ditampilkan
+          di sini agar tidak bentrok.
+        </p>
+      </div>
+
+      <Link
+        to="/admin/pimsleur"
+        className="flex items-center justify-between gap-4 rounded-2xl border border-brand-navy/8 bg-white p-6 transition-all hover:border-brand-red/20 hover:shadow-md"
+      >
+        <div className="flex items-start gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-red-soft text-brand-red">
+            <Users size={24} />
+          </div>
+          <div>
+            <p className="font-display text-lg font-bold text-brand-navy">Hasil Pimsleur peserta</p>
+            <p className="mt-1 text-sm text-brand-navy/50">
+              Daftar peserta, skor tahap 2–6, grade A–F, dan detail jawaban
+            </p>
+          </div>
+        </div>
+        <ArrowRight className="shrink-0 text-brand-red" size={20} />
+      </Link>
+
+      <div className="rounded-2xl border border-dashed border-brand-navy/15 bg-white/60 p-5 text-sm text-brand-navy/55">
+        <p className="font-semibold text-brand-navy">Menyusul</p>
+        <p className="mt-1">Admin Papikostik &amp; CFIT akan muncul di sini setelah materi siap.</p>
+      </div>
+
+      <a
+        href={LANDING_URL}
+        className="block text-center text-xs text-brand-navy/40 transition-colors hover:text-brand-red"
+      >
+        ← Kembali ke website Harunokaze
+      </a>
+    </div>
+  );
+}
+
+function ParticipantHome({
+  profileName,
+  progress,
+}: {
+  profileName: string;
+  progress: ReturnType<typeof useAuth>["progress"];
+}) {
   const paymentDone =
     progress?.payment_status === "verified" || progress?.payment_status === "paid";
   const pimsleurDone = progress?.language_test_status === "completed";
@@ -17,7 +79,6 @@ export function DashboardPage() {
     progress?.result_status === "available" ||
     progress?.result_status === "completed" ||
     pimsleurDone;
-  const isAdmin = profile?.role === "admin";
 
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
@@ -25,15 +86,11 @@ export function DashboardPage() {
         <div>
           <p className="mb-1 text-xs font-bold uppercase tracking-widest text-brand-red">Beranda</p>
           <h1 className="font-display text-2xl font-extrabold text-brand-navy md:text-3xl">
-            Halo, {profile?.full_name?.split(" ")[0] ?? "Peserta"}
-            {isAdmin ? (
-              <span className="ml-2 align-middle text-sm font-bold text-brand-red">(Admin)</span>
-            ) : null}
+            Halo, {profileName}
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-brand-navy/55">
-            {isAdmin
-              ? "Akun staf: dashboard peserta tetap tampil di bawah. Buka menu Admin di header atau kartu Admin Pimsleur untuk melihat hasil semua peserta."
-              : "Ikuti langkah pemetaan potensi. Setelah bayar, kerjakan Pimsleur. Papikostik & CFIT menyusul."}
+            Ikuti langkah pemetaan potensi. Setelah bayar, kerjakan Pimsleur. Papikostik &amp; CFIT
+            menyusul.
           </p>
         </div>
 
@@ -71,24 +128,6 @@ export function DashboardPage() {
             cta={resultAvailable ? "Lihat hasil" : "Belum tersedia"}
           />
         </div>
-
-        {isAdmin ? (
-          <Link
-            to="/admin/pimsleur"
-            className="flex items-center justify-between gap-3 rounded-2xl border border-brand-navy/8 bg-white p-5 hover:border-brand-red/20 hover:shadow-md"
-          >
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-red-soft text-brand-red">
-                <Shield size={20} />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-brand-navy">Admin Pimsleur</p>
-                <p className="mt-1 text-xs text-brand-navy/50">Daftar peserta, skor, dan detail jawaban</p>
-              </div>
-            </div>
-            <ArrowRight size={16} className="text-brand-red" />
-          </Link>
-        ) : null}
 
         {pimsleurDone ? (
           <div className="flex flex-col justify-between gap-4 rounded-2xl border border-brand-navy/8 bg-white p-6 sm:flex-row sm:items-center">
