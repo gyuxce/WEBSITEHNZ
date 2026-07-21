@@ -49,7 +49,7 @@ export function DashboardPage() {
           <ActionCard
             icon={<TestTube size={20} />}
             title="Tes Pimsleur"
-            description="Aptitude bahasa · 25 menit · seksi 2–6"
+            description="Aptitude bahasa · 25 menit · 5 tahap"
             href="/test/pimsleur"
             disabled={!paymentDone || pimsleurDone}
             cta={pimsleurDone ? "Selesai" : "Mulai tes"}
@@ -65,7 +65,7 @@ export function DashboardPage() {
           <ActionCard
             icon={<FileCheck size={20} />}
             title="Hasil Pimsleur"
-            description="Skor per seksi, grade A–F, rekomendasi"
+            description="Skor per tahap, grade A–F, rekomendasi"
             href="/result/pimsleur"
             disabled={!resultAvailable}
             cta={resultAvailable ? "Lihat hasil" : "Belum tersedia"}
