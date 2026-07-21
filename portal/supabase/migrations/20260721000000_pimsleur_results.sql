@@ -35,16 +35,30 @@ create index if not exists pimsleur_results_completed_at_idx on public.pimsleur_
 
 alter table public.pimsleur_results enable row level security;
 
+-- Helper: cek admin tanpa recursion RLS (security definer)
+create or replace function public.is_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.profiles
+    where id = auth.uid()
+      and role = 'admin'
+  );
+$$;
+
+revoke all on function public.is_admin() from public;
+grant execute on function public.is_admin() to authenticated;
+grant execute on function public.is_admin() to anon;
+
 drop policy if exists "Users can view own pimsleur results" on public.pimsleur_results;
 create policy "Users can view own pimsleur results"
   on public.pimsleur_results for select
-  using (
-    auth.uid() = user_id
-    or exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid() and p.role = 'admin'
-    )
-  );
+  using (auth.uid() = user_id or public.is_admin());
 
 drop policy if exists "Users can insert own pimsleur results" on public.pimsleur_results;
 create policy "Users can insert own pimsleur results"
@@ -55,21 +69,9 @@ create policy "Users can insert own pimsleur results"
 drop policy if exists "Admins can view all profiles" on public.profiles;
 create policy "Admins can view all profiles"
   on public.profiles for select
-  using (
-    auth.uid() = id
-    or exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid() and p.role = 'admin'
-    )
-  );
+  using (auth.uid() = id or public.is_admin());
 
 drop policy if exists "Admins can view all progress" on public.user_progress;
 create policy "Admins can view all progress"
   on public.user_progress for select
-  using (
-    auth.uid() = user_id
-    or exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid() and p.role = 'admin'
-    )
-  );
+  using (auth.uid() = user_id or public.is_admin());
