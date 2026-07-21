@@ -186,8 +186,9 @@ export function PimsleurTestPage() {
           </h1>
           <p className="mt-3 text-sm leading-relaxed text-brand-navy/55">
             Mengukur kemampuan belajar bahasa asing. Durasi total{" "}
-            <strong className="text-brand-navy">25 menit</strong> untuk lima tahap. Audio diputar
-            sendiri pada tahap yang membutuhkan suara.
+            <strong className="text-brand-navy">25 menit</strong> untuk tahap 2–6. Nomor tahap
+            mengikuti materi audio (tahap 1 tidak digunakan). Audio diputar sendiri pada tahap yang
+            membutuhkan suara.
           </p>
           <ul className="mt-6 space-y-2 text-sm text-brand-navy/70">
             {PIMSLEUR_SECTIONS.map((s) => (
@@ -239,7 +240,7 @@ export function PimsleurTestPage() {
       <div className="mb-2 flex flex-wrap items-end justify-between gap-2">
         <div>
           <p className="text-xs font-bold uppercase tracking-wide text-brand-navy/40">
-            Tahap {sectionMeta.phase} dari {PIMSLEUR_SECTIONS.length}
+            Tahap {sectionMeta.id} · {sectionIndex + 1}/{PIMSLEUR_SECTIONS.length}
           </p>
           <h1 className="font-display text-xl font-extrabold text-brand-navy sm:text-2xl">
             {sectionMeta.title.replace(/^Tahap \d+ — /, "")}

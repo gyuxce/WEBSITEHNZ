@@ -90,7 +90,7 @@ export function AdminPimsleurPage() {
                 <th className="px-4 py-3 font-bold">Peserta</th>
                 <th className="px-4 py-3 font-bold">Total</th>
                 <th className="px-4 py-3 font-bold">Grade</th>
-                <th className="px-4 py-3 font-bold">T1–T5</th>
+                <th className="px-4 py-3 font-bold">T2–T6</th>
                 <th className="px-4 py-3 font-bold">Selesai</th>
                 <th className="px-4 py-3 font-bold" />
               </tr>

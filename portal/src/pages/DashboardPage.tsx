@@ -49,7 +49,7 @@ export function DashboardPage() {
           <ActionCard
             icon={<TestTube size={20} />}
             title="Tes Pimsleur"
-            description="Aptitude bahasa · 25 menit · 5 tahap"
+            description="Aptitude bahasa · 25 menit · tahap 2–6"
             href="/test/pimsleur"
             disabled={!paymentDone || pimsleurDone}
             cta={pimsleurDone ? "Selesai" : "Mulai tes"}
