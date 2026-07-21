@@ -97,11 +97,11 @@ export function PimsleurResultPage() {
         </div>
 
         <div className="mt-6 grid gap-2 text-sm text-brand-navy/70 sm:grid-cols-5">
-          <Mini label="S2" value={result.score_section2} />
-          <Mini label="S3" value={result.score_section3} />
-          <Mini label="S4" value={result.score_section4} />
-          <Mini label="S5" value={result.score_section5} />
-          <Mini label="S6" value={result.score_section6} />
+          <Mini label="Tahap 1" value={result.score_section2} />
+          <Mini label="Tahap 2" value={result.score_section3} />
+          <Mini label="Tahap 3" value={result.score_section4} />
+          <Mini label="Tahap 4" value={result.score_section5} />
+          <Mini label="Tahap 5" value={result.score_section6} />
         </div>
 
         <p className="mt-6 rounded-xl bg-brand-bg p-4 text-sm leading-relaxed text-brand-navy/70">

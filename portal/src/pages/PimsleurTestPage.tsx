@@ -98,7 +98,6 @@ export function PimsleurTestPage() {
       .from("user_progress")
       .update({
         language_test_status: "completed",
-        // Papikostik/CFIT belum dibuka — jangan unlock character
         result_status: "available",
       })
       .eq("user_id", user.id);
@@ -187,17 +186,17 @@ export function PimsleurTestPage() {
           </h1>
           <p className="mt-3 text-sm leading-relaxed text-brand-navy/55">
             Mengukur kemampuan belajar bahasa asing. Durasi total{" "}
-            <strong className="text-brand-navy">25 menit</strong> untuk seluruh seksi. Audio
-            diputar sendiri pada seksi yang membutuhkan suara.
+            <strong className="text-brand-navy">25 menit</strong> untuk lima tahap. Audio diputar
+            sendiri pada tahap yang membutuhkan suara.
           </p>
           <ul className="mt-6 space-y-2 text-sm text-brand-navy/70">
             {PIMSLEUR_SECTIONS.map((s) => (
               <li key={s.id}>
                 • {s.title}
-                {s.hasAudio ? " (ada audio)" : ""}
+                {s.hasAudio ? " — ada audio" : ""}
               </li>
             ))}
-            <li>• Setelah selesai, hasil Pimsleur langsung tampil. Papikostik &amp; CFIT menyusul.</li>
+            <li>• Setelah selesai, hasil langsung tampil. Papikostik &amp; CFIT menyusul.</li>
           </ul>
           {error ? (
             <p className="mt-4 rounded-lg bg-brand-red-soft px-3 py-2 text-sm text-brand-red">
@@ -237,40 +236,40 @@ export function PimsleurTestPage() {
         </span>
       </div>
 
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-sm text-brand-navy/50">
-        <p className="font-medium text-brand-navy/70">
-          {sectionMeta.title} · Bagian {sectionIndex + 1}/{PIMSLEUR_SECTIONS.length}
-        </p>
-        <p>
+      <div className="mb-2 flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wide text-brand-navy/40">
+            Tahap {sectionMeta.phase} dari {PIMSLEUR_SECTIONS.length}
+          </p>
+          <h1 className="font-display text-xl font-extrabold text-brand-navy sm:text-2xl">
+            {sectionMeta.title.replace(/^Tahap \d+ — /, "")}
+          </h1>
+        </div>
+        <p className="text-sm text-brand-navy/50">
           Terjawab {answeredCount}/{totalQuestions}
         </p>
       </div>
 
-      <p className="mb-6 rounded-xl bg-white/80 px-4 py-3 text-sm leading-relaxed text-brand-navy/55">
-        {sectionMeta.description}
-        {sectionMeta.hasAudio
-          ? " Putar audio di bawah, lalu jawab tiap soal."
-          : ""}
-      </p>
+      <p className="mb-5 text-sm leading-relaxed text-brand-navy/55">{sectionMeta.description}</p>
 
-      {sectionMeta.hasAudio ? (
-        <SectionAudioPlayer sectionId={sectionMeta.id} />
-      ) : null}
+      {sectionMeta.hasAudio ? <SectionAudioPlayer sectionId={sectionMeta.id} /> : null}
 
       {sectionMeta.id === 4 ? (
-        <div className="mb-6 rounded-xl border border-brand-navy/8 bg-white p-4">
-          <p className="mb-2 text-xs font-bold uppercase tracking-wide text-brand-navy/40">
+        <div className="mb-6 rounded-xl border border-brand-navy/8 bg-white p-5">
+          <p className="mb-3 text-xs font-bold uppercase tracking-wide text-brand-navy/40">
             Daftar kata
           </p>
-          <ul className="grid gap-1 text-sm text-brand-navy/70 sm:grid-cols-2">
+          <ul className="grid gap-x-6 gap-y-1.5 font-mono text-[13px] leading-relaxed text-brand-navy/80 sm:grid-cols-2">
             {SECTION4_WORD_LIST.map((line) => (
-              <li key={line}>{line}</li>
+              <li key={line} className="border-b border-brand-navy/5 pb-1.5 last:border-0 sm:odd:pr-2">
+                {line}
+              </li>
             ))}
           </ul>
         </div>
       ) : null}
 
-      <div className="space-y-5">
+      <div className="space-y-4">
         {questions.map((q) => (
           <QuestionCard
             key={q.id}
@@ -297,7 +296,7 @@ export function PimsleurTestPage() {
             }}
             className="rounded-xl border border-brand-navy/15 px-5 py-3 text-sm font-bold text-brand-navy"
           >
-            Seksi sebelumnya
+            Tahap sebelumnya
           </button>
         ) : null}
         <button
@@ -309,7 +308,7 @@ export function PimsleurTestPage() {
           {submitting
             ? "Menyimpan…"
             : sectionIndex < PIMSLEUR_SECTIONS.length - 1
-              ? "Lanjut seksi berikutnya"
+              ? "Lanjut tahap berikutnya"
               : "Selesai & lihat hasil"}
         </button>
       </div>
@@ -333,16 +332,10 @@ function SectionAudioPlayer({ sectionId }: { sectionId: 2 | 3 | 4 | 5 | 6 }) {
 
   return (
     <div className="mb-6 rounded-xl border border-brand-navy/8 bg-white p-4">
-      <p className="mb-2 text-xs font-bold uppercase tracking-wide text-brand-navy/40">
-        Audio seksi {sectionId}
-      </p>
+      <p className="mb-2 text-xs font-bold uppercase tracking-wide text-brand-navy/40">Audio</p>
       <audio controls preload="metadata" className="w-full" src={src}>
         Browser Anda tidak mendukung pemutar audio.
       </audio>
-      <p className="mt-2 text-xs text-brand-navy/40">
-        Jika audio tidak muncul, pastikan file sudah diunggah ke{" "}
-        <code className="text-brand-navy/60">public/audio/pimsleur/</code>.
-      </p>
     </div>
   );
 }
@@ -356,27 +349,41 @@ function QuestionCard({
   value?: string;
   onSelect: (id: string, value: string) => void;
 }) {
+  const optionCount = question.options.length;
+  const gridClass =
+    optionCount <= 2
+      ? "grid-cols-1 sm:grid-cols-2"
+      : optionCount === 3
+        ? "grid-cols-1 sm:grid-cols-3"
+        : "grid-cols-1 sm:grid-cols-2";
+
   return (
-    <fieldset className="rounded-2xl border border-brand-navy/8 bg-white p-5 shadow-sm">
-      <legend className="px-1 text-sm font-bold text-brand-navy">
-        {question.number}. {question.prompt}
-      </legend>
-      <div className="mt-3 flex flex-col gap-2">
-        {question.options.map((opt) => (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => onSelect(question.id, opt.value)}
-            className={`rounded-xl border px-4 py-3 text-left text-sm font-medium transition-all ${
-              value === opt.value
-                ? "border-brand-red bg-brand-red-soft text-brand-red"
-                : "border-brand-navy/10 hover:border-brand-navy/25"
-            }`}
-          >
-            {opt.label}
-          </button>
-        ))}
+    <div className="rounded-2xl border border-brand-navy/8 bg-white p-5 shadow-sm">
+      <p className="text-sm font-bold leading-snug text-brand-navy">
+        <span className="mr-2 inline-flex h-6 min-w-6 items-center justify-center rounded-md bg-brand-bg px-1.5 text-xs text-brand-navy/60">
+          {question.number}
+        </span>
+        {question.prompt}
+      </p>
+      <div className={`mt-4 grid gap-2 ${gridClass}`}>
+        {question.options.map((opt) => {
+          const selected = value === opt.value;
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => onSelect(question.id, opt.value)}
+              className={`rounded-xl border px-3.5 py-3 text-left text-sm font-medium transition-all ${
+                selected
+                  ? "border-brand-red bg-brand-red-soft text-brand-red"
+                  : "border-brand-navy/10 text-brand-navy/80 hover:border-brand-navy/25"
+              }`}
+            >
+              {opt.label}
+            </button>
+          );
+        })}
       </div>
-    </fieldset>
+    </div>
   );
 }

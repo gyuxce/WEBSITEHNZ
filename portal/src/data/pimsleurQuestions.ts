@@ -23,11 +23,46 @@ export const PIMSLEUR_AUDIO = {
 } as const;
 
 export const PIMSLEUR_SECTIONS = [
-  { id: 2 as const, title: "Seksi 2 — Minat", description: "Perkiraan minat belajar bahasa asing", hasAudio: false, maxScore: 8 },
-  { id: 3 as const, title: "Seksi 3 — Kosa Kata", description: "Pilih padanan kata yang paling sesuai (dengan audio)", hasAudio: true, maxScore: 24 },
-  { id: 4 as const, title: "Seksi 4 — Analisis Bahasa", description: "Terjemahkan kalimat berdasarkan daftar kata (dengan audio)", hasAudio: true, maxScore: 15 },
-  { id: 5 as const, title: "Seksi 5 — Diskriminasi Suara", description: "Dengarkan audio, pilih Kabin / Boa / Teman", hasAudio: true, maxScore: 30 },
-  { id: 6 as const, title: "Seksi 6 — Asosiasi Sistem Suara", description: "Pilih kata yang sesuai pola suara (dengan audio)", hasAudio: true, maxScore: 24 },
+  {
+    id: 2 as const,
+    phase: 1,
+    title: "Tahap 1 — Minat",
+    description: "Perkiraan minat belajar bahasa asing.",
+    hasAudio: false,
+    maxScore: 8,
+  },
+  {
+    id: 3 as const,
+    phase: 2,
+    title: "Tahap 2 — Kosa Kata",
+    description: "Pilih padanan kata yang paling sesuai. Putar audio, lalu jawab.",
+    hasAudio: true,
+    maxScore: 24,
+  },
+  {
+    id: 4 as const,
+    phase: 3,
+    title: "Tahap 3 — Analisis Bahasa",
+    description: "Terjemahkan kalimat berdasarkan daftar kata di bawah. Putar audio, lalu jawab.",
+    hasAudio: true,
+    maxScore: 15,
+  },
+  {
+    id: 5 as const,
+    phase: 4,
+    title: "Tahap 4 — Diskriminasi Suara",
+    description: "Dengarkan audio, lalu pilih jawaban yang sesuai.",
+    hasAudio: true,
+    maxScore: 30,
+  },
+  {
+    id: 6 as const,
+    phase: 5,
+    title: "Tahap 5 — Asosiasi Sistem Suara",
+    description: "Dengarkan audio, lalu pilih kata yang paling sesuai.",
+    hasAudio: true,
+    maxScore: 24,
+  },
 ];
 
 const s3 = (
