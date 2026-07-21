@@ -44,8 +44,8 @@ export function Hero() {
             className="mt-4 text-[0.95rem] md:text-base text-brand-navy/60 max-w-xl leading-relaxed"
           >
             Harunokaze mendampingi perjalanan kariermu sejak persiapan, pendidikan &amp; pelatihan, job
-            matching, keberangkatan, selama bekerja di Jepang, hingga kembali ke Indonesia — satu ekosistem,
-            bukan sekadar pendaftaran LPK.
+            matching, keberangkatan, selama bekerja di Jepang, hingga kembali ke Indonesia — satu
+            ekosistem, bukan sekadar pendaftaran LPK.
           </motion.p>
 
           <motion.div
@@ -77,7 +77,10 @@ export function Hero() {
           >
             {heroStats.map((stat) => (
               <div key={stat.label}>
-                <CountUpStat value={stat.value} className="font-display font-extrabold text-xl md:text-2xl text-brand-navy" />
+                <CountUpStat
+                  value={stat.value}
+                  className="font-display font-extrabold text-xl md:text-2xl text-brand-navy"
+                />
                 <div className="text-[11px] text-brand-navy/50 mt-0.5 leading-snug">{stat.label}</div>
               </div>
             ))}
@@ -91,47 +94,48 @@ export function Hero() {
           className="relative"
         >
           <div className="absolute -inset-3 rounded-[1.75rem] bg-gradient-to-br from-brand-red/10 to-brand-navy/10 blur-2xl -z-10" />
-          <div className="relative rounded-2xl overflow-hidden aspect-[4/5] max-h-[min(520px,62vh)] shadow-2xl shadow-brand-navy/20">
+
+          {/* Foto terpisah dari kartu teks — overflow tidak memotong label tahap */}
+          <div className="relative rounded-2xl overflow-hidden aspect-[4/5] sm:aspect-[5/6] max-h-[min(560px,70vh)] shadow-2xl shadow-brand-navy/20">
             <img
               src={heroImage}
               alt="Calon peserta Harunokaze bersiap menuju Jepang"
-              className="absolute inset-0 h-full w-full object-cover object-[center_28%]"
+              className="absolute inset-0 h-full w-full object-cover object-[center_30%]"
             />
-            {/* Soft gradient only at bottom — keeps Fuji & sakura visible */}
-            <div className="absolute inset-0 bg-gradient-to-t from-brand-navy-deep/85 via-brand-navy-deep/15 to-transparent" />
-
+            <div className="absolute inset-0 bg-gradient-to-t from-brand-navy-deep/50 via-transparent to-transparent" />
             <div className="absolute top-4 left-4 inline-flex items-center gap-1.5 rounded-full bg-white/20 backdrop-blur-md px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white">
               <Sparkles size={11} className="text-brand-sakura" />
               Perjalananmu dimulai di sini
             </div>
+          </div>
 
-            {/* Compact glass strip — doesn't cover most of the photo */}
-            <div className="absolute bottom-0 inset-x-0 p-3.5 md:p-4">
-              <div className="rounded-xl bg-brand-navy-deep/55 backdrop-blur-md border border-white/15 px-4 py-3.5">
-                <div className="flex items-baseline justify-between gap-3 mb-2.5">
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-brand-sakura">Alur singkat peserta</span>
-                    <h3 className="font-display text-sm font-bold text-white mt-0.5">Satu jalur, banyak titik dukungan</h3>
-                  </div>
+          <div className="relative z-10 -mt-10 sm:-mt-12 mx-3 sm:mx-4 rounded-xl bg-brand-navy-deep/90 backdrop-blur-md border border-white/15 px-4 py-3.5 shadow-xl">
+            <div className="mb-2.5">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-brand-sakura">
+                Alur singkat peserta
+              </span>
+              <h3 className="font-display text-sm font-bold text-white mt-0.5">
+                Satu jalur, banyak titik dukungan
+              </h3>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-2">
+              {heroSteps.map((step) => (
+                <div
+                  key={step.label}
+                  className={`flex items-start gap-2 text-[11px] leading-snug ${
+                    step.active ? "text-white font-semibold" : "text-white/70"
+                  }`}
+                >
+                  <span
+                    className={`mt-1.5 h-1.5 w-1.5 rounded-full shrink-0 ${
+                      step.active
+                        ? "bg-brand-red shadow-[0_0_0_3px_rgba(230,25,53,0.25)]"
+                        : "bg-white/30"
+                    }`}
+                  />
+                  <span>{step.label}</span>
                 </div>
-                <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
-                  {heroSteps.map((step) => (
-                    <div
-                      key={step.label}
-                      className={`flex items-center gap-2 text-[11px] leading-tight ${
-                        step.active ? "text-white font-semibold" : "text-white/55"
-                      }`}
-                    >
-                      <span
-                        className={`h-1.5 w-1.5 rounded-full shrink-0 ${
-                          step.active ? "bg-brand-red shadow-[0_0_0_3px_rgba(230,25,53,0.25)]" : "bg-white/30"
-                        }`}
-                      />
-                      <span className="line-clamp-1">{step.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </motion.div>

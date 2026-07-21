@@ -216,11 +216,35 @@ export const faqs = [
   },
   {
     q: "Bagaimana cara mulai pemetaan potensi?",
-    a: 'Kamu bisa memulai lewat tombol "Mulai Pemetaan Potensi" di halaman ini, atau menghubungi tim melalui form konsultasi di bagian bawah.',
+    a: 'Kamu bisa memulai lewat tombol "Mulai Pemetaan Potensi" di header atau hero, atau mengisi form konsultasi di bagian bawah lalu lanjut chat WhatsApp.',
   },
 ];
 
 export const whatsappUrl = "https://wa.me/message/DWVTJESHI2RQC1";
+
+/** Nomor WA internasional tanpa + (opsional). Jika diisi, pesan konsultasi langsung ke nomor ini. */
+export const whatsappPhone = import.meta.env.VITE_WHATSAPP_PHONE?.replace(/\D/g, "") ?? "";
+
+export function buildConsultWhatsAppUrl(input: {
+  name: string;
+  whatsapp: string;
+  interest: string;
+}) {
+  const text = [
+    "Halo Harunokaze, saya ingin konsultasi.",
+    "",
+    `Nama: ${input.name.trim()}`,
+    `WhatsApp: ${input.whatsapp.trim()}`,
+    `Minat program: ${input.interest.trim()}`,
+  ].join("\n");
+
+  const encoded = encodeURIComponent(text);
+  if (whatsappPhone) {
+    return `https://wa.me/${whatsappPhone}?text=${encoded}`;
+  }
+  // Tanpa nomor: buka WhatsApp dengan pesan siap kirim (pilih chat Harunokaze)
+  return `https://wa.me/?text=${encoded}`;
+}
 
 export const galleryPhotos = [
   { key: "activity-classroom", caption: "Kelas bahasa & diskusi kelompok" },
