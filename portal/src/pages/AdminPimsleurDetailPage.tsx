@@ -107,11 +107,11 @@ export function AdminPimsleurDetailPage() {
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
         {(
           [
-            ["S2", row.score_section2],
-            ["S3", row.score_section3],
-            ["S4", row.score_section4],
-            ["S5", row.score_section5],
-            ["S6", row.score_section6],
+            ["T2", row.score_section2],
+            ["T3", row.score_section3],
+            ["T4", row.score_section4],
+            ["T5", row.score_section5],
+            ["T6", row.score_section6],
           ] as const
         ).map(([label, value]) => (
           <div
