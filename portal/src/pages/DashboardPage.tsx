@@ -52,7 +52,7 @@ function AdminHome({ name }: { name: string }) {
 
       <div className="rounded-2xl border border-dashed border-brand-navy/15 bg-white/60 p-5 text-sm text-brand-navy/55">
         <p className="font-semibold text-brand-navy">Menyusul</p>
-        <p className="mt-1">Admin Papikostik &amp; CFIT akan muncul di sini setelah materi siap.</p>
+        <p className="mt-1">Admin Papikostik akan muncul di sini setelah materi siap. Hasil CFIT peserta bisa dicek di Supabase sementara ini.</p>
       </div>
 
       <a
@@ -75,6 +75,15 @@ function ParticipantHome({
   const paymentDone =
     progress?.payment_status === "verified" || progress?.payment_status === "paid";
   const pimsleurDone = progress?.language_test_status === "completed";
+  const cfitDone = progress?.cfit_test_status === "completed";
+  const cfitOpen =
+    progress?.cfit_test_status === "available" ||
+    progress?.cfit_test_status === "in_progress" ||
+    (pimsleurDone && !cfitDone);
+  const papikostikOpen =
+    progress?.character_test_status === "available" ||
+    progress?.character_test_status === "in_progress" ||
+    cfitDone;
   const resultAvailable =
     progress?.result_status === "available" ||
     progress?.result_status === "completed" ||
@@ -89,8 +98,8 @@ function ParticipantHome({
             Halo, {profileName}
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-brand-navy/55">
-            Ikuti langkah pemetaan potensi. Setelah bayar, kerjakan Pimsleur. Papikostik &amp; CFIT
-            menyusul.
+            Ikuti langkah: bayar → Pimsleur → CFIT → Papikostik. Hasil tiap tahap tersimpan di
+            akun Anda.
           </p>
         </div>
 
@@ -113,11 +122,23 @@ function ParticipantHome({
           />
           <ActionCard
             icon={<TestTube size={20} />}
+            title="Tes CFIT"
+            description="IQ non-verbal · 4 subtes berbatas waktu"
+            href={cfitDone ? "/result/cfit" : "/test/cfit"}
+            disabled={!cfitOpen && !cfitDone}
+            cta={cfitDone ? "Lihat hasil" : cfitOpen ? "Mulai tes" : "Terkunci"}
+          />
+          <ActionCard
+            icon={<TestTube size={20} />}
             title="Papikostik"
-            description="Tes kepribadian — materi menyusul"
+            description={
+              papikostikOpen
+                ? "Tes kepribadian — materi menyusul"
+                : "Terbuka setelah CFIT selesai"
+            }
             href="/dashboard"
             disabled
-            cta="Segera hadir"
+            cta={papikostikOpen ? "Segera hadir" : "Terkunci"}
           />
           <ActionCard
             icon={<FileCheck size={20} />}
@@ -126,6 +147,14 @@ function ParticipantHome({
             href="/result/pimsleur"
             disabled={!resultAvailable}
             cta={resultAvailable ? "Lihat hasil" : "Belum tersedia"}
+          />
+          <ActionCard
+            icon={<FileCheck size={20} />}
+            title="Hasil CFIT"
+            description="IQ, skor subtes, klasifikasi norma"
+            href="/result/cfit"
+            disabled={!cfitDone}
+            cta={cfitDone ? "Lihat hasil" : "Belum tersedia"}
           />
         </div>
 
@@ -136,7 +165,7 @@ function ParticipantHome({
               <div>
                 <p className="text-sm font-bold text-brand-navy">Konsultasi lanjutan (opsional)</p>
                 <p className="mt-1 text-xs text-brand-navy/55">
-                  Diskusikan hasil Pimsleur dengan tim Harunokaze
+                  Diskusikan hasil Pimsleur &amp; CFIT dengan tim Harunokaze
                 </p>
               </div>
             </div>

@@ -1,30 +1,28 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, MessageCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabase";
-import { PIMSLEUR_MAX_SCORE } from "../data/pimsleurQuestions";
-import type { PimsleurResult } from "../lib/database.types";
+import { CFIT_MAX_RAW } from "../data/cfitQuestions";
+import type { CfitResult } from "../lib/database.types";
 
-const WHATSAPP_URL = "https://wa.me/message/DWVTJESHI2RQC1";
-
-export function PimsleurResultPage() {
+export function CfitResultPage() {
   const { user, progress } = useAuth();
-  const [result, setResult] = useState<PimsleurResult | null>(null);
+  const [result, setResult] = useState<CfitResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const languageDone = progress?.language_test_status === "completed";
+  const cfitDone = progress?.cfit_test_status === "completed";
 
   useEffect(() => {
-    if (!user || !languageDone) {
+    if (!user || !cfitDone) {
       setLoading(false);
       return;
     }
 
     async function load() {
       const { data, error: qError } = await supabase
-        .from("pimsleur_results")
+        .from("cfit_results")
         .select("*")
         .eq("user_id", user!.id)
         .order("completed_at", { ascending: false })
@@ -37,14 +35,14 @@ export function PimsleurResultPage() {
     }
 
     void load();
-  }, [user, languageDone]);
+  }, [user, cfitDone]);
 
-  if (!languageDone) {
+  if (!cfitDone) {
     return (
       <div className="mx-auto max-w-lg py-12 text-center">
-        <p className="text-sm text-brand-navy/60">Selesaikan tes Pimsleur terlebih dahulu.</p>
-        <Link to="/test/pimsleur" className="mt-4 inline-block text-sm font-semibold text-brand-red">
-          Ke tes Pimsleur
+        <p className="text-sm text-brand-navy/60">Selesaikan tes CFIT terlebih dahulu.</p>
+        <Link to="/test/cfit" className="mt-4 inline-block text-sm font-semibold text-brand-red">
+          Ke tes CFIT
         </Link>
       </div>
     );
@@ -69,8 +67,6 @@ export function PimsleurResultPage() {
     );
   }
 
-  const percent = Math.round((result.score_total / PIMSLEUR_MAX_SCORE) * 100);
-
   return (
     <div className="mx-auto max-w-2xl">
       <Link
@@ -81,55 +77,42 @@ export function PimsleurResultPage() {
       </Link>
 
       <div className="rounded-2xl border border-brand-navy/8 bg-white p-8 shadow-sm">
-        <p className="text-xs font-bold uppercase tracking-widest text-brand-red">Hasil Pimsleur</p>
+        <p className="text-xs font-bold uppercase tracking-widest text-brand-red">Hasil CFIT 3A</p>
         <h1 className="mt-1 font-display text-2xl font-extrabold text-brand-navy">
-          Grade {result.grade} — {result.grade_label}
+          IQ {result.iq} — {result.classification_label}
         </h1>
         <p className="mt-2 text-sm text-brand-navy/55">
-          Status: <strong className="text-brand-navy">{result.status_label}</strong>
+          Klasifikasi: <strong className="text-brand-navy">{result.classification}</strong>
+          {" · "}
+          Norma {result.age_band} (usia {result.age_years} th {result.age_months} bln)
         </p>
 
-        <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <Stat label="Total" value={`${result.score_total}/${PIMSLEUR_MAX_SCORE}`} />
-          <Stat label="Persen" value={`${percent}%`} />
-          <Stat label="Verbal" value={String(result.score_verbal)} />
-          <Stat label="Audio" value={String(result.score_audio)} />
+        <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
+          <Stat label="IQ" value={String(result.iq)} />
+          <Stat label="Skor mentah" value={`${result.score_raw}/${CFIT_MAX_RAW}`} />
+          <Stat label="Norma" value={result.age_band} />
         </div>
 
-        <div className="mt-6 grid gap-2 text-sm text-brand-navy/70 sm:grid-cols-5">
-          <Mini label="Tahap 2" value={result.score_section2} />
-          <Mini label="Tahap 3" value={result.score_section3} />
-          <Mini label="Tahap 4" value={result.score_section4} />
-          <Mini label="Tahap 5" value={result.score_section5} />
-          <Mini label="Tahap 6" value={result.score_section6} />
+        <div className="mt-6 grid gap-2 text-sm text-brand-navy/70 sm:grid-cols-4">
+          <Mini label="Subtes 1" value={result.score_subtest1} max={13} />
+          <Mini label="Subtes 2" value={result.score_subtest2} max={14} />
+          <Mini label="Subtes 3" value={result.score_subtest3} max={13} />
+          <Mini label="Subtes 4" value={result.score_subtest4} max={10} />
         </div>
-
-        <p className="mt-6 rounded-xl bg-brand-bg p-4 text-sm leading-relaxed text-brand-navy/70">
-          {result.recommendation}
-        </p>
 
         <div className="mt-8 rounded-xl border border-dashed border-brand-navy/15 bg-brand-bg/60 p-5">
-          <p className="font-bold text-brand-navy">Tahap berikutnya: CFIT</p>
+          <p className="font-bold text-brand-navy">Tahap berikutnya: Papikostik</p>
           <p className="mt-1 text-sm text-brand-navy/55">
-            Tes intelektual CFIT 3A sudah terbuka. Setelah CFIT selesai, Papikostik akan dibuka.
+            Tes kepribadian sudah terbuka di dashboard. Materi &amp; review psikolog (SLA 1×24 jam)
+            menyusul — untuk sekarang status menunggu materi.
           </p>
           <Link
-            to="/test/cfit"
-            className="mt-4 inline-block text-sm font-bold text-brand-red"
+            to="/dashboard"
+            className="mt-4 inline-flex items-center gap-1.5 text-sm font-bold text-brand-red"
           >
-            Mulai CFIT →
+            Kembali ke dashboard <ArrowRight size={14} />
           </Link>
         </div>
-
-        <a
-          href={WHATSAPP_URL}
-          target="_blank"
-          rel="noreferrer"
-          className="mt-6 inline-flex items-center gap-2 rounded-full bg-brand-navy px-5 py-2.5 text-sm font-bold text-white hover:bg-brand-navy-light"
-        >
-          <MessageCircle size={16} />
-          Konsultasi WhatsApp
-        </a>
       </div>
     </div>
   );
@@ -144,11 +127,13 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Mini({ label, value }: { label: string; value: number }) {
+function Mini({ label, value, max }: { label: string; value: number; max: number }) {
   return (
     <div className="rounded-lg border border-brand-navy/8 px-3 py-2 text-center">
       <p className="text-[10px] font-bold uppercase text-brand-navy/40">{label}</p>
-      <p className="font-bold text-brand-navy">{value}</p>
+      <p className="font-bold text-brand-navy">
+        {value}/{max}
+      </p>
     </div>
   );
 }

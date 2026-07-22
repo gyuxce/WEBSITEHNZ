@@ -85,6 +85,54 @@ export interface Database {
         };
         Relationships: [];
       };
+      cfit_results: {
+        Row: {
+          id: string;
+          user_id: string;
+          answers: Json;
+          birth_date: string;
+          age_years: number;
+          age_months: number;
+          age_band: string;
+          score_subtest1: number;
+          score_subtest2: number;
+          score_subtest3: number;
+          score_subtest4: number;
+          score_raw: number;
+          iq: number;
+          classification: string;
+          classification_label: string;
+          duration_seconds: number | null;
+          started_at: string;
+          completed_at: string;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          answers?: Json;
+          birth_date: string;
+          age_years: number;
+          age_months: number;
+          age_band: string;
+          score_subtest1: number;
+          score_subtest2: number;
+          score_subtest3: number;
+          score_subtest4: number;
+          score_raw: number;
+          iq: number;
+          classification: string;
+          classification_label: string;
+          duration_seconds?: number | null;
+          started_at?: string;
+          completed_at?: string;
+        };
+        Update: {
+          answers?: Json;
+          iq?: number;
+          score_raw?: number;
+        };
+        Relationships: [];
+      };
       user_progress: {
         Row: {
           id: string;
@@ -92,6 +140,7 @@ export interface Database {
           registration_status: string;
           payment_status: "pending" | "paid" | "verified";
           language_test_status: "locked" | "available" | "in_progress" | "completed";
+          cfit_test_status: "locked" | "available" | "in_progress" | "completed";
           character_test_status: "locked" | "available" | "in_progress" | "completed";
           result_status: "locked" | "available" | "completed";
           consultation_status: string;
@@ -103,6 +152,7 @@ export interface Database {
           registration_status?: string;
           payment_status?: string;
           language_test_status?: string;
+          cfit_test_status?: string;
           character_test_status?: string;
           result_status?: string;
           consultation_status?: string;
@@ -111,6 +161,7 @@ export interface Database {
           registration_status?: string;
           payment_status?: string;
           language_test_status?: string;
+          cfit_test_status?: string;
           character_test_status?: string;
           result_status?: string;
           consultation_status?: string;
@@ -290,12 +341,14 @@ export interface Database {
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type UserProgress = Database["public"]["Tables"]["user_progress"]["Row"];
 export type PimsleurResult = Database["public"]["Tables"]["pimsleur_results"]["Row"];
+export type CfitResult = Database["public"]["Tables"]["cfit_results"]["Row"];
 
 export const PROGRESS_STEPS = [
   { key: "registration", label: "Registrasi & akun peserta", field: "registration_status" as const },
   { key: "payment", label: "Verifikasi pembayaran", field: "payment_status" as const },
   { key: "language", label: "Tes Pimsleur (bahasa)", field: "language_test_status" as const },
-  { key: "character", label: "Papikostik (menyusul)", field: "character_test_status" as const },
-  { key: "result", label: "Hasil Pimsleur", field: "result_status" as const },
+  { key: "cfit", label: "Tes CFIT (IQ)", field: "cfit_test_status" as const },
+  { key: "character", label: "Papikostik (kepribadian)", field: "character_test_status" as const },
+  { key: "result", label: "Hasil tes", field: "result_status" as const },
   { key: "consultation", label: "Konsultasi lanjutan", field: "consultation_status" as const },
 ] as const;
