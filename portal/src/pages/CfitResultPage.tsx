@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
-import { supabase } from "../lib/supabase";
+import { apiFetch } from "../lib/api";
 import { CFIT_MAX_RAW } from "../data/cfitQuestions";
 import { categoryFromIq, type CfitCategoryColor } from "../lib/cfitScoring";
 import type { CfitResult } from "../lib/database.types";
@@ -32,7 +32,7 @@ const CATEGORY_STYLE: Record<
 };
 
 export function CfitResultPage() {
-  const { user, progress } = useAuth();
+  const { progress } = useAuth();
   const [result, setResult] = useState<CfitResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -40,27 +40,24 @@ export function CfitResultPage() {
   const cfitDone = progress?.cfit_test_status === "completed";
 
   useEffect(() => {
-    if (!user || !cfitDone) {
+    if (!cfitDone) {
       setLoading(false);
       return;
     }
 
     async function load() {
-      const { data, error: qError } = await supabase
-        .from("cfit_results")
-        .select("*")
-        .eq("user_id", user!.id)
-        .order("completed_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (qError) setError(qError.message);
-      else setResult(data);
-      setLoading(false);
+      try {
+        const data = await apiFetch<{ result: CfitResult | null }>("/tests/cfit/result");
+        setResult(data.result);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Gagal memuat hasil");
+      } finally {
+        setLoading(false);
+      }
     }
 
     void load();
-  }, [user, cfitDone]);
+  }, [cfitDone]);
 
   if (!cfitDone) {
     return (

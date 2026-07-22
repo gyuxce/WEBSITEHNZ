@@ -9,7 +9,7 @@ import {
   type CfitSubtestId,
 } from "../data/cfitQuestions";
 import { normalizeAnswer, scoreCfit } from "../lib/cfitScoring";
-import { supabase } from "../lib/supabase";
+import { apiFetch } from "../lib/api";
 
 function formatTime(totalSeconds: number) {
   const m = Math.floor(totalSeconds / 60);
@@ -83,42 +83,35 @@ export function CfitTestPage() {
         )
       : null;
 
-    const { error: insertError } = await supabase.from("cfit_results").insert({
-      user_id: user.id,
-      answers,
-      birth_date: dob,
-      age_years: scored.age_years,
-      age_months: scored.age_months,
-      age_band: scored.age_band,
-      score_subtest1: scored.score_subtest1,
-      score_subtest2: scored.score_subtest2,
-      score_subtest3: scored.score_subtest3,
-      score_subtest4: scored.score_subtest4,
-      score_raw: scored.score_raw,
-      iq: scored.iq,
-      classification: scored.classification,
-      classification_label: scored.classification_label,
-      category_color: scored.category_color,
-      category_label: scored.category_label,
-      duration_seconds: duration,
-      started_at: startedAtRef.current ?? new Date().toISOString(),
-      completed_at: new Date().toISOString(),
-    });
-
-    if (insertError) {
+    try {
+      await apiFetch("/tests/cfit/submit", {
+        method: "POST",
+        body: JSON.stringify({
+          answers,
+          birth_date: dob,
+          age_years: scored.age_years,
+          age_months: scored.age_months,
+          age_band: scored.age_band,
+          score_subtest1: scored.score_subtest1,
+          score_subtest2: scored.score_subtest2,
+          score_subtest3: scored.score_subtest3,
+          score_subtest4: scored.score_subtest4,
+          score_raw: scored.score_raw,
+          iq: scored.iq,
+          classification: scored.classification,
+          classification_label: scored.classification_label,
+          category_color: scored.category_color,
+          category_label: scored.category_label,
+          duration_seconds: duration,
+          started_at: startedAtRef.current ?? new Date().toISOString(),
+        }),
+      });
+    } catch (err) {
       finishingRef.current = false;
       setSubmitting(false);
-      setError(insertError.message);
+      setError(err instanceof Error ? err.message : "Gagal menyimpan hasil");
       return;
     }
-
-    await supabase
-      .from("user_progress")
-      .update({
-        cfit_test_status: "completed",
-        character_test_status: "available",
-      })
-      .eq("user_id", user.id);
 
     await refreshProfile();
     setSubmitting(false);
@@ -154,10 +147,7 @@ export function CfitTestPage() {
     }
     birthDateRef.current = birthDate;
     startedAtRef.current = new Date().toISOString();
-    await supabase
-      .from("user_progress")
-      .update({ cfit_test_status: "in_progress" })
-      .eq("user_id", user.id);
+    await apiFetch("/tests/cfit/start", { method: "POST", body: "{}" });
     await refreshProfile();
     setError("");
     setStarted(true);

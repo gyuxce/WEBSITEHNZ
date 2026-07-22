@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, CreditCard, FileCheck, MessageCircle, TestTube, Users } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { ProgressSteps } from "../components/ProgressSteps";
-import { LANDING_URL } from "../lib/supabase";
+import { LANDING_URL } from "../lib/api";
 
 const WHATSAPP_URL = "https://wa.me/message/DWVTJESHI2RQC1";
 

@@ -1,121 +1,84 @@
 # Harunokaze Portal — Pemetaan Potensi
 
-Portal web calon siswa untuk daftar, bayar, tes, dan unduh sertifikat pemetaan potensi.
+Portal web calon siswa: daftar, bayar, tes Pimsleur + CFIT, hasil.
 
-**Stack:** React 19 + Vite + TypeScript + Tailwind v4 + Supabase + Midtrans Snap
+**Stack:** React 19 + Vite + TypeScript + Tailwind v4 + **Neon Postgres** + **Better Auth** + **Hono API** + Midtrans Snap
 
-## Fitur MVP
+## Fitur
 
-- Register / login / logout / lupa password
-- Dashboard progress 6 langkah
-- Pembayaran pemetaan (Midtrans + mode sandbox dev)
-- **Tes Pimsleur** (aptitude bahasa, seksi 2–6, timer 25 menit, grade A–F)
-- Hasil Pimsleur + admin daftar/detail skor
-- Papikostik & CFIT: menyusul (belum dibuka)
-- Legacy sertifikat HTML masih ada di `/result/legacy`
+- Register / login / logout / lupa password (Better Auth)
+- Dashboard progress (bayar → Pimsleur → CFIT → Papikostik)
+- Pembayaran pemetaan (Midtrans + sandbox)
+- Tes Pimsleur + admin daftar/detail
+- Tes CFIT 3A (timer, IQ norma, kategori merah/kuning/hijau)
+- Papikostik: placeholder (menyusul)
 
-## Setup
+## Setup Neon
 
-### 1. Supabase
+1. Buat project di [console.neon.tech](https://console.neon.tech)
+2. Copy **connection string** → `DATABASE_URL`
+3. Di Neon SQL Editor, jalankan seluruh isi:
+   - `db/schema.sql`
+4. (Opsional) jadikan admin:
+   ```sql
+   update public.profiles set role = 'admin' where id = '<user-id>';
+   ```
 
-1. Buat project di [supabase.com](https://supabase.com)
-2. **Pastikan project tidak paused** — kalau ada banner "Project is paused", klik **Restore project** dulu
-3. Buka **SQL Editor** → paste & jalankan isi file (berurutan):
-   - `supabase/migrations/20260720000000_initial_schema.sql`
-   - `supabase/migrations/20260721000000_pimsleur_results.sql`
-
-Untuk admin: set `profiles.role = 'admin'` pada user staf.
-
-#### Error `cannot execute CREATE TABLE in a read-only transaction`?
-
-Jalankan **query ini dulu** (Run terpisah), lalu ulangi migration:
-
-```sql
-SELECT pg_is_in_recovery() AS database_readonly;
-SHOW default_transaction_read_only;
-SET default_transaction_read_only = off;
-```
-
-| Hasil | Arti | Solusi |
-|-------|------|--------|
-| `pg_is_in_recovery = true` | DB read-only | Project paused → **Restore** di dashboard |
-| Project paused / sleep | Free tier tidak aktif | Dashboard → **Restore project** |
-| Masih error | Branch/pooler issue | Buat **project Supabase baru**, ulangi migration |
-
-4. Di **Authentication → URL Configuration**, tambahkan:
-   - Site URL: `http://localhost:5174`
-   - Redirect URLs: `http://localhost:5174/reset-password`
-
-### 2. Environment
+## Environment
 
 ```bash
 cp .env.example .env
 ```
 
-Isi `.env`:
+Isi minimal:
 
 ```env
-VITE_SUPABASE_URL=https://xxxx.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJ...
-VITE_MIDTRANS_CLIENT_KEY=SB-Mid-client-...
+DATABASE_URL=postgresql://...@...neon.tech/neondb?sslmode=require
+BETTER_AUTH_SECRET=<random-min-32-chars>
+BETTER_AUTH_URL=http://localhost:5174
+VITE_APP_URL=http://localhost:5174
 VITE_PEMETAAN_PRICE=150000
 VITE_LANDING_URL=http://localhost:5173
 ```
 
-### 3. Midtrans Edge Functions (opsional untuk production)
+Opsional Midtrans / email:
 
-Deploy ke Supabase:
-
-```bash
-supabase functions deploy midtrans-create
-supabase functions deploy midtrans-webhook
+```env
+VITE_MIDTRANS_CLIENT_KEY=SB-Mid-client-...
+MIDTRANS_SERVER_KEY=SB-Mid-server-...
+MIDTRANS_IS_PRODUCTION=false
+RESEND_API_KEY=re_...
 ```
 
-Set secrets di Supabase Dashboard → Edge Functions:
-
-- `MIDTRANS_SERVER_KEY`
-- `MIDTRANS_IS_PRODUCTION=false`
-- `SUPABASE_SERVICE_ROLE_KEY`
-
-Webhook URL Midtrans: `https://xxxx.supabase.co/functions/v1/midtrans-webhook`
-
-**Tanpa Midtrans:** gunakan tombol "Mode sandbox" di halaman pembayaran untuk simulasi lokal.
-
-### 4. Jalankan
+## Local development
 
 ```bash
-cd portal
 npm install
 npm run dev
 ```
 
-Buka http://localhost:5174
+Menjalankan **API** di `:8787` + **Vite** di `:5174` (proxy `/api` → API).
 
-Landing page (terminal terpisah):
+## Vercel
 
-```bash
-cd ..
-npm run dev
-```
+- Root directory: `portal/`
+- Build: `npm run build`
+- Output: `dist`
+- Env: samakan `.env.example` (`DATABASE_URL`, `BETTER_AUTH_*`, Midtrans, …)
+- Set `BETTER_AUTH_URL` / `VITE_APP_URL` ke URL production portal
+- Midtrans webhook: `https://<portal-domain>/api/payments/midtrans/webhook`
 
-Buka http://localhost:5173 — tombol "Mulai Pemetaan" mengarah ke portal.
+API di-serve dari `api/[[...route]].ts` (Hono + Node runtime).
 
-## Struktur
+## Migrasi dari Supabase
 
-```
-portal/
-  src/
-    pages/          Login, Register, Dashboard, Payment, Tests, Result
-    components/     Layout, ProgressSteps, ProtectedRoute
-    contexts/       AuthContext
-    lib/            Supabase client + types
-  supabase/
-    migrations/     Schema SQL
-    functions/      Midtrans create + webhook
-```
+| Dulu | Sekarang |
+|------|----------|
+| Supabase Auth | Better Auth (`/api/auth/*`) |
+| Supabase Postgres + RLS | Neon Postgres (auth di API) |
+| Edge Functions Midtrans | `POST /api/payments/midtrans/*` |
+| `VITE_SUPABASE_*` | `DATABASE_URL` + `BETTER_AUTH_*` |
 
-## Production
+Data lama di Supabase yang sleep **tidak ikut pindah otomatis** — peserta daftar ulang di Neon, atau export manual jika masih kebaca.
 
-- Deploy portal ke Vercel/Netlify (build: `npm run build`, output: `dist/`)
-- Set env `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_MIDTRANS_CLIENT_KEY`
-- Di landing, set `VITE_PORTAL_URL=https://portal.harunokaze.id`
+Folder `supabase/` dibiarkan sebagai arsip referensi; skema aktif ada di `db/schema.sql`.

@@ -2,14 +2,14 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, MessageCircle } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
-import { supabase } from "../lib/supabase";
+import { apiFetch } from "../lib/api";
 import { PIMSLEUR_MAX_SCORE } from "../data/pimsleurQuestions";
 import type { PimsleurResult } from "../lib/database.types";
 
 const WHATSAPP_URL = "https://wa.me/message/DWVTJESHI2RQC1";
 
 export function PimsleurResultPage() {
-  const { user, progress } = useAuth();
+  const { progress } = useAuth();
   const [result, setResult] = useState<PimsleurResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -17,27 +17,24 @@ export function PimsleurResultPage() {
   const languageDone = progress?.language_test_status === "completed";
 
   useEffect(() => {
-    if (!user || !languageDone) {
+    if (!languageDone) {
       setLoading(false);
       return;
     }
 
     async function load() {
-      const { data, error: qError } = await supabase
-        .from("pimsleur_results")
-        .select("*")
-        .eq("user_id", user!.id)
-        .order("completed_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (qError) setError(qError.message);
-      else setResult(data);
-      setLoading(false);
+      try {
+        const data = await apiFetch<{ result: PimsleurResult | null }>("/tests/pimsleur/result");
+        setResult(data.result);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Gagal memuat hasil");
+      } finally {
+        setLoading(false);
+      }
     }
 
     void load();
-  }, [user, languageDone]);
+  }, [languageDone]);
 
   if (!languageDone) {
     return (

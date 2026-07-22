@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { supabase, isSupabaseConfigured } from "../lib/supabase";
+import { Link, useNavigate } from "react-router-dom";
+import { authClient } from "../lib/auth-client";
+import { apiFetch, isApiConfigured } from "../lib/api";
 import { AuthLayout } from "../components/PortalLayout";
+import { useAuth } from "../contexts/AuthContext";
 
 const PROGRAMS = [
   "Pelatihan Bahasa & Karakter",
@@ -11,6 +13,8 @@ const PROGRAMS = [
 ];
 
 export function RegisterPage() {
+  const navigate = useNavigate();
+  const { refreshProfile } = useAuth();
   const [form, setForm] = useState({
     fullName: "",
     email: "",
@@ -20,7 +24,6 @@ export function RegisterPage() {
     programInterest: PROGRAMS[0],
   });
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,53 +31,42 @@ export function RegisterPage() {
     setError("");
     setLoading(true);
 
-    if (!isSupabaseConfigured) {
-      setError("Supabase belum dikonfigurasi. Isi file portal/.env terlebih dahulu.");
+    if (!isApiConfigured) {
+      setError("API belum dikonfigurasi. Isi DATABASE_URL & BETTER_AUTH_SECRET di portal/.env.");
       setLoading(false);
       return;
     }
 
-    const { error: authError } = await supabase.auth.signUp({
+    const { error: authError } = await authClient.signUp.email({
       email: form.email,
       password: form.password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
-        data: {
-          full_name: form.fullName,
-          whatsapp: form.whatsapp,
-          city: form.city,
-          program_interest: form.programInterest,
-        },
-      },
+      name: form.fullName,
     });
 
     if (authError) {
-      setError(authError.message);
-    } else {
-      setSuccess(true);
+      setError(authError.message || "Gagal daftar");
+      setLoading(false);
+      return;
     }
-    setLoading(false);
-  };
 
-  if (success) {
-    return (
-      <AuthLayout>
-        <div className="rounded-2xl border border-brand-navy/8 bg-white p-8 shadow-sm text-center">
-          <h1 className="font-display font-extrabold text-2xl text-brand-navy">Cek email kamu</h1>
-          <p className="mt-3 text-sm text-brand-navy/60 leading-relaxed">
-            Kami sudah mengirim link verifikasi ke <strong>{form.email}</strong>. Setelah verifikasi,
-            kamu bisa masuk dan mulai pemetaan.
-          </p>
-          <Link
-            to="/login"
-            className="mt-6 inline-block rounded-xl bg-brand-navy text-white font-bold px-6 py-3 text-sm"
-          >
-            Ke halaman masuk
-          </Link>
-        </div>
-      </AuthLayout>
-    );
-  }
+    try {
+      await apiFetch("/me/profile", {
+        method: "PATCH",
+        body: JSON.stringify({
+          fullName: form.fullName,
+          whatsapp: form.whatsapp,
+          city: form.city,
+          programInterest: form.programInterest,
+        }),
+      });
+      await refreshProfile();
+      navigate("/dashboard", { replace: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Akun dibuat, tapi profil gagal disimpan");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <AuthLayout>
@@ -82,9 +74,11 @@ export function RegisterPage() {
         <h1 className="font-display font-extrabold text-2xl text-brand-navy">Daftar</h1>
         <p className="mt-1 text-sm text-brand-navy/55">Buat akun untuk mulai pemetaan potensi</p>
 
-        <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
+        <form onSubmit={(e) => void handleSubmit(e)} className="mt-6 flex flex-col gap-4">
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-bold uppercase tracking-wide text-brand-navy/50">Nama lengkap</span>
+            <span className="text-xs font-bold uppercase tracking-wide text-brand-navy/50">
+              Nama lengkap
+            </span>
             <input
               required
               value={form.fullName}
@@ -103,7 +97,9 @@ export function RegisterPage() {
             />
           </label>
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-bold uppercase tracking-wide text-brand-navy/50">Password</span>
+            <span className="text-xs font-bold uppercase tracking-wide text-brand-navy/50">
+              Password
+            </span>
             <input
               type="password"
               required
@@ -114,12 +110,12 @@ export function RegisterPage() {
             />
           </label>
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-bold uppercase tracking-wide text-brand-navy/50">WhatsApp</span>
+            <span className="text-xs font-bold uppercase tracking-wide text-brand-navy/50">
+              WhatsApp
+            </span>
             <input
-              required
               value={form.whatsapp}
               onChange={(e) => setForm({ ...form, whatsapp: e.target.value })}
-              placeholder="08xxxxxxxxxx"
               className="rounded-xl border border-brand-navy/12 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-red/30"
             />
           </label>
@@ -132,7 +128,9 @@ export function RegisterPage() {
             />
           </label>
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-bold uppercase tracking-wide text-brand-navy/50">Program minat</span>
+            <span className="text-xs font-bold uppercase tracking-wide text-brand-navy/50">
+              Minat program
+            </span>
             <select
               value={form.programInterest}
               onChange={(e) => setForm({ ...form, programInterest: e.target.value })}
@@ -146,22 +144,22 @@ export function RegisterPage() {
             </select>
           </label>
 
-          {error && (
-            <p className="text-sm text-brand-red bg-brand-red-soft rounded-lg px-3 py-2">{error}</p>
-          )}
+          {error ? (
+            <p className="rounded-lg bg-brand-red-soft px-3 py-2 text-sm text-brand-red">{error}</p>
+          ) : null}
 
           <button
             type="submit"
             disabled={loading}
-            className="mt-2 rounded-xl bg-brand-red text-white font-bold py-3.5 text-sm hover:bg-brand-red-hover transition-colors disabled:opacity-60"
+            className="mt-2 rounded-xl bg-brand-red py-3.5 text-sm font-bold text-white disabled:opacity-50"
           >
-            {loading ? "Mendaftar..." : "Daftar"}
+            {loading ? "Mendaftar…" : "Daftar"}
           </button>
         </form>
 
-        <p className="mt-5 text-center text-sm text-brand-navy/55">
+        <p className="mt-4 text-center text-sm text-brand-navy/50">
           Sudah punya akun?{" "}
-          <Link to="/login" className="font-semibold text-brand-red hover:underline">
+          <Link to="/login" className="font-semibold text-brand-red">
             Masuk
           </Link>
         </p>
