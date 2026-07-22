@@ -4,7 +4,32 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabase";
 import { CFIT_MAX_RAW } from "../data/cfitQuestions";
+import { categoryFromIq, type CfitCategoryColor } from "../lib/cfitScoring";
 import type { CfitResult } from "../lib/database.types";
+
+const CATEGORY_STYLE: Record<
+  CfitCategoryColor,
+  { badge: string; panel: string; dot: string; short: string }
+> = {
+  red: {
+    short: "Merah",
+    badge: "bg-red-100 text-red-800 border-red-200",
+    panel: "border-red-200 bg-red-50",
+    dot: "bg-red-500",
+  },
+  yellow: {
+    short: "Kuning",
+    badge: "bg-amber-100 text-amber-900 border-amber-200",
+    panel: "border-amber-200 bg-amber-50",
+    dot: "bg-amber-400",
+  },
+  green: {
+    short: "Hijau",
+    badge: "bg-emerald-100 text-emerald-800 border-emerald-200",
+    panel: "border-emerald-200 bg-emerald-50",
+    dot: "bg-emerald-500",
+  },
+};
 
 export function CfitResultPage() {
   const { user, progress } = useAuth();
@@ -67,6 +92,11 @@ export function CfitResultPage() {
     );
   }
 
+  const fallback = categoryFromIq(result.iq);
+  const color = (result.category_color ?? fallback.category_color) as CfitCategoryColor;
+  const categoryLabel = result.category_label || fallback.category_label;
+  const style = CATEGORY_STYLE[color];
+
   return (
     <div className="mx-auto max-w-2xl">
       <Link
@@ -86,6 +116,23 @@ export function CfitResultPage() {
           {" · "}
           Norma {result.age_band} (usia {result.age_years} th {result.age_months} bln)
         </p>
+
+        <div className={`mt-5 rounded-xl border p-4 ${style.panel}`}>
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wide ${style.badge}`}
+            >
+              <span className={`h-2 w-2 rounded-full ${style.dot}`} />
+              {style.short}
+            </span>
+            <p className="text-sm font-semibold text-brand-navy">{categoryLabel}</p>
+          </div>
+          <ul className="mt-3 space-y-1 text-xs text-brand-navy/60">
+            <li>• Merah — Borderline &amp; di bawahnya (IQ &lt; 80)</li>
+            <li>• Kuning — Rata-rata bawah (IQ 80–89)</li>
+            <li>• Hijau — Rata-rata ke atas (IQ ≥ 90)</li>
+          </ul>
+        </div>
 
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
           <Stat label="IQ" value={String(result.iq)} />

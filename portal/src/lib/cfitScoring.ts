@@ -26,6 +26,9 @@ const KEYS: Record<CfitSubtestId, string[]> = {
 
 type AgeBand = "A1" | "A2" | "A3" | "A4" | "A5" | "A6";
 
+/** Triase operasional klien (bukan label MANUAL penuh). */
+export type CfitCategoryColor = "red" | "yellow" | "green";
+
 export type CfitScoreBreakdown = {
   score_subtest1: number;
   score_subtest2: number;
@@ -38,6 +41,8 @@ export type CfitScoreBreakdown = {
   age_band: AgeBand;
   classification: string;
   classification_label: string;
+  category_color: CfitCategoryColor;
+  category_label: string;
 };
 
 /** Normalisasi jawaban multi-select: "EB" / "E,B" → "BE" */
@@ -140,6 +145,34 @@ export function classifyIq(iq: number): { classification: string; classification
   };
 }
 
+/**
+ * Triase warna klien:
+ * - merah: Borderline ke bawah (IQ &lt; 80) — termasuk Mentally Defective
+ * - kuning: Rata-rata bawah (80–89)
+ * - hijau: Rata-rata ke atas (≥ 90)
+ */
+export function categoryFromIq(iq: number): {
+  category_color: CfitCategoryColor;
+  category_label: string;
+} {
+  if (iq < 80) {
+    return {
+      category_color: "red",
+      category_label: "Kategori merah — Borderline & di bawahnya",
+    };
+  }
+  if (iq < 90) {
+    return {
+      category_color: "yellow",
+      category_label: "Kategori kuning — Rata-rata bawah",
+    };
+  }
+  return {
+    category_color: "green",
+    category_label: "Kategori hijau — Rata-rata ke atas",
+  };
+}
+
 export function scoreCfit(
   answers: Record<string, string>,
   birthDate: string,
@@ -155,6 +188,7 @@ export function scoreCfit(
   const age_band = ageBandFromAge(years, months);
   const iq = lookupIq(age_band, score_raw);
   const cls = classifyIq(iq);
+  const cat = categoryFromIq(iq);
 
   return {
     score_subtest1,
@@ -168,5 +202,7 @@ export function scoreCfit(
     age_band,
     classification: cls.classification,
     classification_label: cls.classification_label,
+    category_color: cat.category_color,
+    category_label: cat.category_label,
   };
 }

@@ -102,6 +102,8 @@ export interface Database {
           iq: number;
           classification: string;
           classification_label: string;
+          category_color: "red" | "yellow" | "green";
+          category_label: string;
           duration_seconds: number | null;
           started_at: string;
           completed_at: string;
@@ -122,6 +124,8 @@ export interface Database {
           iq: number;
           classification: string;
           classification_label: string;
+          category_color: "red" | "yellow" | "green";
+          category_label: string;
           duration_seconds?: number | null;
           started_at?: string;
           completed_at?: string;

@@ -98,6 +98,8 @@ export function CfitTestPage() {
       iq: scored.iq,
       classification: scored.classification,
       classification_label: scored.classification_label,
+      category_color: scored.category_color,
+      category_label: scored.category_label,
       duration_seconds: duration,
       started_at: startedAtRef.current ?? new Date().toISOString(),
       completed_at: new Date().toISOString(),

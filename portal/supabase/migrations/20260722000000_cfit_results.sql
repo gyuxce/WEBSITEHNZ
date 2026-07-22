@@ -30,10 +30,14 @@ create table if not exists public.cfit_results (
   iq integer not null default 0,
   classification text not null,
   classification_label text not null,
+  category_color text not null default 'green',
+  category_label text not null default 'Kategori hijau — Rata-rata ke atas',
   duration_seconds integer,
   started_at timestamptz not null default now(),
   completed_at timestamptz not null default now(),
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  constraint cfit_results_category_color_check
+    check (category_color in ('red', 'yellow', 'green'))
 );
 
 create unique index if not exists cfit_results_user_id_unique on public.cfit_results (user_id);
