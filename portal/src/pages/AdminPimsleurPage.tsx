@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
-import { supabase } from "../lib/supabase";
+import { apiFetch } from "../lib/api";
 import { PIMSLEUR_MAX_SCORE } from "../data/pimsleurQuestions";
 
 type AdminRow = {
@@ -32,16 +32,14 @@ export function AdminPimsleurPage() {
     if (authLoading || profile?.role !== "admin") return;
 
     async function load() {
-      const { data, error: qError } = await supabase.rpc("admin_list_pimsleur_results");
-
-      if (qError) {
-        setError(qError.message);
+      try {
+        const data = await apiFetch<{ rows: AdminRow[] }>("/admin/pimsleur");
+        setRows(data.rows ?? []);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Gagal memuat data");
+      } finally {
         setLoading(false);
-        return;
       }
-
-      setRows((data as AdminRow[]) ?? []);
-      setLoading(false);
     }
 
     void load();
@@ -73,9 +71,7 @@ export function AdminPimsleurPage() {
         <div className="mt-6 space-y-2">
           <p className="text-sm text-brand-red">{error}</p>
           <p className="text-xs text-brand-navy/50">
-            Jika error fungsi tidak ditemukan, jalankan migration{" "}
-            <code className="text-brand-navy/70">20260721180000_admin_pimsleur_rpc.sql</code> di
-            Supabase SQL Editor.
+            Jika error 403, pastikan `profiles.role = 'admin'` untuk akun staf di Neon.
           </p>
         </div>
       ) : rows.length === 0 ? (

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
-import { supabase } from "../lib/supabase";
+import { apiFetch } from "../lib/api";
 import {
   getQuestionsForSection,
   PIMSLEUR_MAX_SCORE,
@@ -41,19 +41,16 @@ export function AdminPimsleurDetailPage() {
     if (!userId || authLoading || profile?.role !== "admin") return;
 
     async function load() {
-      const { data, error: qError } = await supabase.rpc("admin_get_pimsleur_detail", {
-        p_user_id: userId!,
-      });
-
-      if (qError) {
-        setError(qError.message);
+      try {
+        const data = await apiFetch<{ result: Detail | null }>(
+          `/admin/pimsleur/${encodeURIComponent(userId!)}`,
+        );
+        setRow(data.result);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Gagal memuat detail");
+      } finally {
         setLoading(false);
-        return;
       }
-
-      const first = Array.isArray(data) ? data[0] : data;
-      setRow((first as Detail) ?? null);
-      setLoading(false);
     }
 
     void load();

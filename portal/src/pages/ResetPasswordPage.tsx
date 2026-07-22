@@ -1,78 +1,74 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { supabase } from "../lib/supabase";
+import { useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { authClient } from "../lib/auth-client";
 import { AuthLayout } from "../components/PortalLayout";
 
 export function ResetPasswordPage() {
+  const [params] = useSearchParams();
+  const navigate = useNavigate();
+  const token = params.get("token") ?? "";
   const [password, setPassword] = useState("");
-  const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setReady(Boolean(data.session));
-    });
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
+    setLoading(true);
 
-    const { error: authError } = await supabase.auth.updateUser({ password });
-    if (authError) setError(authError.message);
-    else setSuccess(true);
+    if (!token) {
+      setError("Token reset tidak ditemukan di URL.");
+      setLoading(false);
+      return;
+    }
+
+    const { error: authError } = await authClient.resetPassword({
+      newPassword: password,
+      token,
+    });
+
+    if (authError) {
+      setError(authError.message || "Gagal reset password");
+      setLoading(false);
+      return;
+    }
+
     setLoading(false);
+    navigate("/login", { replace: true });
   };
-
-  if (!ready && !success) {
-    return (
-      <AuthLayout>
-        <div className="rounded-2xl border border-brand-navy/8 bg-white p-8 shadow-sm text-center text-sm text-brand-navy/60">
-          Memuat sesi reset password...
-        </div>
-      </AuthLayout>
-    );
-  }
-
-  if (success) {
-    return (
-      <AuthLayout>
-        <div className="rounded-2xl border border-brand-navy/8 bg-white p-8 shadow-sm text-center">
-          <h1 className="font-display font-extrabold text-2xl text-brand-navy">Password diperbarui</h1>
-          <Link to="/login" className="mt-6 inline-block rounded-xl bg-brand-navy text-white font-bold px-6 py-3 text-sm">
-            Masuk sekarang
-          </Link>
-        </div>
-      </AuthLayout>
-    );
-  }
 
   return (
     <AuthLayout>
       <div className="rounded-2xl border border-brand-navy/8 bg-white p-8 shadow-sm">
-        <h1 className="font-display font-extrabold text-2xl text-brand-navy">Password Baru</h1>
-        <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
-          <input
-            type="password"
-            required
-            minLength={8}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password baru (min. 8 karakter)"
-            className="rounded-xl border border-brand-navy/12 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-red/30"
-          />
-          {error && <p className="text-sm text-brand-red bg-brand-red-soft rounded-lg px-3 py-2">{error}</p>}
+        <h1 className="font-display text-2xl font-extrabold text-brand-navy">Password baru</h1>
+        <form onSubmit={(e) => void handleSubmit(e)} className="mt-6 flex flex-col gap-4">
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs font-bold uppercase tracking-wide text-brand-navy/50">
+              Password baru
+            </span>
+            <input
+              type="password"
+              required
+              minLength={8}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="rounded-xl border border-brand-navy/12 px-4 py-3 text-sm"
+            />
+          </label>
+          {error ? (
+            <p className="rounded-lg bg-brand-red-soft px-3 py-2 text-sm text-brand-red">{error}</p>
+          ) : null}
           <button
             type="submit"
             disabled={loading}
-            className="rounded-xl bg-brand-red text-white font-bold py-3.5 text-sm disabled:opacity-60"
+            className="rounded-xl bg-brand-red py-3.5 text-sm font-bold text-white disabled:opacity-50"
           >
-            {loading ? "Menyimpan..." : "Simpan password"}
+            {loading ? "Menyimpan…" : "Simpan password"}
           </button>
         </form>
+        <Link to="/login" className="mt-4 inline-block text-sm font-semibold text-brand-red">
+          Ke login
+        </Link>
       </div>
     </AuthLayout>
   );

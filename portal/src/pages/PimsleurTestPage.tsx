@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Clock } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import { apiFetch } from "../lib/api";
+import { scorePimsleur } from "../lib/pimsleurScoring";
 import {
   getQuestionsForSection,
   PIMSLEUR_AUDIO,
@@ -10,8 +12,6 @@ import {
   SECTION4_WORD_LIST,
   type PimsleurQuestion,
 } from "../data/pimsleurQuestions";
-import { scorePimsleur } from "../lib/pimsleurScoring";
-import { supabase } from "../lib/supabase";
 
 function formatTime(totalSeconds: number) {
   const m = Math.floor(totalSeconds / 60);
@@ -67,40 +67,33 @@ export function PimsleurTestPage() {
         )
       : PIMSLEUR_DURATION_SEC - remaining;
 
-    const { error: insertError } = await supabase.from("pimsleur_results").insert({
-      user_id: user.id,
-      answers,
-      score_section2: scored.score_section2,
-      score_section3: scored.score_section3,
-      score_section4: scored.score_section4,
-      score_section5: scored.score_section5,
-      score_section6: scored.score_section6,
-      score_verbal: scored.score_verbal,
-      score_audio: scored.score_audio,
-      score_total: scored.score_total,
-      grade: scored.grade,
-      grade_label: scored.grade_label,
-      status_label: scored.status_label,
-      recommendation: scored.recommendation,
-      duration_seconds: duration,
-      started_at: startedAtRef.current ?? new Date().toISOString(),
-      completed_at: new Date().toISOString(),
-    });
-
-    if (insertError) {
+    try {
+      await apiFetch("/tests/pimsleur/submit", {
+        method: "POST",
+        body: JSON.stringify({
+          answers,
+          score_section2: scored.score_section2,
+          score_section3: scored.score_section3,
+          score_section4: scored.score_section4,
+          score_section5: scored.score_section5,
+          score_section6: scored.score_section6,
+          score_verbal: scored.score_verbal,
+          score_audio: scored.score_audio,
+          score_total: scored.score_total,
+          grade: scored.grade,
+          grade_label: scored.grade_label,
+          status_label: scored.status_label,
+          recommendation: scored.recommendation,
+          duration_seconds: duration,
+          started_at: startedAtRef.current ?? new Date().toISOString(),
+        }),
+      });
+    } catch (err) {
       finishingRef.current = false;
       setSubmitting(false);
-      setError(insertError.message);
+      setError(err instanceof Error ? err.message : "Gagal menyimpan hasil");
       return;
     }
-
-    await supabase
-      .from("user_progress")
-      .update({
-        language_test_status: "completed",
-        result_status: "available",
-      })
-      .eq("user_id", user.id);
 
     await refreshProfile();
     setSubmitting(false);
@@ -120,10 +113,7 @@ export function PimsleurTestPage() {
   async function handleStart() {
     if (!user) return;
     startedAtRef.current = new Date().toISOString();
-    await supabase
-      .from("user_progress")
-      .update({ language_test_status: "in_progress" })
-      .eq("user_id", user.id);
+    await apiFetch("/tests/pimsleur/start", { method: "POST", body: "{}" });
     await refreshProfile();
     setStarted(true);
   }
@@ -197,7 +187,7 @@ export function PimsleurTestPage() {
                 {s.hasAudio ? " — ada audio" : ""}
               </li>
             ))}
-            <li>• Setelah selesai, hasil langsung tampil. Papikostik &amp; CFIT menyusul.</li>
+            <li>• Setelah selesai, hasil langsung tampil. Lanjut ke CFIT, lalu Papikostik.</li>
           </ul>
           {error ? (
             <p className="mt-4 rounded-lg bg-brand-red-soft px-3 py-2 text-sm text-brand-red">

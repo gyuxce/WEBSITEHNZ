@@ -7,13 +7,19 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { Session, User } from "@supabase/supabase-js";
-import { supabase } from "../lib/supabase";
+import { authClient } from "../lib/auth-client";
+import { apiFetch } from "../lib/api";
 import type { Profile, UserProgress } from "../lib/database.types";
 
+export type AppUser = {
+  id: string;
+  email: string;
+  name: string;
+};
+
 interface AuthContextValue {
-  session: Session | null;
-  user: User | null;
+  session: { user: AppUser } | null;
+  user: AppUser | null;
   profile: Profile | null;
   progress: UserProgress | null;
   loading: boolean;
@@ -24,66 +30,77 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const loadUserData = useCallback(async (userId: string) => {
-    const [profileRes, progressRes] = await Promise.all([
-      supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
-      supabase.from("user_progress").select("*").eq("user_id", userId).maybeSingle(),
-    ]);
-
-    if (profileRes.data) setProfile(profileRes.data);
-    if (progressRes.data) setProgress(progressRes.data);
+  const refreshProfile = useCallback(async () => {
+    try {
+      const me = await apiFetch<{
+        user: AppUser;
+        profile: Profile | null;
+        progress: UserProgress | null;
+      }>("/me");
+      setUser(me.user);
+      setProfile(me.profile);
+      setProgress(me.progress);
+    } catch {
+      setUser(null);
+      setProfile(null);
+      setProgress(null);
+    }
   }, []);
 
-  const refreshProfile = useCallback(async () => {
-    if (!session?.user.id) return;
-    await loadUserData(session.user.id);
-  }, [loadUserData, session?.user.id]);
-
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      if (data.session?.user) {
-        loadUserData(data.session.user.id).finally(() => setLoading(false));
-      } else {
-        setLoading(false);
-      }
-    });
+    let cancelled = false;
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
-      if (nextSession?.user) {
-        loadUserData(nextSession.user.id);
-      } else {
-        setProfile(null);
-        setProgress(null);
+    async function boot() {
+      try {
+        const { data } = await authClient.getSession();
+        if (cancelled) return;
+        if (data?.session && data.user) {
+          await refreshProfile();
+        } else {
+          setUser(null);
+          setProfile(null);
+          setProgress(null);
+        }
+      } catch {
+        if (!cancelled) {
+          setUser(null);
+          setProfile(null);
+          setProgress(null);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-    });
+    }
 
-    return () => listener.subscription.unsubscribe();
-  }, [loadUserData]);
+    void boot();
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshProfile]);
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+    await authClient.signOut();
+    setUser(null);
     setProfile(null);
     setProgress(null);
   }, []);
 
   const value = useMemo(
     () => ({
-      session,
-      user: session?.user ?? null,
+      session: user ? { user } : null,
+      user,
       profile,
       progress,
       loading,
       signOut,
       refreshProfile,
     }),
-    [session, profile, progress, loading, signOut, refreshProfile],
+    [user, profile, progress, loading, signOut, refreshProfile],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

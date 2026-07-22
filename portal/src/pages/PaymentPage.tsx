@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, ArrowRight, CreditCard, ShieldCheck } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
-import { PEMETAAN_PRICE, supabase, MIDTRANS_CLIENT_KEY } from "../lib/supabase";
+import { PEMETAAN_PRICE, apiFetch, MIDTRANS_CLIENT_KEY } from "../lib/api";
 
 export function PaymentPage() {
   const { user, progress, refreshProfile } = useAuth();
@@ -21,11 +21,14 @@ export function PaymentPage() {
     setError("");
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke("midtrans-create", {
-        body: { amount: PEMETAAN_PRICE },
-      });
+      const data = await apiFetch<{ token: string; order_id: string; error?: string }>(
+        "/payments/midtrans/create",
+        {
+          method: "POST",
+          body: JSON.stringify({ amount: PEMETAAN_PRICE }),
+        },
+      );
 
-      if (fnError) throw fnError;
       if (!data?.token) throw new Error(data?.error ?? "Gagal membuat transaksi Midtrans");
 
       if (!window.snap) {
@@ -50,35 +53,21 @@ export function PaymentPage() {
     }
   };
 
-  /** Sandbox fallback when Edge Function not deployed yet */
+  /** Sandbox fallback when Midtrans belum dikonfigurasi */
   const handleSandboxMarkPaid = async () => {
     if (!user) return;
     setLoading(true);
     setError("");
 
-    const orderId = `HNZ-SANDBOX-${Date.now()}`;
-
-    const { error: payError } = await supabase.from("payments").insert({
-      user_id: user.id,
-      order_id: orderId,
-      amount: PEMETAAN_PRICE,
-      status: "settlement",
-    });
-
-    if (payError) {
-      setError(payError.message);
+    try {
+      await apiFetch("/payments/sandbox/settle", { method: "POST", body: "{}" });
+      await refreshProfile();
+      setSandboxMode(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal sandbox pay");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    await supabase
-      .from("user_progress")
-      .update({ payment_status: "verified", language_test_status: "available" })
-      .eq("user_id", user.id);
-
-    await refreshProfile();
-    setLoading(false);
-    setSandboxMode(false);
   };
 
   const canStartLanguageTest =

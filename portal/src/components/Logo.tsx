@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { LANDING_URL } from "../lib/supabase";
+import { LANDING_URL } from "../lib/api";
 
 export function Logo({ className = "", homeHref }: { className?: string; homeHref?: string }) {
   const content = (
