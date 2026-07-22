@@ -109,11 +109,16 @@ export function PimsleurResultPage() {
         </p>
 
         <div className="mt-8 rounded-xl border border-dashed border-brand-navy/15 bg-brand-bg/60 p-5">
-          <p className="font-bold text-brand-navy">Tahap berikutnya</p>
+          <p className="font-bold text-brand-navy">Tahap berikutnya: CFIT</p>
           <p className="mt-1 text-sm text-brand-navy/55">
-            Papikostik (kepribadian) dan CFIT (IQ) akan dibuka setelah materi siap. Sementara ini
-            hasil Pimsleur sudah tersimpan.
+            Tes intelektual CFIT 3A sudah terbuka. Setelah CFIT selesai, Papikostik akan dibuka.
           </p>
+          <Link
+            to="/test/cfit"
+            className="mt-4 inline-block text-sm font-bold text-brand-red"
+          >
+            Mulai CFIT →
+          </Link>
         </div>
 
         <a

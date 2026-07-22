@@ -99,6 +99,7 @@ export function PimsleurTestPage() {
       .update({
         language_test_status: "completed",
         result_status: "available",
+        cfit_test_status: "available",
       })
       .eq("user_id", user.id);
 
@@ -197,7 +198,7 @@ export function PimsleurTestPage() {
                 {s.hasAudio ? " — ada audio" : ""}
               </li>
             ))}
-            <li>• Setelah selesai, hasil langsung tampil. Papikostik &amp; CFIT menyusul.</li>
+            <li>• Setelah selesai, hasil langsung tampil. Lanjut ke CFIT, lalu Papikostik.</li>
           </ul>
           {error ? (
             <p className="mt-4 rounded-lg bg-brand-red-soft px-3 py-2 text-sm text-brand-red">

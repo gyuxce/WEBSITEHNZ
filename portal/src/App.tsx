@@ -11,6 +11,8 @@ import { PaymentPage } from "./pages/PaymentPage";
 import { ResultPage } from "./pages/ResultPage";
 import { PimsleurTestPage } from "./pages/PimsleurTestPage";
 import { PimsleurResultPage } from "./pages/PimsleurResultPage";
+import { CfitTestPage } from "./pages/CfitTestPage";
+import { CfitResultPage } from "./pages/CfitResultPage";
 import { AdminPimsleurPage } from "./pages/AdminPimsleurPage";
 import { AdminPimsleurDetailPage } from "./pages/AdminPimsleurDetailPage";
 
@@ -35,6 +37,8 @@ export default function App() {
               <Route path="/payment" element={<PaymentPage />} />
               <Route path="/test/pimsleur" element={<PimsleurTestPage />} />
               <Route path="/result/pimsleur" element={<PimsleurResultPage />} />
+              <Route path="/test/cfit" element={<CfitTestPage />} />
+              <Route path="/result/cfit" element={<CfitResultPage />} />
               <Route path="/admin/pimsleur" element={<AdminPimsleurPage />} />
               <Route path="/admin/pimsleur/:userId" element={<AdminPimsleurDetailPage />} />
               {/* Legacy routes — digantikan Pimsleur / Papikostik */}
