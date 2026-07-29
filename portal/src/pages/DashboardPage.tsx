@@ -68,9 +68,29 @@ function AdminHome({ name }: { name: string }) {
         <ArrowRight className="shrink-0 text-brand-red" size={20} />
       </Link>
 
+      <Link
+        to="/admin/papikostik"
+        className="flex items-center justify-between gap-4 rounded-2xl border border-brand-navy/8 bg-white p-6 transition-all hover:border-brand-red/20 hover:shadow-md"
+      >
+        <div className="flex items-start gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-red-soft text-brand-red">
+            <FileCheck size={24} />
+          </div>
+          <div>
+            <p className="font-display text-lg font-bold text-brand-navy">
+              Hasil PAPI Kostick peserta
+            </p>
+            <p className="mt-1 text-sm text-brand-navy/50">
+              Skor 20 faktor, detail jawaban, dan catatan review psikolog/admin
+            </p>
+          </div>
+        </div>
+        <ArrowRight className="shrink-0 text-brand-red" size={20} />
+      </Link>
+
       <div className="rounded-2xl border border-dashed border-brand-navy/15 bg-white/60 p-5 text-sm text-brand-navy/55">
         <p className="font-semibold text-brand-navy">Menyusul</p>
-        <p className="mt-1">Admin Papikostik akan muncul di sini setelah materi siap.</p>
+        <p className="mt-1">Rekap final gabungan Pimsleur, CFIT, dan PAPI Kostick.</p>
       </div>
 
       <a
@@ -162,6 +182,14 @@ function ParticipantHome({
             href="/result/cfit"
             disabled={!cfitDone}
             cta={cfitDone ? "Lihat hasil" : "Belum tersedia"}
+          />
+          <ActionCard
+            icon={<FileCheck size={20} />}
+            title="Status PAPI Kostick"
+            description="Status jawaban dan review psikolog/admin"
+            href="/result/papikostik"
+            disabled={!papikostikDone}
+            cta={papikostikDone ? "Lihat status" : "Belum tersedia"}
           />
         </div>
 

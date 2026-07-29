@@ -12,7 +12,7 @@ Portal web calon siswa untuk daftar, bayar, tes, dan unduh sertifikat pemetaan p
 - **Tes Pimsleur** (aptitude bahasa, seksi 2–6, timer 25 menit, grade A–F)
 - Hasil Pimsleur + admin daftar/detail skor
 - CFIT: 4 subtes, instruksi dari PPTX, timer per subtes, gambar soal, penyimpanan jawaban, raw score per subtes, raw total, IQ, kategori, halaman hasil peserta, dan admin detail jawaban berdasarkan norma CFIT 3A
-- PAPI Kostick: route, progress, timer, dan penyimpanan jawaban siap; soal resmi harus diisi ke Supabase
+- PAPI Kostick: 90 soal forced-choice, scoring 20 faktor, status hasil peserta, dan admin detail + review psikolog/admin
 - Legacy sertifikat HTML masih ada di `/result/legacy`
 
 ## Setup
@@ -25,6 +25,8 @@ Portal web calon siswa untuk daftar, bayar, tes, dan unduh sertifikat pemetaan p
    - `supabase/migrations/20260720000000_initial_schema.sql`
    - `supabase/migrations/20260721000000_pimsleur_results.sql`
    - `supabase/migrations/20260722000000_cfit_papikostik_progress.sql`
+   - `supabase/migrations/20260723000000_cfit_low_score_floor.sql`
+   - `supabase/migrations/20260724000000_papikostik_results.sql`
 
 Untuk admin: set `profiles.role = 'admin'` pada user staf.
 
@@ -48,10 +50,10 @@ SET default_transaction_read_only = off;
    - Site URL: `http://localhost:5174`
    - Redirect URLs: `http://localhost:5174/reset-password`
 
-#### Format soal CFIT / PAPI Kostick
+#### Format soal legacy
 
-Masukkan materi resmi ke tabel `test_questions`. Gunakan `test_type = 'cfit'` untuk CFIT dan
-`test_type = 'papikostik'` untuk PAPI Kostick.
+Tes Pimsleur, CFIT, dan PAPI Kostick sudah memakai data lokal di source code. Tabel
+`test_questions` hanya tersisa untuk flow legacy/generic.
 
 Contoh struktur data:
 
@@ -69,8 +71,8 @@ values
   );
 ```
 
-Untuk PAPI Kostick, `correct_answer` boleh diisi `''` karena halaman menyimpan respons untuk review,
-bukan menghitung skor resmi otomatis.
+Untuk PAPI Kostick, sistem menyimpan jawaban, skor faktor, interpretasi dasar, dan status review
+ke tabel `papikostik_results`.
 
 ### 2. Environment
 

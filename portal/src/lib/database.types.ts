@@ -141,6 +141,59 @@ export interface Database {
         };
         Relationships: [];
       };
+      papikostik_results: {
+        Row: {
+          id: string;
+          user_id: string;
+          answers: Json;
+          scores: Json;
+          analyses: Json;
+          total_top: number | null;
+          total_bottom: number | null;
+          total_all: number | null;
+          is_complete_pattern: boolean | null;
+          duration_seconds: number | null;
+          review_status: "pending" | "reviewed";
+          psychologist_notes: string | null;
+          final_summary: string | null;
+          started_at: string;
+          completed_at: string;
+          reviewed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          answers?: Json;
+          scores?: Json;
+          analyses?: Json;
+          total_top?: number | null;
+          total_bottom?: number | null;
+          total_all?: number | null;
+          is_complete_pattern?: boolean | null;
+          duration_seconds?: number | null;
+          review_status?: "pending" | "reviewed";
+          psychologist_notes?: string | null;
+          final_summary?: string | null;
+          started_at?: string;
+          completed_at?: string;
+          reviewed_at?: string | null;
+        };
+        Update: {
+          answers?: Json;
+          scores?: Json;
+          analyses?: Json;
+          total_top?: number | null;
+          total_bottom?: number | null;
+          total_all?: number | null;
+          is_complete_pattern?: boolean | null;
+          duration_seconds?: number | null;
+          review_status?: "pending" | "reviewed";
+          psychologist_notes?: string | null;
+          final_summary?: string | null;
+          reviewed_at?: string | null;
+        };
+        Relationships: [];
+      };
       user_progress: {
         Row: {
           id: string;
@@ -392,6 +445,48 @@ export interface Database {
           birth_date: string | null;
         }[];
       };
+      admin_list_papikostik_results: {
+        Args: Record<string, never>;
+        Returns: {
+          id: string;
+          user_id: string;
+          total_top: number | null;
+          total_bottom: number | null;
+          total_all: number | null;
+          is_complete_pattern: boolean | null;
+          review_status: "pending" | "reviewed";
+          completed_at: string;
+          reviewed_at: string | null;
+          full_name: string;
+          email: string | null;
+          whatsapp: string | null;
+          city: string | null;
+        }[];
+      };
+      admin_get_papikostik_detail: {
+        Args: { p_user_id: string };
+        Returns: {
+          id: string;
+          user_id: string;
+          answers: Json;
+          scores: Json;
+          analyses: Json;
+          total_top: number | null;
+          total_bottom: number | null;
+          total_all: number | null;
+          is_complete_pattern: boolean | null;
+          review_status: "pending" | "reviewed";
+          psychologist_notes: string | null;
+          final_summary: string | null;
+          duration_seconds: number | null;
+          completed_at: string;
+          reviewed_at: string | null;
+          full_name: string;
+          email: string | null;
+          whatsapp: string | null;
+          city: string | null;
+        }[];
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
@@ -402,6 +497,7 @@ export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type UserProgress = Database["public"]["Tables"]["user_progress"]["Row"];
 export type PimsleurResult = Database["public"]["Tables"]["pimsleur_results"]["Row"];
 export type CfitResult = Database["public"]["Tables"]["cfit_results"]["Row"];
+export type PapikostikResult = Database["public"]["Tables"]["papikostik_results"]["Row"];
 
 export const PROGRESS_STEPS = [
   { key: "registration", label: "Registrasi & akun peserta", field: "registration_status" as const },

@@ -21,7 +21,9 @@ Alasannya: portal sudah memakai Supabase Auth, RLS, RPC, `auth.uid()`, dan Edge 
 - Halaman hasil Pimsleur peserta.
 - Halaman admin daftar/detail hasil Pimsleur.
 - Route CFIT di `/test/cfit` dengan 4 subtes, instruksi dari PPTX, timer per subtes, dan gambar soal dari lampiran Google Forms.
-- Route teknis PAPI Kostick di `/test/papikostik`.
+- PAPI Kostick di `/test/papikostik` dengan 90 soal forced-choice dari file klien, timer estimasi 20 menit, scoring 20 faktor, dan penyimpanan hasil.
+- Halaman status PAPI peserta di `/result/papikostik`.
+- Halaman admin daftar/detail PAPI di `/admin/papikostik` dan `/admin/papikostik/:userId`, termasuk catatan review psikolog/admin.
 - Progress dan penyimpanan session/jawaban untuk CFIT dan PAPI Kostick.
 
 ## Yang Belum Final
@@ -31,7 +33,7 @@ Alasannya: portal sudah memakai Supabase Auth, RLS, RPC, `auth.uid()`, dan Edge 
 - Midtrans production perlu deploy Edge Functions dan set secrets.
 - CFIT sudah berisi soal dari PDF. Kunci jawaban subtes 1-4, raw score per subtes, raw total, konversi IQ, dan kategori sudah masuk. Norma memakai tabel `Skoring CFIT (3A)` dengan `A1-A6`; usia 17 tahun ke atas memakai `A6` sesuai header `>17`.
 - Hasil CFIT peserta tersedia di `/result/cfit`; admin tersedia di `/admin/cfit` dan detail jawaban per peserta di `/admin/cfit/:userId`.
-- Papikostik belum punya materi final di repo. Sistem teknisnya siap, tetapi soal/scoring resmi harus diisi ke Supabase.
+- PAPI Kostick sudah memakai materi dari file klien. Interpretasi otomatis mengikuti teks pada file skoring, tetapi pembacaan final tetap perlu psikolog/admin.
 - Audio Pimsleur perlu dipastikan hak penggunaan/lisensinya sebelum production.
 - `npm audit` portal masih menandai vulnerability `react-router@7.18.1`; tunggu rilis kompatibel dari `react-router-dom` atau evaluasi upgrade mayor saat tersedia.
 
@@ -120,7 +122,7 @@ where id = 'USER_UUID_ADMIN';
 ```
 
 4. Jalankan migration Supabase terbaru agar kolom `birth_date`, `age_years`, `age_months`, dan `norm_code` tersedia di database.
-5. Isi materi resmi PAPI Kostick ke `test_questions` dengan `test_type = 'papikostik'`.
-6. Test halaman `/test/cfit` dan `/test/papikostik`.
-7. Test halaman admin `/admin/pimsleur`.
+5. Test halaman `/test/cfit`, `/result/cfit`, `/test/papikostik`, dan `/result/papikostik`.
+6. Test halaman admin `/admin/pimsleur`, `/admin/cfit`, dan `/admin/papikostik`.
+7. Buat halaman rekap final gabungan Pimsleur + CFIT + PAPI Kostick setelah format output final disepakati.
 8. Deploy landing dan portal sebagai dua project Vercel, atau satu project dengan routing yang disepakati.

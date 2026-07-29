@@ -12,12 +12,15 @@ import { ResultPage } from "./pages/ResultPage";
 import { PimsleurTestPage } from "./pages/PimsleurTestPage";
 import { PimsleurResultPage } from "./pages/PimsleurResultPage";
 import { CfitResultPage } from "./pages/CfitResultPage";
-import { AssessmentTestPage } from "./pages/AssessmentTestPage";
 import { CfitTestPage } from "./pages/CfitTestPage";
+import { PapikostikTestPage } from "./pages/PapikostikTestPage";
+import { PapikostikResultPage } from "./pages/PapikostikResultPage";
 import { AdminPimsleurPage } from "./pages/AdminPimsleurPage";
 import { AdminPimsleurDetailPage } from "./pages/AdminPimsleurDetailPage";
 import { AdminCfitPage } from "./pages/AdminCfitPage";
 import { AdminCfitDetailPage } from "./pages/AdminCfitDetailPage";
+import { AdminPapikostikPage } from "./pages/AdminPapikostikPage";
+import { AdminPapikostikDetailPage } from "./pages/AdminPapikostikDetailPage";
 
 export default function App() {
   return (
@@ -40,13 +43,16 @@ export default function App() {
               <Route path="/payment" element={<PaymentPage />} />
               <Route path="/test/pimsleur" element={<PimsleurTestPage />} />
               <Route path="/test/cfit" element={<CfitTestPage />} />
-              <Route path="/test/papikostik" element={<AssessmentTestPage type="papikostik" />} />
+              <Route path="/test/papikostik" element={<PapikostikTestPage />} />
               <Route path="/result/pimsleur" element={<PimsleurResultPage />} />
               <Route path="/result/cfit" element={<CfitResultPage />} />
+              <Route path="/result/papikostik" element={<PapikostikResultPage />} />
               <Route path="/admin/pimsleur" element={<AdminPimsleurPage />} />
               <Route path="/admin/pimsleur/:userId" element={<AdminPimsleurDetailPage />} />
               <Route path="/admin/cfit" element={<AdminCfitPage />} />
               <Route path="/admin/cfit/:userId" element={<AdminCfitDetailPage />} />
+              <Route path="/admin/papikostik" element={<AdminPapikostikPage />} />
+              <Route path="/admin/papikostik/:userId" element={<AdminPapikostikDetailPage />} />
               {/* Legacy routes. Flow MVP sekarang memakai Pimsleur dan hasil Pimsleur. */}
               <Route path="/test/language" element={<Navigate to="/test/pimsleur" replace />} />
               <Route path="/test/character" element={<Navigate to="/test/papikostik" replace />} />
