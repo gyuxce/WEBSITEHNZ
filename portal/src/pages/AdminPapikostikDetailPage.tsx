@@ -12,6 +12,7 @@ import {
 } from "../data/papikostikQuestions";
 import { supabase } from "../lib/supabase";
 import type { Json } from "../lib/database.types";
+import { PapiProfileChart } from "../components/PapiProfileChart";
 
 type PapikostikDetail = {
   id: string;
@@ -181,6 +182,10 @@ export function AdminPapikostikDetailPage() {
           diverifikasi.
         </p>
       ) : null}
+
+      <div className="mt-8">
+        <PapiProfileChart scores={scores} />
+      </div>
 
       <div className="mt-8 space-y-6">
         {ASPECTS.map((aspect) => (
