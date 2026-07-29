@@ -1,6 +1,14 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, CreditCard, FileCheck, MessageCircle, TestTube, Users } from "lucide-react";
+import {
+  ArrowRight,
+  ClipboardList,
+  CreditCard,
+  FileCheck,
+  MessageCircle,
+  TestTube,
+  Users,
+} from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { ProgressSteps } from "../components/ProgressSteps";
 import { LANDING_URL } from "../lib/supabase";
@@ -88,10 +96,23 @@ function AdminHome({ name }: { name: string }) {
         <ArrowRight className="shrink-0 text-brand-red" size={20} />
       </Link>
 
-      <div className="rounded-2xl border border-dashed border-brand-navy/15 bg-white/60 p-5 text-sm text-brand-navy/55">
-        <p className="font-semibold text-brand-navy">Menyusul</p>
-        <p className="mt-1">Rekap final gabungan Pimsleur, CFIT, dan PAPI Kostick.</p>
-      </div>
+      <Link
+        to="/admin/recap"
+        className="flex items-center justify-between gap-4 rounded-2xl border border-brand-navy/8 bg-white p-6 transition-all hover:border-brand-red/20 hover:shadow-md"
+      >
+        <div className="flex items-start gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-red-soft text-brand-red">
+            <ClipboardList size={24} />
+          </div>
+          <div>
+            <p className="font-display text-lg font-bold text-brand-navy">Rekap asesmen peserta</p>
+            <p className="mt-1 text-sm text-brand-navy/50">
+              Ringkasan tiga tes dan status review dalam satu tampilan admin
+            </p>
+          </div>
+        </div>
+        <ArrowRight className="shrink-0 text-brand-red" size={20} />
+      </Link>
 
       <a
         href={LANDING_URL}
