@@ -1,4 +1,4 @@
-type CfitNormCode = "A1" | "A2" | "A3" | "A4" | "A5" | "A6";
+export type CfitNormCode = "A1" | "A2" | "A3" | "A4" | "A5" | "A6";
 
 const CFIT_IQ_BY_NORM: Record<CfitNormCode, Record<number, number>> = {
   A1: {
@@ -101,18 +101,41 @@ function lookupIq(normCode: CfitNormCode, rawTotal: number) {
   const minRaw = Math.min(...rawScores);
   const maxRaw = Math.max(...rawScores);
   if (rawTotal > maxRaw) return table[maxRaw];
-  if (rawTotal < minRaw) return null;
+  if (rawTotal < minRaw) return table[minRaw];
   return null;
+}
+
+function isCfitNormCode(value: string | null | undefined): value is CfitNormCode {
+  return (
+    value === "A1" ||
+    value === "A2" ||
+    value === "A3" ||
+    value === "A4" ||
+    value === "A5" ||
+    value === "A6"
+  );
+}
+
+export function calculateCfitIqFromNorm(rawTotal: number | null, normCode: string | null | undefined) {
+  if (rawTotal === null || !isCfitNormCode(normCode)) {
+    return { iq: null, category: null };
+  }
+
+  const iq = lookupIq(normCode, rawTotal);
+  return {
+    iq,
+    category: getCfitCategory(iq),
+  };
 }
 
 export function calculateCfitIq(rawTotal: number | null, birthDate: string | null | undefined, at: Date) {
   const age = calculateAgeAt(birthDate, at);
   const normCode = age ? getNormCode(age.totalMonths) : null;
-  const iq = rawTotal !== null && normCode ? lookupIq(normCode, rawTotal) : null;
+  const { iq, category } = calculateCfitIqFromNorm(rawTotal, normCode);
 
   return {
     iq,
-    category: getCfitCategory(iq),
+    category,
     normCode,
     ageYears: age?.years ?? null,
     ageMonths: age?.months ?? null,

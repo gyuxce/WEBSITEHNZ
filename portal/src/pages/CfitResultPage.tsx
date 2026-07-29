@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { CFIT_TOTAL_QUESTIONS } from "../data/cfitQuestions";
+import { calculateCfitIqFromNorm } from "../data/cfitScoring";
 import { supabase } from "../lib/supabase";
 import type { CfitResult } from "../lib/database.types";
 
@@ -67,6 +68,10 @@ export function CfitResultPage() {
     );
   }
 
+  const fallback = calculateCfitIqFromNorm(result.raw_total, result.norm_code);
+  const displayIq = result.iq ?? fallback.iq;
+  const displayCategory = result.category ?? fallback.category;
+
   return (
     <div className="mx-auto max-w-2xl">
       <Link
@@ -79,10 +84,10 @@ export function CfitResultPage() {
       <div className="rounded-2xl border border-brand-navy/8 bg-white p-8 shadow-sm">
         <p className="text-xs font-bold uppercase tracking-widest text-brand-red">Hasil CFIT</p>
         <h1 className="mt-1 font-display text-2xl font-extrabold text-brand-navy">
-          IQ {result.iq ?? "-"}
+          IQ {displayIq ?? "-"}
         </h1>
         <p className="mt-2 text-sm text-brand-navy/55">
-          {result.category ?? "Kategori belum tersedia"}
+          {displayCategory ?? "Kategori belum tersedia"}
         </p>
 
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">

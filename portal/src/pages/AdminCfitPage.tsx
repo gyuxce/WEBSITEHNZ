@@ -3,6 +3,7 @@ import { Link, Navigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { CFIT_TOTAL_QUESTIONS } from "../data/cfitQuestions";
+import { calculateCfitIqFromNorm } from "../data/cfitScoring";
 import { supabase } from "../lib/supabase";
 
 type AdminCfitRow = {
@@ -114,9 +115,9 @@ export function AdminCfitPage() {
                       {row.raw_subtest4 ?? 0}
                     </p>
                   </td>
-                  <td className="px-4 py-3 font-bold text-brand-navy">{row.iq ?? "-"}</td>
+                  <td className="px-4 py-3 font-bold text-brand-navy">{getDisplayIq(row)}</td>
                   <td className="px-4 py-3 text-xs text-brand-navy/65">
-                    {row.category ?? "-"}
+                    {getDisplayCategory(row)}
                   </td>
                   <td className="px-4 py-3 text-xs text-brand-navy/50">
                     {formatAge(row.age_years, row.age_months)} · {row.norm_code ?? "-"}
@@ -145,4 +146,12 @@ export function AdminCfitPage() {
 function formatAge(years: number | null, months: number | null) {
   if (years === null) return "-";
   return `${years} th ${months ?? 0} bln`;
+}
+
+function getDisplayIq(row: AdminCfitRow) {
+  return row.iq ?? calculateCfitIqFromNorm(row.raw_total, row.norm_code).iq ?? "-";
+}
+
+function getDisplayCategory(row: AdminCfitRow) {
+  return row.category ?? calculateCfitIqFromNorm(row.raw_total, row.norm_code).category ?? "-";
 }

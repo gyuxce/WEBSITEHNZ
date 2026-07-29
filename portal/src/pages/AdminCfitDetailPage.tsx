@@ -8,6 +8,7 @@ import {
   CFIT_TOTAL_QUESTIONS,
   type CfitAnswerValue,
 } from "../data/cfitQuestions";
+import { calculateCfitIqFromNorm } from "../data/cfitScoring";
 import { supabase } from "../lib/supabase";
 import type { Json } from "../lib/database.types";
 
@@ -67,6 +68,9 @@ export function AdminCfitDetailPage() {
     () => ((row?.answers ?? {}) as Record<string, CfitAnswerValue>),
     [row?.answers],
   );
+  const fallback = row ? calculateCfitIqFromNorm(row.raw_total, row.norm_code) : null;
+  const displayIq = row?.iq ?? fallback?.iq ?? null;
+  const displayCategory = row?.category ?? fallback?.category ?? null;
 
   if (!authLoading && profile?.role !== "admin") {
     return <Navigate to="/dashboard" replace />;
@@ -113,13 +117,13 @@ export function AdminCfitDetailPage() {
 
       <div className="mt-6 grid gap-3 sm:grid-cols-4">
         <Stat label="Raw Total" value={`${row.raw_total ?? 0}/${CFIT_TOTAL_QUESTIONS}`} />
-        <Stat label="IQ" value={String(row.iq ?? "-")} />
+        <Stat label="IQ" value={String(displayIq ?? "-")} />
         <Stat label="Norma" value={row.norm_code ?? "-"} />
         <Stat label="Usia" value={formatAge(row.age_years, row.age_months)} />
       </div>
 
       <p className="mt-4 rounded-xl bg-brand-bg p-4 text-sm font-semibold text-brand-navy/75">
-        {row.category ?? "Kategori belum tersedia"}
+        {displayCategory ?? "Kategori belum tersedia"}
       </p>
 
       <div className="mt-8 space-y-8">
