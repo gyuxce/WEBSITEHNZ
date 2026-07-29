@@ -47,6 +47,10 @@ export function PimsleurTestPage() {
   );
 
   const answeredCount = Object.keys(answers).length;
+  const sectionAnswered = questions.every((question) => Boolean(answers[question.id]));
+  const allAnswered = PIMSLEUR_SECTIONS.every((section) =>
+    getQuestionsForSection(section.id).every((question) => Boolean(answers[question.id])),
+  );
 
   const paymentOk =
     progress?.payment_status === "verified" || progress?.payment_status === "paid";
@@ -98,6 +102,7 @@ export function PimsleurTestPage() {
       .from("user_progress")
       .update({
         language_test_status: "completed",
+        cfit_test_status: "available",
         result_status: "available",
       })
       .eq("user_id", user.id);
@@ -136,6 +141,10 @@ export function PimsleurTestPage() {
     if (sectionIndex < PIMSLEUR_SECTIONS.length - 1) {
       setSectionIndex((v) => v + 1);
       window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    if (!allAnswered) {
+      setError("Lengkapi semua jawaban terlebih dahulu sebelum melihat hasil.");
       return;
     }
     void finishTest();
@@ -197,7 +206,7 @@ export function PimsleurTestPage() {
                 {s.hasAudio ? " — ada audio" : ""}
               </li>
             ))}
-            <li>• Setelah selesai, hasil langsung tampil. Papikostik &amp; CFIT menyusul.</li>
+            <li>• Setelah selesai, hasil Pimsleur langsung tampil dan bisa dikonsultasikan.</li>
           </ul>
           {error ? (
             <p className="mt-4 rounded-lg bg-brand-red-soft px-3 py-2 text-sm text-brand-red">
@@ -302,7 +311,7 @@ export function PimsleurTestPage() {
         ) : null}
         <button
           type="button"
-          disabled={submitting}
+          disabled={submitting || !sectionAnswered}
           onClick={goNext}
           className="rounded-xl bg-brand-red px-6 py-3 text-sm font-bold text-white disabled:opacity-50"
         >

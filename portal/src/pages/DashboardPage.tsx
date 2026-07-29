@@ -50,9 +50,27 @@ function AdminHome({ name }: { name: string }) {
         <ArrowRight className="shrink-0 text-brand-red" size={20} />
       </Link>
 
+      <Link
+        to="/admin/cfit"
+        className="flex items-center justify-between gap-4 rounded-2xl border border-brand-navy/8 bg-white p-6 transition-all hover:border-brand-red/20 hover:shadow-md"
+      >
+        <div className="flex items-start gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-red-soft text-brand-red">
+            <TestTube size={24} />
+          </div>
+          <div>
+            <p className="font-display text-lg font-bold text-brand-navy">Hasil CFIT peserta</p>
+            <p className="mt-1 text-sm text-brand-navy/50">
+              Raw score, IQ, kategori, dan detail jawaban per soal
+            </p>
+          </div>
+        </div>
+        <ArrowRight className="shrink-0 text-brand-red" size={20} />
+      </Link>
+
       <div className="rounded-2xl border border-dashed border-brand-navy/15 bg-white/60 p-5 text-sm text-brand-navy/55">
         <p className="font-semibold text-brand-navy">Menyusul</p>
-        <p className="mt-1">Admin Papikostik &amp; CFIT akan muncul di sini setelah materi siap.</p>
+        <p className="mt-1">Admin Papikostik akan muncul di sini setelah materi siap.</p>
       </div>
 
       <a
@@ -75,6 +93,8 @@ function ParticipantHome({
   const paymentDone =
     progress?.payment_status === "verified" || progress?.payment_status === "paid";
   const pimsleurDone = progress?.language_test_status === "completed";
+  const cfitDone = progress?.cfit_test_status === "completed";
+  const papikostikDone = progress?.papikostik_test_status === "completed";
   const resultAvailable =
     progress?.result_status === "available" ||
     progress?.result_status === "completed" ||
@@ -89,8 +109,8 @@ function ParticipantHome({
             Halo, {profileName}
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-brand-navy/55">
-            Ikuti langkah pemetaan potensi. Setelah bayar, kerjakan Pimsleur. Papikostik &amp; CFIT
-            menyusul.
+            Ikuti langkah pemetaan potensi. Setelah bayar, kerjakan Pimsleur dan lihat rekomendasi
+            awalmu.
           </p>
         </div>
 
@@ -113,11 +133,19 @@ function ParticipantHome({
           />
           <ActionCard
             icon={<TestTube size={20} />}
-            title="Papikostik"
-            description="Tes kepribadian — materi menyusul"
-            href="/dashboard"
-            disabled
-            cta="Segera hadir"
+            title="CFIT"
+            description="Tes kognitif, aktif setelah Pimsleur"
+            href="/test/cfit"
+            disabled={!pimsleurDone || cfitDone}
+            cta={cfitDone ? "Selesai" : pimsleurDone ? "Mulai tes" : "Terkunci"}
+          />
+          <ActionCard
+            icon={<TestTube size={20} />}
+            title="PAPI Kostick"
+            description="Tes preferensi kerja, aktif setelah CFIT"
+            href="/test/papikostik"
+            disabled={!cfitDone || papikostikDone}
+            cta={papikostikDone ? "Selesai" : cfitDone ? "Mulai tes" : "Terkunci"}
           />
           <ActionCard
             icon={<FileCheck size={20} />}
@@ -126,6 +154,14 @@ function ParticipantHome({
             href="/result/pimsleur"
             disabled={!resultAvailable}
             cta={resultAvailable ? "Lihat hasil" : "Belum tersedia"}
+          />
+          <ActionCard
+            icon={<FileCheck size={20} />}
+            title="Hasil CFIT"
+            description="Raw score, IQ, dan kategori"
+            href="/result/cfit"
+            disabled={!cfitDone}
+            cta={cfitDone ? "Lihat hasil" : "Belum tersedia"}
           />
         </div>
 

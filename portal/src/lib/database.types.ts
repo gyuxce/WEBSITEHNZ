@@ -14,6 +14,7 @@ export interface Database {
           id: string;
           full_name: string;
           whatsapp: string | null;
+          birth_date: string | null;
           program_interest: string | null;
           city: string | null;
           role: "participant" | "admin";
@@ -24,6 +25,7 @@ export interface Database {
           id: string;
           full_name: string;
           whatsapp?: string | null;
+          birth_date?: string | null;
           program_interest?: string | null;
           city?: string | null;
           role?: "participant" | "admin";
@@ -31,6 +33,7 @@ export interface Database {
         Update: {
           full_name?: string;
           whatsapp?: string | null;
+          birth_date?: string | null;
           program_interest?: string | null;
           city?: string | null;
           role?: "participant" | "admin";
@@ -85,6 +88,59 @@ export interface Database {
         };
         Relationships: [];
       };
+      cfit_results: {
+        Row: {
+          id: string;
+          user_id: string;
+          answers: Json;
+          raw_subtest1: number | null;
+          raw_subtest2: number | null;
+          raw_subtest3: number | null;
+          raw_subtest4: number | null;
+          raw_total: number | null;
+          iq: number | null;
+          category: string | null;
+          age_years: number | null;
+          age_months: number | null;
+          norm_code: string | null;
+          duration_seconds: number | null;
+          started_at: string;
+          completed_at: string;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          answers?: Json;
+          raw_subtest1?: number | null;
+          raw_subtest2?: number | null;
+          raw_subtest3?: number | null;
+          raw_subtest4?: number | null;
+          raw_total?: number | null;
+          iq?: number | null;
+          category?: string | null;
+          age_years?: number | null;
+          age_months?: number | null;
+          norm_code?: string | null;
+          duration_seconds?: number | null;
+          started_at?: string;
+          completed_at?: string;
+        };
+        Update: {
+          answers?: Json;
+          raw_subtest1?: number | null;
+          raw_subtest2?: number | null;
+          raw_subtest3?: number | null;
+          raw_subtest4?: number | null;
+          raw_total?: number | null;
+          iq?: number | null;
+          category?: string | null;
+          age_years?: number | null;
+          age_months?: number | null;
+          norm_code?: string | null;
+          duration_seconds?: number | null;
+        };
+        Relationships: [];
+      };
       user_progress: {
         Row: {
           id: string;
@@ -93,6 +149,8 @@ export interface Database {
           payment_status: "pending" | "paid" | "verified";
           language_test_status: "locked" | "available" | "in_progress" | "completed";
           character_test_status: "locked" | "available" | "in_progress" | "completed";
+          cfit_test_status: "locked" | "available" | "in_progress" | "completed";
+          papikostik_test_status: "locked" | "available" | "in_progress" | "completed";
           result_status: "locked" | "available" | "completed";
           consultation_status: string;
           created_at: string;
@@ -104,6 +162,8 @@ export interface Database {
           payment_status?: string;
           language_test_status?: string;
           character_test_status?: string;
+          cfit_test_status?: string;
+          papikostik_test_status?: string;
           result_status?: string;
           consultation_status?: string;
         };
@@ -112,6 +172,8 @@ export interface Database {
           payment_status?: string;
           language_test_status?: string;
           character_test_status?: string;
+          cfit_test_status?: string;
+          papikostik_test_status?: string;
           result_status?: string;
           consultation_status?: string;
         };
@@ -146,7 +208,7 @@ export interface Database {
       test_questions: {
         Row: {
           id: string;
-          test_type: "language" | "character";
+          test_type: "language" | "character" | "cfit" | "papikostik";
           question_text: string;
           options: { label: string; value: string }[];
           correct_answer: string;
@@ -281,6 +343,55 @@ export interface Database {
           city: string | null;
         }[];
       };
+      admin_list_cfit_results: {
+        Args: Record<string, never>;
+        Returns: {
+          id: string;
+          user_id: string;
+          raw_subtest1: number | null;
+          raw_subtest2: number | null;
+          raw_subtest3: number | null;
+          raw_subtest4: number | null;
+          raw_total: number | null;
+          iq: number | null;
+          category: string | null;
+          age_years: number | null;
+          age_months: number | null;
+          norm_code: string | null;
+          duration_seconds: number | null;
+          completed_at: string;
+          full_name: string;
+          email: string | null;
+          whatsapp: string | null;
+          city: string | null;
+          birth_date: string | null;
+        }[];
+      };
+      admin_get_cfit_detail: {
+        Args: { p_user_id: string };
+        Returns: {
+          id: string;
+          user_id: string;
+          answers: Json;
+          raw_subtest1: number | null;
+          raw_subtest2: number | null;
+          raw_subtest3: number | null;
+          raw_subtest4: number | null;
+          raw_total: number | null;
+          iq: number | null;
+          category: string | null;
+          age_years: number | null;
+          age_months: number | null;
+          norm_code: string | null;
+          duration_seconds: number | null;
+          completed_at: string;
+          full_name: string;
+          email: string | null;
+          whatsapp: string | null;
+          city: string | null;
+          birth_date: string | null;
+        }[];
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
@@ -290,12 +401,14 @@ export interface Database {
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type UserProgress = Database["public"]["Tables"]["user_progress"]["Row"];
 export type PimsleurResult = Database["public"]["Tables"]["pimsleur_results"]["Row"];
+export type CfitResult = Database["public"]["Tables"]["cfit_results"]["Row"];
 
 export const PROGRESS_STEPS = [
   { key: "registration", label: "Registrasi & akun peserta", field: "registration_status" as const },
   { key: "payment", label: "Verifikasi pembayaran", field: "payment_status" as const },
   { key: "language", label: "Tes Pimsleur (bahasa)", field: "language_test_status" as const },
-  { key: "character", label: "Papikostik (menyusul)", field: "character_test_status" as const },
-  { key: "result", label: "Hasil Pimsleur", field: "result_status" as const },
+  { key: "cfit", label: "CFIT", field: "cfit_test_status" as const },
+  { key: "papikostik", label: "PAPI Kostick", field: "papikostik_test_status" as const },
+  { key: "result", label: "Hasil & rekomendasi", field: "result_status" as const },
   { key: "consultation", label: "Konsultasi lanjutan", field: "consultation_status" as const },
 ] as const;

@@ -70,6 +70,8 @@ export function PimsleurResultPage() {
   }
 
   const percent = Math.round((result.score_total / PIMSLEUR_MAX_SCORE) * 100);
+  const cfitDone = progress?.cfit_test_status === "completed";
+  const papikostikDone = progress?.papikostik_test_status === "completed";
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -111,9 +113,27 @@ export function PimsleurResultPage() {
         <div className="mt-8 rounded-xl border border-dashed border-brand-navy/15 bg-brand-bg/60 p-5">
           <p className="font-bold text-brand-navy">Tahap berikutnya</p>
           <p className="mt-1 text-sm text-brand-navy/55">
-            Papikostik (kepribadian) dan CFIT (IQ) akan dibuka setelah materi siap. Sementara ini
-            hasil Pimsleur sudah tersimpan.
+            Hasil Pimsleur sudah tersimpan. Lanjutkan CFIT terlebih dahulu. PAPI Kostick akan
+            dibuka setelah CFIT selesai.
           </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {!cfitDone ? (
+              <Link
+                to="/test/cfit"
+                className="rounded-full bg-white px-4 py-2 text-xs font-bold text-brand-navy shadow-sm hover:text-brand-red"
+              >
+                Lanjut CFIT
+              </Link>
+            ) : null}
+            {cfitDone && !papikostikDone ? (
+              <Link
+                to="/test/papikostik"
+                className="rounded-full bg-white px-4 py-2 text-xs font-bold text-brand-navy shadow-sm hover:text-brand-red"
+              >
+                Lanjut PAPI Kostick
+              </Link>
+            ) : null}
+          </div>
         </div>
 
         <a

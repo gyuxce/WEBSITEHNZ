@@ -23,13 +23,23 @@ function getStepStatus(stepKey: string, progress: UserProgress | null): StepStat
       return progress.payment_status === "verified" || progress.payment_status === "paid"
         ? "active"
         : "locked";
+    case "cfit":
+      if (progress.cfit_test_status === "completed") return "done";
+      if (progress.cfit_test_status === "in_progress") return "active";
+      if (progress.cfit_test_status === "available") return "active";
+      return progress.language_test_status === "completed" ? "active" : "locked";
+    case "papikostik":
+      if (progress.papikostik_test_status === "completed") return "done";
+      if (progress.papikostik_test_status === "in_progress") return "active";
+      if (progress.papikostik_test_status === "available") return "active";
+      return progress.cfit_test_status === "completed" ? "active" : "locked";
     case "result":
       if (progress.result_status === "completed") return "done";
       if (progress.result_status === "available") return "active";
-      // Hasil Pimsleur tersedia setelah tes bahasa selesai (Papikostik belum wajib)
+      // Hasil MVP tersedia setelah tes Pimsleur selesai.
       return progress.language_test_status === "completed" ? "active" : "locked";
     case "character":
-      // Papikostik belum dibuka — tetap locked / coming soon
+      // Legacy status. Tidak ditampilkan di progress MVP sampai materi final tersedia.
       if (progress.character_test_status === "completed") return "done";
       if (progress.character_test_status === "available" || progress.character_test_status === "in_progress") {
         return "active";

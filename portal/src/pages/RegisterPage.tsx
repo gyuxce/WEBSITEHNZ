@@ -16,6 +16,7 @@ export function RegisterPage() {
     email: "",
     password: "",
     whatsapp: "",
+    birthDate: "",
     city: "",
     programInterest: PROGRAMS[0],
   });
@@ -42,6 +43,7 @@ export function RegisterPage() {
         data: {
           full_name: form.fullName,
           whatsapp: form.whatsapp,
+          birth_date: form.birthDate,
           city: form.city,
           program_interest: form.programInterest,
         },
@@ -120,6 +122,16 @@ export function RegisterPage() {
               value={form.whatsapp}
               onChange={(e) => setForm({ ...form, whatsapp: e.target.value })}
               placeholder="08xxxxxxxxxx"
+              className="rounded-xl border border-brand-navy/12 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-red/30"
+            />
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs font-bold uppercase tracking-wide text-brand-navy/50">Tanggal lahir</span>
+            <input
+              type="date"
+              required
+              value={form.birthDate}
+              onChange={(e) => setForm({ ...form, birthDate: e.target.value })}
               className="rounded-xl border border-brand-navy/12 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-red/30"
             />
           </label>

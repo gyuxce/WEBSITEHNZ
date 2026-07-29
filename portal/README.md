@@ -7,11 +7,12 @@ Portal web calon siswa untuk daftar, bayar, tes, dan unduh sertifikat pemetaan p
 ## Fitur MVP
 
 - Register / login / logout / lupa password
-- Dashboard progress 6 langkah
+- Dashboard progress pemetaan
 - Pembayaran pemetaan (Midtrans + mode sandbox dev)
 - **Tes Pimsleur** (aptitude bahasa, seksi 2–6, timer 25 menit, grade A–F)
 - Hasil Pimsleur + admin daftar/detail skor
-- Papikostik & CFIT: menyusul (belum dibuka)
+- CFIT: 4 subtes, instruksi dari PPTX, timer per subtes, gambar soal, penyimpanan jawaban, raw score per subtes, raw total, IQ, kategori, halaman hasil peserta, dan admin detail jawaban berdasarkan norma CFIT 3A
+- PAPI Kostick: route, progress, timer, dan penyimpanan jawaban siap; soal resmi harus diisi ke Supabase
 - Legacy sertifikat HTML masih ada di `/result/legacy`
 
 ## Setup
@@ -23,6 +24,7 @@ Portal web calon siswa untuk daftar, bayar, tes, dan unduh sertifikat pemetaan p
 3. Buka **SQL Editor** → paste & jalankan isi file (berurutan):
    - `supabase/migrations/20260720000000_initial_schema.sql`
    - `supabase/migrations/20260721000000_pimsleur_results.sql`
+   - `supabase/migrations/20260722000000_cfit_papikostik_progress.sql`
 
 Untuk admin: set `profiles.role = 'admin'` pada user staf.
 
@@ -45,6 +47,30 @@ SET default_transaction_read_only = off;
 4. Di **Authentication → URL Configuration**, tambahkan:
    - Site URL: `http://localhost:5174`
    - Redirect URLs: `http://localhost:5174/reset-password`
+
+#### Format soal CFIT / PAPI Kostick
+
+Masukkan materi resmi ke tabel `test_questions`. Gunakan `test_type = 'cfit'` untuk CFIT dan
+`test_type = 'papikostik'` untuk PAPI Kostick.
+
+Contoh struktur data:
+
+```sql
+insert into public.test_questions
+  (test_type, question_text, options, correct_answer, order_index, active)
+values
+  (
+    'cfit',
+    'ISI_SOAL_RESMI_DI_SINI',
+    '[{"label":"A","value":"a"},{"label":"B","value":"b"},{"label":"C","value":"c"},{"label":"D","value":"d"}]'::jsonb,
+    'a',
+    1,
+    true
+  );
+```
+
+Untuk PAPI Kostick, `correct_answer` boleh diisi `''` karena halaman menyimpan respons untuk review,
+bukan menghitung skor resmi otomatis.
 
 ### 2. Environment
 
