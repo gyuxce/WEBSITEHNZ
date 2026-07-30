@@ -2,13 +2,13 @@
 
 Portal web calon siswa untuk daftar, bayar, tes, dan unduh sertifikat pemetaan potensi.
 
-**Stack:** React 19 + Vite + TypeScript + Tailwind v4 + Supabase + Pivot Payment
+**Stack:** React 19 + Vite + TypeScript + Tailwind v4 + Supabase
 
 ## Fitur MVP
 
 - Register / login / logout / lupa password
 - Dashboard progress pemetaan
-- Pembayaran pemetaan (Pivot Payment + mode sandbox dev)
+- Pembayaran pemetaan (**mode demo** sementara — gateway Pivot/Paper.id belum diaktifkan)
 - **Tes Pimsleur** (aptitude bahasa, seksi 2–6, timer 25 menit, grade A–F)
 - Hasil Pimsleur + admin daftar/detail skor
 - CFIT: 4 subtes, instruksi dari PPTX, timer per subtes, gambar soal, penyimpanan jawaban, raw score per subtes, raw total, IQ, kategori, halaman hasil peserta, dan admin detail jawaban berdasarkan norma CFIT 3A
@@ -89,65 +89,25 @@ VITE_PEMETAAN_PRICE=150000
 VITE_LANDING_URL=http://localhost:5173
 ```
 
-### 3. Pivot Payment Edge Functions
+### 3. Pembayaran (mode demo — aktif sekarang)
 
-Deploy ke Supabase:
+Halaman `/payment` memakai **satu klik demo**: menandai lunas + membuka Tes Pimsleur.
+Tidak perlu Edge Function / Midtrans / Pivot untuk alur peserta saat ini.
 
-```bash
-supabase functions deploy pivot-create
-supabase functions deploy pivot-webhook
-```
+### 4. Pivot Payment (ditunda — belum diaktifkan di UI)
 
-Set secrets di Supabase Dashboard → Edge Functions:
+Kode Edge Function `pivot-create` / `pivot-webhook` tetap di repo untuk nanti.
+Jangan aktifkan di UI sampai kredensial & callback sudah stabil.
 
-- `PIVOT_BASE_URL=https://api-stg.pivot-payment.com`
-- `PIVOT_CLIENT_ID`
-- `PIVOT_CLIENT_SECRET`
-- `PIVOT_CALLBACK_API_KEY`
-- `PIVOT_PAYMENT_AMOUNT=150000`
-- `PIVOT_SUCCESS_URL`
-- `PIVOT_FAILURE_URL`
-- `PIVOT_EXPIRATION_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
-
-Callback URL Pivot: `https://xxxx.supabase.co/functions/v1/pivot-webhook`
-
-Gunakan kredensial Sandbox sampai alur pembayaran dan callback berhasil diverifikasi.
-
-### 4. Database payment metadata
-
-Portal menggunakan Pivot Payment Session mode `REDIRECT`. Jalankan migration berikut di Supabase SQL
-Editor:
-
-```text
-supabase/migrations/20260730000000_pivot_payment.sql
-```
-
-Deploy functions:
+Ringkasan setup (nanti):
 
 ```bash
 supabase functions deploy pivot-create
 supabase functions deploy pivot-webhook
 ```
 
-Set secrets di Supabase Edge Functions:
-
-```text
-PIVOT_BASE_URL=https://api-stg.pivot-payment.com
-PIVOT_CLIENT_ID=<Client ID Sandbox>
-PIVOT_CLIENT_SECRET=<Client Secret Sandbox>
-PIVOT_CALLBACK_API_KEY=<Callback API Key Sandbox>
-PIVOT_PAYMENT_AMOUNT=150000
-PIVOT_SUCCESS_URL=https://portal.harunokaze.id/payment?payment=success
-PIVOT_FAILURE_URL=https://portal.harunokaze.id/payment?payment=failure
-PIVOT_EXPIRATION_URL=https://portal.harunokaze.id/payment?payment=expired
-```
-
-Callback URL yang didaftarkan di Pivot Dashboard → Settings → Developer Settings → Callbacks:
-
-```text
-https://<PROJECT_REF>.supabase.co/functions/v1/pivot-webhook
-```
+Secrets yang akan dibutuhkan: `PIVOT_*`, `SUPABASE_SERVICE_ROLE_KEY`.
+Migration metadata: `supabase/migrations/20260730000000_pivot_payment.sql`.
 
 ### 5. Jalankan
 

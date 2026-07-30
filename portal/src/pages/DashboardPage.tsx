@@ -159,10 +159,10 @@ function ParticipantHome({
           <ActionCard
             icon={<CreditCard size={20} />}
             title="Pembayaran Pemetaan"
-            description="Bayar biaya pemetaan untuk membuka tes"
+            description="Mode demo — buka akses tes"
             href="/payment"
             disabled={paymentDone}
-            cta={paymentDone ? "Sudah dibayar" : "Bayar sekarang"}
+            cta={paymentDone ? "Sudah dibayar" : "Lanjutkan (demo)"}
           />
           <ActionCard
             icon={<TestTube size={20} />}
