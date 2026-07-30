@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, ArrowRight, CreditCard, ShieldCheck } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
-import { PEMETAAN_PRICE, supabase, MIDTRANS_CLIENT_KEY } from "../lib/supabase";
+import { PEMETAAN_PRICE, supabase } from "../lib/supabase";
 
 export function PaymentPage() {
   const { user, progress, refreshProfile } = useAuth();
@@ -15,34 +15,17 @@ export function PaymentPage() {
   const formatPrice = (amount: number) =>
     new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(amount);
 
-  const handlePayMidtrans = async () => {
+  const handlePayPivot = async () => {
     if (!user) return;
     setLoading(true);
     setError("");
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke("midtrans-create", {
-        body: { amount: PEMETAAN_PRICE },
-      });
+      const { data, error: fnError } = await supabase.functions.invoke("pivot-create");
 
       if (fnError) throw fnError;
-      if (!data?.token) throw new Error(data?.error ?? "Gagal membuat transaksi Midtrans");
-
-      if (!window.snap) {
-        throw new Error("Midtrans Snap belum dimuat. Pastikan VITE_MIDTRANS_CLIENT_KEY sudah diset.");
-      }
-
-      window.snap.pay(data.token, {
-        onSuccess: async () => {
-          await refreshProfile();
-        },
-        onPending: async () => {
-          await refreshProfile();
-        },
-        onError: () => {
-          setError("Pembayaran gagal. Silakan coba lagi.");
-        },
-      });
+      if (!data?.redirect_url) throw new Error(data?.error ?? "Gagal membuat sesi pembayaran Pivot");
+      window.location.assign(data.redirect_url);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Terjadi kesalahan pembayaran");
     } finally {
@@ -50,7 +33,7 @@ export function PaymentPage() {
     }
   };
 
-  /** Sandbox fallback when Edge Function not deployed yet */
+  /** Local-only fallback while the payment gateway is being tested. */
   const handleSandboxMarkPaid = async () => {
     if (!user) return;
     setLoading(true);
@@ -63,6 +46,7 @@ export function PaymentPage() {
       order_id: orderId,
       amount: PEMETAAN_PRICE,
       status: "settlement",
+      provider: "pivot",
     });
 
     if (payError) {
@@ -104,7 +88,7 @@ export function PaymentPage() {
         <div className="rounded-xl bg-brand-bg p-5 mb-6">
           <p className="text-xs font-bold uppercase tracking-wide text-brand-navy/40">Total pembayaran</p>
           <p className="font-display font-extrabold text-3xl text-brand-navy mt-1">{formatPrice(PEMETAAN_PRICE)}</p>
-          <p className="text-xs text-brand-navy/45 mt-2">Pembayaran aman via Midtrans (QRIS, transfer bank, e-wallet)</p>
+          <p className="text-xs text-brand-navy/45 mt-2">Pembayaran aman via Paper.id (QRIS, transfer bank, e-wallet)</p>
         </div>
 
         {isPaid ? (
@@ -140,20 +124,15 @@ export function PaymentPage() {
 
             <button
               type="button"
-              onClick={handlePayMidtrans}
-              disabled={loading || !MIDTRANS_CLIENT_KEY}
+              onClick={handlePayPivot}
+              disabled={loading}
               className="w-full rounded-xl bg-brand-red text-white font-bold py-3.5 text-sm hover:bg-brand-red-hover transition-colors disabled:opacity-50"
             >
-              {loading ? "Memproses..." : "Bayar dengan Midtrans"}
+              {loading ? "Memproses..." : "Bayar via Paper.id"}
             </button>
 
-            {!MIDTRANS_CLIENT_KEY && (
-              <p className="mt-3 text-xs text-brand-navy/45 text-center">
-                Midtrans belum dikonfigurasi. Gunakan mode sandbox di bawah untuk testing.
-              </p>
-            )}
-
-            <div className="mt-6 pt-6 border-t border-brand-navy/8">
+            {import.meta.env.DEV ? (
+              <div className="mt-6 pt-6 border-t border-brand-navy/8">
               <button
                 type="button"
                 onClick={() => setSandboxMode(!sandboxMode)}
@@ -164,7 +143,7 @@ export function PaymentPage() {
               {sandboxMode && (
                 <div className="mt-3">
                   <p className="text-xs text-brand-navy/50 mb-2">
-                    Tandai pembayaran sebagai lunas tanpa Midtrans. Hanya untuk testing lokal.
+                    Tandai pembayaran sebagai lunas tanpa gateway. Hanya untuk testing lokal.
                   </p>
                   <button
                     type="button"
@@ -176,7 +155,8 @@ export function PaymentPage() {
                   </button>
                 </div>
               )}
-            </div>
+              </div>
+            ) : null}
           </>
         )}
       </div>

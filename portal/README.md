@@ -2,13 +2,13 @@
 
 Portal web calon siswa untuk daftar, bayar, tes, dan unduh sertifikat pemetaan potensi.
 
-**Stack:** React 19 + Vite + TypeScript + Tailwind v4 + Supabase + Midtrans Snap
+**Stack:** React 19 + Vite + TypeScript + Tailwind v4 + Supabase + Pivot Payment
 
 ## Fitur MVP
 
 - Register / login / logout / lupa password
 - Dashboard progress pemetaan
-- Pembayaran pemetaan (Midtrans + mode sandbox dev)
+- Pembayaran pemetaan (Pivot Payment + mode sandbox dev)
 - **Tes Pimsleur** (aptitude bahasa, seksi 2–6, timer 25 menit, grade A–F)
 - Hasil Pimsleur + admin daftar/detail skor
 - CFIT: 4 subtes, instruksi dari PPTX, timer per subtes, gambar soal, penyimpanan jawaban, raw score per subtes, raw total, IQ, kategori, halaman hasil peserta, dan admin detail jawaban berdasarkan norma CFIT 3A
@@ -85,31 +85,71 @@ Isi `.env`:
 ```env
 VITE_SUPABASE_URL=https://xxxx.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJ...
-VITE_MIDTRANS_CLIENT_KEY=SB-Mid-client-...
 VITE_PEMETAAN_PRICE=150000
 VITE_LANDING_URL=http://localhost:5173
 ```
 
-### 3. Midtrans Edge Functions (opsional untuk production)
+### 3. Pivot Payment Edge Functions
 
 Deploy ke Supabase:
 
 ```bash
-supabase functions deploy midtrans-create
-supabase functions deploy midtrans-webhook
+supabase functions deploy pivot-create
+supabase functions deploy pivot-webhook
 ```
 
 Set secrets di Supabase Dashboard → Edge Functions:
 
-- `MIDTRANS_SERVER_KEY`
-- `MIDTRANS_IS_PRODUCTION=false`
+- `PIVOT_BASE_URL=https://api-stg.pivot-payment.com`
+- `PIVOT_CLIENT_ID`
+- `PIVOT_CLIENT_SECRET`
+- `PIVOT_CALLBACK_API_KEY`
+- `PIVOT_PAYMENT_AMOUNT=150000`
+- `PIVOT_SUCCESS_URL`
+- `PIVOT_FAILURE_URL`
+- `PIVOT_EXPIRATION_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
 
-Webhook URL Midtrans: `https://xxxx.supabase.co/functions/v1/midtrans-webhook`
+Callback URL Pivot: `https://xxxx.supabase.co/functions/v1/pivot-webhook`
 
-**Tanpa Midtrans:** gunakan tombol "Mode sandbox" di halaman pembayaran untuk simulasi lokal.
+Gunakan kredensial Sandbox sampai alur pembayaran dan callback berhasil diverifikasi.
 
-### 4. Jalankan
+### 4. Database payment metadata
+
+Portal menggunakan Pivot Payment Session mode `REDIRECT`. Jalankan migration berikut di Supabase SQL
+Editor:
+
+```text
+supabase/migrations/20260730000000_pivot_payment.sql
+```
+
+Deploy functions:
+
+```bash
+supabase functions deploy pivot-create
+supabase functions deploy pivot-webhook
+```
+
+Set secrets di Supabase Edge Functions:
+
+```text
+PIVOT_BASE_URL=https://api-stg.pivot-payment.com
+PIVOT_CLIENT_ID=<Client ID Sandbox>
+PIVOT_CLIENT_SECRET=<Client Secret Sandbox>
+PIVOT_CALLBACK_API_KEY=<Callback API Key Sandbox>
+PIVOT_PAYMENT_AMOUNT=150000
+PIVOT_SUCCESS_URL=https://portal.harunokaze.id/payment?payment=success
+PIVOT_FAILURE_URL=https://portal.harunokaze.id/payment?payment=failure
+PIVOT_EXPIRATION_URL=https://portal.harunokaze.id/payment?payment=expired
+```
+
+Callback URL yang didaftarkan di Pivot Dashboard → Settings → Developer Settings → Callbacks:
+
+```text
+https://<PROJECT_REF>.supabase.co/functions/v1/pivot-webhook
+```
+
+### 5. Jalankan
 
 ```bash
 cd portal
@@ -139,11 +179,11 @@ portal/
     lib/            Supabase client + types
   supabase/
     migrations/     Schema SQL
-    functions/      Midtrans create + webhook
+    functions/      Pivot create + webhook
 ```
 
 ## Production
 
 - Deploy portal ke Vercel/Netlify (build: `npm run build`, output: `dist/`)
-- Set env `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_MIDTRANS_CLIENT_KEY`
+- Set env `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_PEMETAAN_PRICE`
 - Di landing, set `VITE_PORTAL_URL=https://portal.harunokaze.id`

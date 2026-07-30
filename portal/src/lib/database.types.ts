@@ -240,6 +240,10 @@ export interface Database {
           amount: number;
           status: string;
           midtrans_transaction_id: string | null;
+          provider: string;
+          provider_reference_id: string | null;
+          payment_url: string | null;
+          raw_payload: Json | null;
           payment_type: string;
           created_at: string;
           updated_at: string;
@@ -250,11 +254,19 @@ export interface Database {
           amount: number;
           status?: string;
           midtrans_transaction_id?: string | null;
+          provider?: string;
+          provider_reference_id?: string | null;
+          payment_url?: string | null;
+          raw_payload?: Json | null;
           payment_type?: string;
         };
         Update: {
           status?: string;
           midtrans_transaction_id?: string | null;
+          provider?: string;
+          provider_reference_id?: string | null;
+          payment_url?: string | null;
+          raw_payload?: Json | null;
         };
         Relationships: [];
       };
@@ -505,6 +517,6 @@ export const PROGRESS_STEPS = [
   { key: "language", label: "Tes Pimsleur (bahasa)", field: "language_test_status" as const },
   { key: "cfit", label: "CFIT", field: "cfit_test_status" as const },
   { key: "papikostik", label: "PAPI Kostick", field: "papikostik_test_status" as const },
-  { key: "result", label: "Hasil & rekomendasi", field: "result_status" as const },
+  { key: "result", label: "Hasil asesmen", field: "result_status" as const },
   { key: "consultation", label: "Konsultasi lanjutan", field: "consultation_status" as const },
 ] as const;
