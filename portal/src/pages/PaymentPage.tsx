@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight, CreditCard, Loader2, ShieldCheck, XCircle } from "lucide-react";
+import { FunctionsHttpError } from "@supabase/supabase-js";
 import { useAuth } from "../contexts/AuthContext";
 import { PEMETAAN_PRICE, supabase } from "../lib/supabase";
 
@@ -114,6 +115,16 @@ export function PaymentPage() {
         body: { amount },
       });
 
+      if (fnError instanceof FunctionsHttpError) {
+        let serverMsg = "Edge Function gagal";
+        try {
+          const errBody = await fnError.context.json();
+          serverMsg = errBody?.error ?? serverMsg;
+        } catch {
+          // body bukan JSON / sudah ter-consume
+        }
+        throw new Error(serverMsg);
+      }
       if (fnError) throw fnError;
       if (!data?.redirect_url) throw new Error(data?.error ?? "Gagal membuat sesi pembayaran Pivot");
       window.location.assign(data.redirect_url);
