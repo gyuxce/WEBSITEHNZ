@@ -116,13 +116,30 @@ serve(async (req) => {
     const successUrl = Deno.env.get("PIVOT_SUCCESS_URL");
     const failureUrl = Deno.env.get("PIVOT_FAILURE_URL");
     const expirationUrl = Deno.env.get("PIVOT_EXPIRATION_URL");
-    const amount = Number(Deno.env.get("PIVOT_PAYMENT_AMOUNT") ?? "150000");
+
+    let body: { amount?: number } = {};
+    try {
+      body = await req.json();
+    } catch {
+      // body kosong diperbolehkan — fallback ke env/default
+    }
+    const fallbackAmount = Number(Deno.env.get("PIVOT_PAYMENT_AMOUNT") ?? "150000");
+    const requestedAmount = Number(body.amount);
+    const amount =
+      Number.isFinite(requestedAmount) && requestedAmount > 0
+        ? Math.round(requestedAmount)
+        : Number.isFinite(fallbackAmount) && fallbackAmount > 0
+          ? Math.round(fallbackAmount)
+          : 150000;
+
+    const MIN_AMOUNT = 1000;
+    const MAX_AMOUNT = 10_000_000;
 
     if (!clientId || !clientSecret || !successUrl || !failureUrl || !expirationUrl) {
       return jsonResponse({ error: "Pivot secrets or return URLs are not configured" }, 500);
     }
-    if (!Number.isInteger(amount) || amount <= 0) {
-      return jsonResponse({ error: "PIVOT_PAYMENT_AMOUNT tidak valid" }, 500);
+    if (!Number.isInteger(amount) || amount < MIN_AMOUNT || amount > MAX_AMOUNT) {
+      return jsonResponse({ error: `Nominal harus antara Rp ${MIN_AMOUNT} dan Rp ${MAX_AMOUNT}` }, 400);
     }
 
     const orderId = `HNZ-${user.id.slice(0, 8)}-${Date.now()}`;

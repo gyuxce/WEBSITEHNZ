@@ -8,6 +8,8 @@ type RedirectStatus = "success" | "failure" | "expired" | null;
 
 const POLL_INTERVAL_MS = 2500;
 const POLL_MAX_MS = 60000;
+const MIN_AMOUNT = 1000;
+const MAX_AMOUNT = 10_000_000;
 
 export function PaymentPage() {
   const { user, progress, refreshProfile } = useAuth();
@@ -19,6 +21,7 @@ export function PaymentPage() {
   const [confirmTimedOut, setConfirmTimedOut] = useState(false);
   const [redirectMessage, setRedirectMessage] = useState("");
   const handledRedirect = useRef(false);
+  const [amountInput, setAmountInput] = useState(String(PEMETAAN_PRICE));
 
   const isPaid = progress?.payment_status === "verified" || progress?.payment_status === "paid";
 
@@ -27,6 +30,9 @@ export function PaymentPage() {
 
   const formatPrice = (amount: number) =>
     new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(amount);
+
+  const amount = Number(amountInput);
+  const amountValid = Number.isInteger(amount) && amount >= MIN_AMOUNT && amount <= MAX_AMOUNT;
 
   const clearPaymentParam = () => {
     setSearchParams(
@@ -95,12 +101,18 @@ export function PaymentPage() {
 
   const handlePayPivot = async () => {
     if (!user) return;
+    if (!amountValid) {
+      setError(`Nominal harus antara ${formatPrice(MIN_AMOUNT)} dan ${formatPrice(MAX_AMOUNT)}.`);
+      return;
+    }
     setLoading(true);
     setError("");
     setRedirectMessage("");
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke("pivot-create");
+      const { data, error: fnError } = await supabase.functions.invoke("pivot-create", {
+        body: { amount },
+      });
 
       if (fnError) throw fnError;
       if (!data?.redirect_url) throw new Error(data?.error ?? "Gagal membuat sesi pembayaran Pivot");
@@ -115,6 +127,10 @@ export function PaymentPage() {
   /** Local-only fallback while the payment gateway is being tested. */
   const handleSandboxMarkPaid = async () => {
     if (!user) return;
+    if (!amountValid) {
+      setError(`Nominal harus antara ${formatPrice(MIN_AMOUNT)} dan ${formatPrice(MAX_AMOUNT)}.`);
+      return;
+    }
     setLoading(true);
     setError("");
 
@@ -123,7 +139,7 @@ export function PaymentPage() {
     const { error: payError } = await supabase.from("payments").insert({
       user_id: user.id,
       order_id: orderId,
-      amount: PEMETAAN_PRICE,
+      amount,
       status: "settlement",
       provider: "pivot",
     });
@@ -167,9 +183,32 @@ export function PaymentPage() {
         </div>
 
         <div className="rounded-xl bg-brand-bg p-5 mb-6">
-          <p className="text-xs font-bold uppercase tracking-wide text-brand-navy/40">Total pembayaran</p>
-          <p className="font-display font-extrabold text-3xl text-brand-navy mt-1">{formatPrice(PEMETAAN_PRICE)}</p>
-          <p className="text-xs text-brand-navy/45 mt-2">Pembayaran aman via Paper.id (QRIS, transfer bank, e-wallet)</p>
+          <label htmlFor="amount" className="text-xs font-bold uppercase tracking-wide text-brand-navy/40">
+            Nominal pembayaran
+          </label>
+          <div className="mt-2 flex items-center gap-2 rounded-lg border border-brand-navy/12 bg-white px-3">
+            <span className="text-brand-navy/50 font-bold">Rp</span>
+            <input
+              id="amount"
+              type="number"
+              inputMode="numeric"
+              min={MIN_AMOUNT}
+              max={MAX_AMOUNT}
+              step={MIN_AMOUNT}
+              value={amountInput}
+              onChange={(e) => setAmountInput(e.target.value)}
+              className="w-full bg-transparent py-3 font-display font-extrabold text-2xl text-brand-navy outline-none"
+              placeholder="150000"
+            />
+          </div>
+          {!amountValid && amountInput !== "" && (
+            <p className="mt-2 text-xs text-brand-red">
+              Nominal harus antara {formatPrice(MIN_AMOUNT)} dan {formatPrice(MAX_AMOUNT)}.
+            </p>
+          )}
+          <p className="text-xs text-brand-navy/45 mt-3">
+            Masukkan nominal sesuai kesepakatan. Pembayaran aman via Paper.id (QRIS, transfer bank, e-wallet).
+          </p>
         </div>
 
         {isPaid ? (
@@ -252,10 +291,10 @@ export function PaymentPage() {
             <button
               type="button"
               onClick={handlePayPivot}
-              disabled={loading}
+              disabled={loading || !amountValid}
               className="w-full rounded-xl bg-brand-red text-white font-bold py-3.5 text-sm hover:bg-brand-red-hover transition-colors disabled:opacity-50"
             >
-              {loading ? "Memproses..." : "Bayar via Paper.id"}
+              {loading ? "Memproses..." : `Bayar ${formatPrice(amountValid ? amount : PEMETAAN_PRICE)}`}
             </button>
 
             {import.meta.env.DEV || import.meta.env.VITE_DEMO_MODE === "true" ? (
