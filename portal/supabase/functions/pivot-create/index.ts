@@ -175,21 +175,20 @@ serve(async (req) => {
         surname: name.surname,
         email: user.email,
       },
-      orderInformation: {
-        productDetails: [
-          {
-            type: "PHYSICAL",
-            category: "SERVICE",
-            subCategory: "ASSESSMENT",
-            name: "Pemetaan Potensi Harunokaze",
-            description: "Akses rangkaian tes pemetaan potensi",
-            quantity: 1,
-            price: { value: amount, currency: "IDR" },
-          },
-        ],
-      },
-      autoConfirm: true,
-    };
+orderInformation: {
+          productDetails: [
+            {
+              type: "PHYSICAL",
+              category: "SERVICE",
+              subCategory: "ASSESSMENT",
+              name: "Pemetaan Potensi Harunokaze",
+              description: "Akses rangkaian tes pemetaan potensi",
+              quantity: 1,
+              price: { value: amount, currency: "IDR" },
+            },
+          ],
+        },
+      };
 
     const paymentResponse = await fetch(`${baseUrl}/v2/payments`, {
       method: "POST",
