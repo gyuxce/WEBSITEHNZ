@@ -4,10 +4,11 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
-import type { Session, User } from "@supabase/supabase-js";
+import type { RealtimeChannel, Session, User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import type { Profile, UserProgress } from "../lib/database.types";
 
@@ -28,6 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [loading, setLoading] = useState(true);
+  const channelRef = useRef<RealtimeChannel | null>(null);
 
   const loadUserData = useCallback(async (userId: string) => {
     const [profileRes, progressRes] = await Promise.all([
@@ -66,6 +68,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => listener.subscription.unsubscribe();
   }, [loadUserData]);
+
+  // Real-time: refresh profile/progress whenever a row for the signed-in user
+  // changes (e.g. the payment-verified trigger unlocks the language test).
+  useEffect(() => {
+    const userId = session?.user.id;
+    if (!userId) {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+      return;
+    }
+
+    const channel = supabase
+      .channel(`user_changes_${userId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "user_progress", filter: `user_id=eq.${userId}` },
+        () => loadUserData(userId),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "profiles", filter: `id=eq.${userId}` },
+        () => loadUserData(userId),
+      )
+      .subscribe();
+
+    channelRef.current = channel;
+
+    return () => {
+      supabase.removeChannel(channel);
+      channelRef.current = null;
+    };
+  }, [session?.user.id, loadUserData]);
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
