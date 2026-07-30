@@ -35,7 +35,7 @@ function mapPaymentStatus(payload: unknown) {
   ).toUpperCase();
 
   if (
-    ["SUCCESS", "SUCCEEDED", "SETTLED", "COMPLETED", "PAID", "CAPTURED", "CONFIRMED"].some(
+    ["SUCCESS", "SUCCEEDED", "SETTLED", "COMPLETED", "PAID", "CAPTURED", "CONFIRMED", "AUTHORISED", "AUTHORIZED"].some(
       (value) => status.includes(value),
     )
   ) {
@@ -61,6 +61,8 @@ serve(async (req) => {
     }
 
     const payload = await req.json();
+    console.log("pivot-webhook payload:", JSON.stringify(payload));
+
     const orderId = getStringAtKeys(payload, [
       "clientReferenceId",
       "client_reference_id",
@@ -68,14 +70,9 @@ serve(async (req) => {
       "order_id",
       "merchantOrderId",
       "merchant_order_id",
+      "requestId",
+      "request_id",
     ]);
-    if (!orderId) return jsonResponse({ error: "Missing client reference" }, 400);
-
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-    );
-    const paymentStatus = mapPaymentStatus(payload);
     const providerReferenceId = getStringAtKeys(payload, [
       "id",
       "paymentSessionId",
@@ -86,15 +83,45 @@ serve(async (req) => {
       "transaction_id",
     ]);
 
-    const { error } = await supabaseAdmin
-      .from("payments")
-      .update({
-        status: paymentStatus,
-        provider: "pivot",
-        provider_reference_id: providerReferenceId,
-        raw_payload: payload,
-      })
-      .eq("order_id", orderId);
+    if (!orderId && !providerReferenceId) {
+      console.error("pivot-webhook: tidak ada order_id maupun provider_reference_id");
+      return jsonResponse({ error: "Missing client reference" }, 400);
+    }
+
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    );
+    const paymentStatus = mapPaymentStatus(payload);
+
+    const updatePayload = {
+      status: paymentStatus,
+      provider: "pivot",
+      provider_reference_id: providerReferenceId,
+      raw_payload: payload,
+    };
+
+    let error: { message: string } | null = null;
+    if (orderId) {
+      const res = await supabaseAdmin
+        .from("payments")
+        .update(updatePayload)
+        .eq("order_id", orderId);
+      error = res.error;
+    }
+    if (error) {
+      console.error("pivot-webhook update by order_id gagal:", error.message);
+      return jsonResponse({ error: error.message }, 500);
+    }
+    // Kalau order_id tidak ditemukan, coba match via provider_reference_id
+    if (providerReferenceId) {
+      const res2 = await supabaseAdmin
+        .from("payments")
+        .update(updatePayload)
+        .eq("provider_reference_id", providerReferenceId);
+      // anggap aman kalau 0 baris terupdate — record pending mungkin belum ada
+      error = res2.error;
+    }
     if (error) return jsonResponse({ error: error.message }, 500);
 
     return jsonResponse({ ok: true });
