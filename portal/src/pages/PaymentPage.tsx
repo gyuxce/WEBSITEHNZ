@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight, CreditCard, Loader2, ShieldCheck, XCircle } from "lucide-react";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { useAuth } from "../contexts/AuthContext";
-import { PEMETAAN_PRICE, supabase } from "../lib/supabase";
+import { supabase } from "../lib/supabase";
 
 type RedirectStatus = "success" | "failure" | "expired" | null;
 
@@ -22,7 +22,7 @@ export function PaymentPage() {
   const [confirmTimedOut, setConfirmTimedOut] = useState(false);
   const [redirectMessage, setRedirectMessage] = useState("");
   const handledRedirect = useRef(false);
-  const [amountInput, setAmountInput] = useState(String(PEMETAAN_PRICE));
+  const [amountInput, setAmountInput] = useState("");
 
   const isPaid = progress?.payment_status === "verified" || progress?.payment_status === "paid";
 
@@ -305,7 +305,11 @@ export function PaymentPage() {
               disabled={loading || !amountValid}
               className="w-full rounded-xl bg-brand-red text-white font-bold py-3.5 text-sm hover:bg-brand-red-hover transition-colors disabled:opacity-50"
             >
-              {loading ? "Memproses..." : `Bayar ${formatPrice(amountValid ? amount : PEMETAAN_PRICE)}`}
+              {loading
+                ? "Memproses..."
+                : amountValid
+                  ? `Bayar ${formatPrice(amount)}`
+                  : "Masukkan nominal"}
             </button>
 
             {import.meta.env.DEV || import.meta.env.VITE_DEMO_MODE === "true" ? (
