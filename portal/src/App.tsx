@@ -22,6 +22,7 @@ import { AdminCfitDetailPage } from "./pages/AdminCfitDetailPage";
 import { AdminPapikostikPage } from "./pages/AdminPapikostikPage";
 import { AdminPapikostikDetailPage } from "./pages/AdminPapikostikDetailPage";
 import { AdminRecapPage } from "./pages/AdminRecapPage";
+import { CertificatePage } from "./pages/CertificatePage";
 
 export default function App() {
   return (
@@ -48,6 +49,7 @@ export default function App() {
               <Route path="/result/pimsleur" element={<PimsleurResultPage />} />
               <Route path="/result/cfit" element={<CfitResultPage />} />
               <Route path="/result/papikostik" element={<PapikostikResultPage />} />
+              <Route path="/certificate" element={<CertificatePage />} />
               <Route path="/admin/pimsleur" element={<AdminPimsleurPage />} />
               <Route path="/admin/pimsleur/:userId" element={<AdminPimsleurDetailPage />} />
               <Route path="/admin/cfit" element={<AdminCfitPage />} />

@@ -103,6 +103,12 @@ export function AdminPapikostikDetailPage() {
       return;
     }
 
+    // Unlock sertifikat di portal peserta (sertifikat dibuat saat peserta buka /certificate)
+    await supabase
+      .from("user_progress")
+      .update({ result_status: "completed" })
+      .eq("user_id", row.user_id);
+
     setRow({
       ...row,
       review_status: "reviewed",
@@ -110,7 +116,7 @@ export function AdminPapikostikDetailPage() {
       final_summary: summary.trim() || null,
       reviewed_at: reviewedAt,
     });
-    setSaveMessage("Review berhasil disimpan.");
+    setSaveMessage("Review berhasil disimpan. Sertifikat peserta sudah terbuka.");
     setSaving(false);
   }
 
