@@ -9,6 +9,21 @@ import type { Database } from "../lib/database.types";
 type FinalAssessment =
   Database["public"]["Functions"]["admin_get_final_assessment"]["Returns"][number];
 
+async function readEdgeFunctionError(error: { message?: string; context?: unknown }) {
+  if (error.context instanceof Response) {
+    try {
+      const body: unknown = await error.context.clone().json();
+      if (body && typeof body === "object" && "error" in body) {
+        const detail = (body as { error?: unknown }).error;
+        if (typeof detail === "string" && detail) return detail;
+      }
+    } catch {
+      // Keep the SDK message when the function response is not JSON.
+    }
+  }
+  return error.message || "Gagal menjalankan refine AI.";
+}
+
 export function AdminFinalReviewPage() {
   const { userId } = useParams<{ userId: string }>();
   const { profile, loading: authLoading, refreshProfile } = useAuth();
@@ -81,7 +96,7 @@ export function AdminFinalReviewPage() {
     });
 
     if (functionError) {
-      setError(functionError.message || "Gagal menjalankan refine AI.");
+      setError(await readEdgeFunctionError(functionError));
       setRefining(false);
       return;
     }
@@ -237,11 +252,21 @@ export function AdminFinalReviewPage() {
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <ReviewField
-          label="Interpretasi psikolog"
+          label="Interpretasi psikolog (dari PAPI)"
           value={psychologistInterpretation}
           onChange={setPsychologistInterpretation}
-          placeholder="Masukkan hasil pembacaan dan interpretasi psikolog. Ini bersifat internal."
-          disabled={approved}
+          placeholder="Isi interpretasi psikolog melalui detail PAPI terlebih dahulu."
+          disabled
+          action={
+            !approved ? (
+              <Link
+                to={`/admin/papikostik/${assessment.user_id}`}
+                className="text-[11px] font-bold normal-case text-brand-red hover:underline"
+              >
+                Edit di PAPI
+              </Link>
+            ) : null
+          }
         />
         <ReviewField
           label="Narasi untuk peserta / hasil refined"

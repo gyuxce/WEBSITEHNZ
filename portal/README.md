@@ -32,6 +32,7 @@ Portal web calon siswa untuk daftar, bayar, tes, dan unduh sertifikat pemetaan p
    - `supabase/migrations/20260731000000_certificate_admin_unlock.sql`
    - `supabase/migrations/20260803000000_final_review_workflow.sql`
    - `supabase/migrations/20260803000001_final_review_guardrails.sql`
+   - `supabase/migrations/20260803000002_unify_papi_final_review.sql`
 
 Untuk admin: set `profiles.role = 'admin'` pada user staf.
 

@@ -47,7 +47,6 @@ export function AdminPapikostikDetailPage() {
   const [error, setError] = useState("");
   const [saveMessage, setSaveMessage] = useState("");
   const [notes, setNotes] = useState("");
-  const [summary, setSummary] = useState("");
 
   useEffect(() => {
     if (!userId || authLoading || profile?.role !== "admin") return;
@@ -67,7 +66,6 @@ export function AdminPapikostikDetailPage() {
       const detail = (first as PapikostikDetail) ?? null;
       setRow(detail);
       setNotes(detail?.psychologist_notes ?? "");
-      setSummary(detail?.final_summary ?? "");
       setLoading(false);
     }
 
@@ -92,7 +90,6 @@ export function AdminPapikostikDetailPage() {
       .update({
         review_status: "reviewed",
         psychologist_notes: notes.trim() || null,
-        final_summary: summary.trim() || null,
         reviewed_at: reviewedAt,
       })
       .eq("user_id", row.user_id);
@@ -107,7 +104,6 @@ export function AdminPapikostikDetailPage() {
       ...row,
       review_status: "reviewed",
       psychologist_notes: notes.trim() || null,
-      final_summary: summary.trim() || null,
       reviewed_at: reviewedAt,
     });
     setSaveMessage("Review psikolog berhasil disimpan. Lanjutkan ke Review final untuk QC dan persetujuan admin.");
@@ -220,10 +216,10 @@ export function AdminPapikostikDetailPage() {
 
       <section className="mt-8 rounded-2xl border border-brand-navy/8 bg-white p-5">
         <h2 className="font-display text-lg font-bold text-brand-navy">Review psikolog/admin</h2>
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <div className="mt-4">
           <label className="flex flex-col gap-1.5">
             <span className="text-xs font-bold uppercase tracking-wide text-brand-navy/45">
-              Catatan psikolog
+              Interpretasi psikolog
             </span>
             <textarea
               value={notes}
@@ -231,18 +227,6 @@ export function AdminPapikostikDetailPage() {
               rows={8}
               className="rounded-xl border border-brand-navy/12 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-red/30"
               placeholder="Catatan detail untuk pembacaan psikolog/admin"
-            />
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-bold uppercase tracking-wide text-brand-navy/45">
-              Ringkasan akhir
-            </span>
-            <textarea
-              value={summary}
-              onChange={(event) => setSummary(event.target.value)}
-              rows={8}
-              className="rounded-xl border border-brand-navy/12 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-red/30"
-              placeholder="Ringkasan yang bisa dipakai untuk rekap final"
             />
           </label>
         </div>
