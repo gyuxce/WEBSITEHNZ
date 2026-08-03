@@ -88,6 +88,41 @@ export interface Database {
         };
         Relationships: [];
       };
+      assessment_final_reviews: {
+        Row: {
+          id: string;
+          user_id: string;
+          psychologist_interpretation: string | null;
+          participant_summary: string | null;
+          qc_notes: string | null;
+          status: "pending_psychologist" | "pending_qc" | "approved";
+          approved_by: string | null;
+          approved_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          psychologist_interpretation?: string | null;
+          participant_summary?: string | null;
+          qc_notes?: string | null;
+          status?: "pending_psychologist" | "pending_qc" | "approved";
+          approved_by?: string | null;
+          approved_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          psychologist_interpretation?: string | null;
+          participant_summary?: string | null;
+          qc_notes?: string | null;
+          status?: "pending_psychologist" | "pending_qc" | "approved";
+          approved_by?: string | null;
+          approved_at?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       cfit_results: {
         Row: {
           id: string;
@@ -204,6 +239,7 @@ export interface Database {
           character_test_status: "locked" | "available" | "in_progress" | "completed";
           cfit_test_status: "locked" | "available" | "in_progress" | "completed";
           papikostik_test_status: "locked" | "available" | "in_progress" | "completed";
+          final_review_status: "locked" | "pending_psychologist" | "pending_qc" | "approved";
           result_status: "locked" | "available" | "completed";
           consultation_status: string;
           created_at: string;
@@ -217,6 +253,7 @@ export interface Database {
           character_test_status?: string;
           cfit_test_status?: string;
           papikostik_test_status?: string;
+          final_review_status?: string;
           result_status?: string;
           consultation_status?: string;
         };
@@ -227,6 +264,7 @@ export interface Database {
           character_test_status?: string;
           cfit_test_status?: string;
           papikostik_test_status?: string;
+          final_review_status?: string;
           result_status?: string;
           consultation_status?: string;
         };
@@ -499,6 +537,66 @@ export interface Database {
           city: string | null;
         }[];
       };
+      admin_get_final_assessment: {
+        Args: { p_user_id: string };
+        Returns: {
+          user_id: string;
+          full_name: string;
+          email: string | null;
+          whatsapp: string | null;
+          city: string | null;
+          pimsleur_score_total: number | null;
+          pimsleur_grade: string | null;
+          cfit_raw_total: number | null;
+          cfit_iq: number | null;
+          cfit_category: string | null;
+          papi_total_all: number | null;
+          papi_review_status: string | null;
+          review_id: string | null;
+          psychologist_interpretation: string | null;
+          participant_summary: string | null;
+          qc_notes: string | null;
+          final_review_status: "locked" | "pending_psychologist" | "pending_qc" | "approved";
+          approved_at: string | null;
+          certificate_code: string | null;
+        }[];
+      };
+      admin_upsert_final_review: {
+        Args: {
+          p_user_id: string;
+          p_psychologist_interpretation: string;
+          p_participant_summary: string;
+          p_qc_notes: string;
+        };
+        Returns: {
+          id: string;
+          user_id: string;
+          psychologist_interpretation: string | null;
+          participant_summary: string | null;
+          qc_notes: string | null;
+          status: "pending_psychologist" | "pending_qc" | "approved";
+          approved_by: string | null;
+          approved_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+      };
+      admin_publish_assessment: {
+        Args: { p_user_id: string };
+        Returns: {
+          certificate_id: string;
+          certificate_code: string;
+        }[];
+      };
+      get_own_papikostik_status: {
+        Args: Record<string, never>;
+        Returns: {
+          total_all: number | null;
+          completed_at: string;
+          review_status: "pending" | "reviewed" | "approved";
+          final_summary: string | null;
+        }[];
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
@@ -510,6 +608,7 @@ export type UserProgress = Database["public"]["Tables"]["user_progress"]["Row"];
 export type PimsleurResult = Database["public"]["Tables"]["pimsleur_results"]["Row"];
 export type CfitResult = Database["public"]["Tables"]["cfit_results"]["Row"];
 export type PapikostikResult = Database["public"]["Tables"]["papikostik_results"]["Row"];
+export type AssessmentFinalReview = Database["public"]["Tables"]["assessment_final_reviews"]["Row"];
 
 export const PROGRESS_STEPS = [
   { key: "registration", label: "Registrasi & akun peserta", field: "registration_status" as const },

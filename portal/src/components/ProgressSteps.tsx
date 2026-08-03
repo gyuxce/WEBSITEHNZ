@@ -35,16 +35,16 @@ function getStepStatus(stepKey: string, progress: UserProgress | null): StepStat
       return progress.cfit_test_status === "completed" ? "active" : "locked";
     case "result":
       if (progress.result_status === "completed") return "done";
+      if (progress.final_review_status === "pending_psychologist") return "active";
+      if (progress.final_review_status === "pending_qc") return "active";
       if (
         progress.language_test_status === "completed" &&
         progress.cfit_test_status === "completed" &&
         progress.papikostik_test_status === "completed"
       ) {
-        return "done";
+        return "active";
       }
-      if (progress.result_status === "available") return "active";
-      // Hasil awal tersedia setelah tes Pimsleur selesai.
-      return progress.language_test_status === "completed" ? "active" : "locked";
+      return "locked";
     case "character":
       // Legacy status. Tidak ditampilkan di progress MVP sampai materi final tersedia.
       if (progress.character_test_status === "completed") return "done";

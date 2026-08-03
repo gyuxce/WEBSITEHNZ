@@ -119,7 +119,11 @@ export function PapikostikTestPage() {
 
     const { error: progressError } = await supabase
       .from("user_progress")
-      .update({ papikostik_test_status: "completed" })
+      .update({
+        papikostik_test_status: "completed",
+        final_review_status: "pending_psychologist",
+        result_status: "available",
+      })
       .eq("user_id", user.id);
 
     if (progressError) {

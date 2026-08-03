@@ -13,6 +13,7 @@ Portal web calon siswa untuk daftar, bayar, tes, dan unduh sertifikat pemetaan p
 - Hasil Pimsleur + admin daftar/detail skor
 - CFIT: 4 subtes, instruksi dari PPTX, timer per subtes, gambar soal, penyimpanan jawaban, raw score per subtes, raw total, IQ, kategori, halaman hasil peserta, dan admin detail jawaban berdasarkan norma CFIT 3A
 - PAPI Kostick: 90 soal forced-choice, scoring 20 faktor, status hasil peserta, dan admin detail + review psikolog/admin
+- Review final admin: interpretasi psikolog, narasi peserta hasil QC, persetujuan final, dan penerbitan sertifikat
 - Legacy sertifikat HTML masih ada di `/result/legacy`
 
 ## Setup
@@ -27,6 +28,7 @@ Portal web calon siswa untuk daftar, bayar, tes, dan unduh sertifikat pemetaan p
    - `supabase/migrations/20260722000000_cfit_papikostik_progress.sql`
    - `supabase/migrations/20260723000000_cfit_low_score_floor.sql`
    - `supabase/migrations/20260724000000_papikostik_results.sql`
+   - `supabase/migrations/20260803000000_final_review_workflow.sql`
 
 Untuk admin: set `profiles.role = 'admin'` pada user staf.
 
@@ -173,7 +175,7 @@ Buka http://localhost:5173 — tombol "Mulai Pemetaan" mengarah ke portal.
 ```
 portal/
   src/
-    pages/          Login, Register, Dashboard, Payment, Tests, Result
+    pages/          Login, Register, Dashboard, Payment, Tests, Result, Admin Review
     components/     Layout, ProgressSteps, ProtectedRoute
     contexts/       AuthContext
     lib/            Supabase client + types

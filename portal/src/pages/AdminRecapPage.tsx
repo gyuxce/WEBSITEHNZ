@@ -225,6 +225,10 @@ export function AdminRecapPage() {
                       <DetailLink href={row.pimsleur ? `/admin/pimsleur/${row.userId}` : null} label="Pimsleur" />
                       <DetailLink href={row.cfit ? `/admin/cfit/${row.userId}` : null} label="CFIT" />
                       <DetailLink href={row.papikostik ? `/admin/papikostik/${row.userId}` : null} label="PAPI" />
+                      <DetailLink
+                        href={row.pimsleur && row.cfit && row.papikostik ? `/admin/review/${row.userId}` : null}
+                        label="Review final"
+                      />
                     </div>
                   </td>
                 </tr>

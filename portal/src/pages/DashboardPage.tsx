@@ -136,6 +136,7 @@ function ParticipantHome({
   const pimsleurDone = progress?.language_test_status === "completed";
   const cfitDone = progress?.cfit_test_status === "completed";
   const papikostikDone = progress?.papikostik_test_status === "completed";
+  const finalApproved = progress?.result_status === "completed";
   const resultAvailable =
     progress?.result_status === "available" ||
     progress?.result_status === "completed" ||
@@ -211,6 +212,14 @@ function ParticipantHome({
             href="/result/papikostik"
             disabled={!papikostikDone}
             cta={papikostikDone ? "Lihat status" : "Belum tersedia"}
+          />
+          <ActionCard
+            icon={<FileCheck size={20} />}
+            title="Sertifikat pemetaan"
+            description="Tersedia setelah psikolog, QC, dan admin menyetujui hasil"
+            href="/result/certificate"
+            disabled={!finalApproved}
+            cta={finalApproved ? "Lihat sertifikat" : "Menunggu review"}
           />
         </div>
 

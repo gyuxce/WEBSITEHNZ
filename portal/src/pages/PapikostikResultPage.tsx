@@ -3,11 +3,17 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, ClipboardCheck } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabase";
-import type { PapikostikResult } from "../lib/database.types";
+
+type PapiStatus = {
+  total_all: number | null;
+  completed_at: string;
+  review_status: "pending" | "reviewed" | "approved";
+  final_summary: string | null;
+};
 
 export function PapikostikResultPage() {
   const { user, progress } = useAuth();
-  const [result, setResult] = useState<PapikostikResult | null>(null);
+  const [result, setResult] = useState<PapiStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -21,11 +27,7 @@ export function PapikostikResultPage() {
 
     async function load() {
       const { data, error: qError } = await supabase
-        .from("papikostik_results")
-        .select("*")
-        .eq("user_id", user!.id)
-        .order("completed_at", { ascending: false })
-        .limit(1)
+        .rpc("get_own_papikostik_status")
         .maybeSingle();
 
       if (qError) setError(qError.message);
@@ -66,7 +68,8 @@ export function PapikostikResultPage() {
     );
   }
 
-  const reviewed = result.review_status === "reviewed";
+  const psychologistReviewed = result.review_status === "reviewed";
+  const approved = result.review_status === "approved";
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -83,24 +86,33 @@ export function PapikostikResultPage() {
           PAPI Kostick
         </p>
         <h1 className="mt-1 font-display text-2xl font-extrabold text-brand-navy">
-          {reviewed ? "Review psikolog selesai" : "Jawaban sudah tersimpan"}
+          {approved
+            ? "Hasil akhir disetujui"
+            : psychologistReviewed
+              ? "Review psikolog selesai"
+              : "Jawaban sudah tersimpan"}
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-brand-navy/55">
-          {reviewed
-            ? "Catatan review sudah tersedia di sistem admin. Hasil akhir tetap digabungkan dengan Pimsleur dan CFIT."
+          {approved
+            ? "Narasi hasil telah melewati review psikolog, QC internal, dan persetujuan admin."
+            : psychologistReviewed
+              ? "Pembacaan psikolog selesai. Narasi untuk peserta masih menunggu QC dan persetujuan admin."
             : "Hasil PAPI Kostick sedang menunggu pembacaan psikolog/admin. Interpretasi final akan digabungkan dengan Pimsleur dan CFIT."}
         </p>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
-          <Stat label="Status" value={reviewed ? "Reviewed" : "Pending"} />
+          <Stat
+            label="Status"
+            value={approved ? "Disetujui" : psychologistReviewed ? "Reviewed" : "Pending"}
+          />
           <Stat label="Jawaban" value={`${result.total_all ?? 0}/90`} />
           <Stat label="Selesai" value={new Date(result.completed_at).toLocaleDateString("id-ID")} />
         </div>
 
-        {reviewed && result.final_summary ? (
+        {approved && result.final_summary ? (
           <div className="mt-6 rounded-xl bg-brand-bg p-4">
             <p className="text-xs font-bold uppercase tracking-wide text-brand-navy/40">
-              Ringkasan admin
+              Narasi hasil
             </p>
             <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-brand-navy/70">
               {result.final_summary}
