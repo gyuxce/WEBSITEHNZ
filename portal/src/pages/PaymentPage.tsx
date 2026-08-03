@@ -17,7 +17,6 @@ export function PaymentPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [sandboxMode, setSandboxMode] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [confirmTimedOut, setConfirmTimedOut] = useState(false);
   const [redirectMessage, setRedirectMessage] = useState("");
@@ -133,42 +132,6 @@ export function PaymentPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  /** Local-only fallback while the payment gateway is being tested. */
-  const handleSandboxMarkPaid = async () => {
-    if (!user) return;
-    if (!amountValid) {
-      setError(`Nominal harus antara ${formatPrice(MIN_AMOUNT)} dan ${formatPrice(MAX_AMOUNT)}.`);
-      return;
-    }
-    setLoading(true);
-    setError("");
-
-    const orderId = `HNZ-SANDBOX-${Date.now()}`;
-
-    const { error: payError } = await supabase.from("payments").insert({
-      user_id: user.id,
-      order_id: orderId,
-      amount,
-      status: "settlement",
-      provider: "pivot",
-    });
-
-    if (payError) {
-      setError(payError.message);
-      setLoading(false);
-      return;
-    }
-
-    await supabase
-      .from("user_progress")
-      .update({ payment_status: "verified", language_test_status: "available" })
-      .eq("user_id", user.id);
-
-    await refreshProfile();
-    setLoading(false);
-    setSandboxMode(false);
   };
 
   const handleRecheckStatus = async () => {
@@ -312,32 +275,6 @@ export function PaymentPage() {
                   : "Masukkan nominal"}
             </button>
 
-            {import.meta.env.DEV || import.meta.env.VITE_DEMO_MODE === "true" ? (
-              <div className="mt-6 pt-6 border-t border-brand-navy/8">
-              <button
-                type="button"
-                onClick={() => setSandboxMode(!sandboxMode)}
-                className="text-xs text-brand-navy/40 hover:text-brand-navy underline"
-              >
-                Mode sandbox (development)
-              </button>
-              {sandboxMode && (
-                <div className="mt-3">
-                  <p className="text-xs text-brand-navy/50 mb-2">
-                    Tandai pembayaran sebagai lunas tanpa gateway. Hanya untuk testing lokal.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleSandboxMarkPaid}
-                    disabled={loading}
-                    className="w-full rounded-xl border border-brand-navy/15 text-brand-navy font-bold py-3 text-sm"
-                  >
-                    Simulasikan pembayaran berhasil
-                  </button>
-                </div>
-              )}
-              </div>
-            ) : null}
           </>
         )}
       </div>

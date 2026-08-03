@@ -8,7 +8,7 @@ Portal web calon siswa untuk daftar, bayar, tes, dan unduh sertifikat pemetaan p
 
 - Register / login / logout / lupa password
 - Dashboard progress pemetaan
-- Pembayaran pemetaan (Pivot Payment + mode sandbox dev)
+- Pembayaran pemetaan melalui Pivot Payment
 - **Tes Pimsleur** (aptitude bahasa, seksi 2–6, timer 25 menit, grade A–F)
 - Hasil Pimsleur + admin daftar/detail skor
 - CFIT: 4 subtes, instruksi dari PPTX, timer per subtes, gambar soal, penyimpanan jawaban, raw score per subtes, raw total, IQ, kategori, halaman hasil peserta, dan admin detail jawaban berdasarkan norma CFIT 3A
@@ -119,7 +119,7 @@ supabase functions deploy pivot-webhook
 
 Set secrets di Supabase Dashboard → Edge Functions:
 
-- `PIVOT_BASE_URL=https://api-stg.pivot-payment.com`
+- `PIVOT_BASE_URL=https://api.pivot-payment.com`
 - `PIVOT_CLIENT_ID`
 - `PIVOT_CLIENT_SECRET`
 - `PIVOT_CALLBACK_API_KEY`
@@ -131,7 +131,7 @@ Set secrets di Supabase Dashboard → Edge Functions:
 
 Callback URL Pivot: `https://xxxx.supabase.co/functions/v1/pivot-webhook`
 
-Gunakan kredensial Sandbox sampai alur pembayaran dan callback berhasil diverifikasi.
+Gunakan kredensial dan Callback API Key production setelah akun Pivot live diaktifkan.
 
 ### 4. Database payment metadata
 
@@ -152,10 +152,10 @@ supabase functions deploy pivot-webhook
 Set secrets di Supabase Edge Functions:
 
 ```text
-PIVOT_BASE_URL=https://api-stg.pivot-payment.com
-PIVOT_CLIENT_ID=<Client ID Sandbox>
-PIVOT_CLIENT_SECRET=<Client Secret Sandbox>
-PIVOT_CALLBACK_API_KEY=<Callback API Key Sandbox>
+PIVOT_BASE_URL=https://api.pivot-payment.com
+PIVOT_CLIENT_ID=<Client ID Production>
+PIVOT_CLIENT_SECRET=<Client Secret Production>
+PIVOT_CALLBACK_API_KEY=<Callback API Key Production>
 PIVOT_PAYMENT_AMOUNT=150000
 PIVOT_SUCCESS_URL=https://portal.harunokaze.id/payment?payment=success
 PIVOT_FAILURE_URL=https://portal.harunokaze.id/payment?payment=failure

@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const DEFAULT_BASE_URL = "https://api-stg.pivot-payment.com";
+const DEFAULT_BASE_URL = "https://api.pivot-payment.com";
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
