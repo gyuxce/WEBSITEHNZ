@@ -28,6 +28,7 @@ Portal web calon siswa untuk daftar, bayar, tes, dan unduh sertifikat pemetaan p
    - `supabase/migrations/20260722000000_cfit_papikostik_progress.sql`
    - `supabase/migrations/20260723000000_cfit_low_score_floor.sql`
    - `supabase/migrations/20260724000000_papikostik_results.sql`
+   - `supabase/migrations/20260731000000_certificate_admin_unlock.sql`
    - `supabase/migrations/20260803000000_final_review_workflow.sql`
    - `supabase/migrations/20260803000001_final_review_guardrails.sql`
 
