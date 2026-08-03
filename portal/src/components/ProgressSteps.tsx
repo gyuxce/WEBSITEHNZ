@@ -45,8 +45,9 @@ function getStepStatus(stepKey: string, progress: UserProgress | null): StepStat
         return "active";
       }
       return "locked";
+    case "certificate":
+      return progress.result_status === "completed" ? "done" : "locked";
     case "character":
-      // Legacy status. Tidak ditampilkan di progress MVP sampai materi final tersedia.
       if (progress.character_test_status === "completed") return "done";
       if (progress.character_test_status === "available" || progress.character_test_status === "in_progress") {
         return "active";

@@ -50,6 +50,7 @@ export default function App() {
               <Route path="/result/cfit" element={<CfitResultPage />} />
               <Route path="/result/papikostik" element={<PapikostikResultPage />} />
               <Route path="/result/certificate" element={<CertificatePage />} />
+              <Route path="/certificate" element={<CertificatePage />} />
               <Route path="/admin/pimsleur" element={<AdminPimsleurPage />} />
               <Route path="/admin/pimsleur/:userId" element={<AdminPimsleurDetailPage />} />
               <Route path="/admin/cfit" element={<AdminCfitPage />} />
@@ -58,7 +59,7 @@ export default function App() {
               <Route path="/admin/papikostik/:userId" element={<AdminPapikostikDetailPage />} />
               <Route path="/admin/recap" element={<AdminRecapPage />} />
               <Route path="/admin/review/:userId" element={<AdminFinalReviewPage />} />
-              {/* Legacy routes. Flow MVP sekarang memakai Pimsleur dan hasil Pimsleur. */}
+              {/* Legacy routes now point to the gated final review flow. */}
               <Route path="/test/language" element={<Navigate to="/test/pimsleur" replace />} />
               <Route path="/test/character" element={<Navigate to="/test/papikostik" replace />} />
               <Route path="/result" element={<Navigate to="/result/pimsleur" replace />} />

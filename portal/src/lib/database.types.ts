@@ -617,5 +617,5 @@ export const PROGRESS_STEPS = [
   { key: "cfit", label: "CFIT", field: "cfit_test_status" as const },
   { key: "papikostik", label: "PAPI Kostick", field: "papikostik_test_status" as const },
   { key: "result", label: "Hasil asesmen", field: "result_status" as const },
-  { key: "consultation", label: "Konsultasi lanjutan", field: "consultation_status" as const },
+  { key: "certificate", label: "Sertifikat pemetaan", field: "result_status" as const },
 ] as const;

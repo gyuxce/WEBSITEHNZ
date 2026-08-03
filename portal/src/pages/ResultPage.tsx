@@ -95,10 +95,16 @@ export function ResultPage() {
     const html = buildCertificateHtml({
       fullName: profile.full_name,
       certificateCode: certificate.certificate_code,
-      score: certificate.score,
-      recommendation: certificate.recommendation,
       issuedAt: certificate.issued_at,
-      programInterest: profile.program_interest,
+      cfitRawTotal: null,
+      cfitIq: null,
+      cfitCategory: null,
+      papiHasil: null,
+      papiCatatan: certificate.recommendation,
+      pimsleurScore: certificate.score,
+      pimsleurGrade: null,
+      pimsleurStatusLabel: null,
+      pimsleurRecommendation: certificate.recommendation,
     });
 
     const blob = new Blob([html], { type: "text/html" });

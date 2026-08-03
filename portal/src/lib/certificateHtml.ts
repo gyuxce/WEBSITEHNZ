@@ -1,180 +1,194 @@
-export function buildCertificateHtml(params: {
+export type CertificateData = {
   fullName: string;
   certificateCode: string;
-  score: number;
-  recommendation: string;
   issuedAt: string;
-  programInterest?: string | null;
-}): string {
-  const { fullName, certificateCode, score, recommendation, issuedAt, programInterest } = params;
-  const dateStr = new Date(issuedAt).toLocaleDateString("id-ID", {
+  /** CFIT */
+  cfitRawTotal: number | null;
+  cfitIq: number | null;
+  cfitCategory: string | null;
+  /** PAPI */
+  papiHasil: string | null;
+  papiCatatan: string | null;
+  /** Pimsleur */
+  pimsleurScore: number | null;
+  pimsleurGrade: string | null;
+  pimsleurStatusLabel: string | null;
+  pimsleurRecommendation: string | null;
+};
+
+function esc(value: string | number | null | undefined): string {
+  if (value === null || value === undefined) return "-";
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+export function buildCertificateHtml(data: CertificateData): string {
+  const dateStr = new Date(data.issuedAt).toLocaleString("id-ID", {
     day: "numeric",
     month: "long",
     year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 
-  const scoreLabel =
-    score >= 80 ? "Sangat Baik" : score >= 60 ? "Cukup Baik" : "Perlu Peningkatan";
+  const name = esc(data.fullName);
+  const code = esc(data.certificateCode);
+  const cfitSkor = data.cfitRawTotal !== null ? `${data.cfitRawTotal} / 50` : "-";
+  const cfitIq = data.cfitIq !== null ? String(data.cfitIq) : "-";
+  const cfitKat = esc(data.cfitCategory ?? "Belum tersedia");
+  const papiHasil = esc(data.papiHasil ?? "Menunggu review");
+  const papiCatatan = esc(data.papiCatatan ?? "Belum ada catatan psikolog.");
+  const pimsleurNilai =
+    data.pimsleurScore !== null
+      ? `${data.pimsleurScore}${data.pimsleurGrade ? ` / ${data.pimsleurGrade}` : ""}`
+      : "-";
+  const pimsleurLevel = esc(data.pimsleurStatusLabel ?? "Belum tersedia");
+  const pimsleurCatatan = esc(data.pimsleurRecommendation ?? "Belum ada catatan evaluasi.");
 
   return `<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="utf-8" />
-  <title>Sertifikat Pemetaan — ${fullName}</title>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <title>Sertifikasi Pemetaan Talenta — ${name}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Plus Jakarta Sans', sans-serif;
-      background: #f8f9fa;
-      padding: 32px;
+      background: #eef1f5;
       color: #0f2240;
+      padding: 24px;
     }
-    .cert {
-      max-width: 820px;
-      margin: 0 auto;
+    .page {
+      max-width: 900px;
+      margin: 0 auto 28px;
       background: #fff;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 20px 60px rgba(15, 34, 64, 0.12);
-      border: 1px solid rgba(15, 34, 64, 0.08);
-    }
-    .header {
-      background: linear-gradient(135deg, #0f2240 0%, #1e355a 55%, #0f2240 100%);
-      padding: 36px 40px 32px;
-      text-align: center;
       position: relative;
       overflow: hidden;
+      border-radius: 4px;
+      box-shadow: 0 12px 40px rgba(15,34,64,0.12);
+      min-height: 1100px;
+      page-break-after: always;
     }
-    .header::before {
-      content: '';
+    .page:last-child { page-break-after: auto; }
+    .side-bar {
       position: absolute;
-      top: -40px; right: -40px;
-      width: 160px; height: 160px;
-      background: rgba(255, 179, 198, 0.15);
-      border-radius: 50%;
+      left: 0; top: 0; bottom: 0;
+      width: 28px;
+      background: linear-gradient(180deg, #e61935 0%, #0f2240 55%, #0f2240 100%);
     }
-    .header::after {
-      content: '';
+    .ribbon {
       position: absolute;
-      bottom: -30px; left: -30px;
-      width: 120px; height: 120px;
-      background: rgba(230, 25, 53, 0.12);
+      top: 28px; right: 36px;
+      width: 72px; height: 72px;
+      background: #e61935;
       border-radius: 50%;
-    }
-    .brand {
-      font-family: 'Outfit', sans-serif;
-      font-size: 32px;
-      font-weight: 800;
-      color: #fff;
-      letter-spacing: -0.02em;
-      position: relative;
-    }
-    .brand span { color: #e61935; }
-    .subtitle {
-      margin-top: 6px;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.55);
-      position: relative;
-    }
-    .accent-bar {
-      height: 4px;
-      background: linear-gradient(90deg, #e61935, #ffb3c6, #e61935);
-    }
-    .body { padding: 40px 48px 36px; text-align: center; }
-    .label {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: #e61935;
-    }
-    .title {
-      font-family: 'Outfit', sans-serif;
-      font-size: 22px;
-      font-weight: 700;
-      color: #0f2240;
-      margin-top: 8px;
-    }
-    .code {
-      margin-top: 12px;
-      font-family: monospace;
-      font-size: 12px;
-      color: rgba(15, 34, 64, 0.45);
-      background: #f8f9fa;
-      display: inline-block;
-      padding: 4px 12px;
-      border-radius: 99px;
-    }
-    .name {
-      font-family: 'Outfit', sans-serif;
-      font-size: 36px;
-      font-weight: 800;
-      color: #0f2240;
-      margin: 28px 0 8px;
-      line-height: 1.2;
-    }
-    .program {
-      font-size: 13px;
-      color: rgba(15, 34, 64, 0.5);
-      margin-bottom: 28px;
-    }
-    .score-box {
-      display: inline-flex;
+      display: flex;
       align-items: center;
-      gap: 24px;
-      background: linear-gradient(135deg, #fdeaec 0%, #fff 100%);
-      border: 1px solid rgba(230, 25, 53, 0.15);
-      border-radius: 16px;
-      padding: 20px 36px;
+      justify-content: center;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-align: center;
+      line-height: 1.2;
+      box-shadow: 0 6px 16px rgba(230,25,53,0.35);
+    }
+    .content { padding: 48px 56px 48px 64px; }
+    .logos {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
       margin-bottom: 28px;
     }
-    .score-num {
+    .logo-text {
       font-family: 'Outfit', sans-serif;
-      font-size: 48px;
       font-weight: 800;
-      color: #e61935;
-      line-height: 1;
-    }
-    .score-meta { text-align: left; }
-    .score-meta .sl { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(15,34,64,0.45); }
-    .score-meta .sv { font-size: 16px; font-weight: 700; color: #0f2240; margin-top: 2px; }
-    .rec-box {
-      text-align: left;
-      background: #f8f9fa;
-      border-left: 4px solid #e61935;
-      border-radius: 0 12px 12px 0;
-      padding: 20px 24px;
-      margin-top: 8px;
-    }
-    .rec-box strong {
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
+      font-size: 18px;
       color: #0f2240;
     }
-    .rec-box p {
-      margin-top: 8px;
-      font-size: 14px;
-      line-height: 1.7;
-      color: rgba(15, 34, 64, 0.7);
+    .logo-text span { color: #e61935; }
+    .logo-sub {
+      font-size: 9px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(15,34,64,0.45);
+      font-weight: 700;
     }
-    .footer {
-      margin-top: 32px;
-      padding-top: 24px;
-      border-top: 1px solid rgba(15, 34, 64, 0.08);
+    .divider-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #e61935;
+    }
+    h1.title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 34px;
+      font-weight: 800;
+      text-align: center;
+      color: #0f2240;
+      letter-spacing: 0.02em;
+      margin-bottom: 22px;
+    }
+    .badge {
+      display: inline-block;
+      background: #e61935;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 22px;
+      border-radius: 999px;
+      margin: 0 auto 28px;
+    }
+    .badge-wrap { text-align: center; }
+    .name {
+      font-family: 'Great Vibes', cursive;
+      font-size: 56px;
+      text-align: center;
+      color: #c41e3a;
+      line-height: 1.15;
+      margin: 8px 0 12px;
+    }
+    .role {
+      text-align: center;
+      font-size: 14px;
+      font-weight: 600;
+      color: #0f2240;
+      margin-bottom: 28px;
+      line-height: 1.55;
+    }
+    .body-text {
+      text-align: center;
+      font-size: 14px;
+      line-height: 1.75;
+      color: rgba(15,34,64,0.72);
+      max-width: 620px;
+      margin: 0 auto 48px;
+    }
+    .meta-row {
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
+      gap: 24px;
+      margin-top: 40px;
+      padding-top: 8px;
     }
-    .footer .date { font-size: 12px; color: rgba(15,34,64,0.45); text-align: left; }
-    .footer .seal {
-      width: 72px; height: 72px;
-      border: 3px solid #e61935;
+    .meta-left {
+      font-size: 12px;
+      color: rgba(15,34,64,0.55);
+      line-height: 1.7;
+    }
+    .sign {
+      text-align: center;
+      min-width: 220px;
+    }
+    .sign-seal {
+      width: 64px; height: 64px;
+      margin: 0 auto 8px;
+      border: 2.5px solid #e61935;
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -183,53 +197,157 @@ export function buildCertificateHtml(params: {
       font-size: 9px;
       font-weight: 800;
       color: #e61935;
-      text-align: center;
-      line-height: 1.3;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.04em;
       text-transform: uppercase;
+      line-height: 1.25;
     }
-    .tagline {
+    .sign-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f2240;
+      margin-top: 6px;
+    }
+    .sign-title {
       font-size: 11px;
-      color: rgba(15,34,64,0.35);
-      margin-top: 4px;
+      color: rgba(15,34,64,0.5);
+      margin-top: 2px;
+    }
+    .code {
+      text-align: center;
+      margin-top: 28px;
+      font-family: monospace;
+      font-size: 11px;
+      color: rgba(15,34,64,0.4);
+    }
+
+    /* Page 2 tables */
+    .section-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 18px;
+      font-weight: 800;
+      color: #e61935;
+      margin: 28px 0 10px;
+    }
+    .section-title:first-of-type { margin-top: 8px; }
+    table.report {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+    table.report th,
+    table.report td {
+      border: 1px solid rgba(15,34,64,0.15);
+      padding: 12px 14px;
+      text-align: left;
+      vertical-align: top;
+    }
+    table.report th {
+      width: 32%;
+      background: #fafafa;
+      font-weight: 700;
+      color: #0f2240;
+    }
+    table.report td {
+      color: rgba(15,34,64,0.78);
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+    .page2-header {
+      font-family: 'Outfit', sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      color: #0f2240;
+      margin-bottom: 6px;
+    }
+    .page2-sub {
+      font-size: 12px;
+      color: rgba(15,34,64,0.45);
+      margin-bottom: 20px;
     }
     @media print {
-      body { padding: 0; background: #fff; }
-      .cert { box-shadow: none; border: none; }
+      body { background: #fff; padding: 0; }
+      .page {
+        box-shadow: none;
+        border-radius: 0;
+        margin: 0;
+        min-height: 100vh;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="cert">
-    <div class="header">
-      <div class="brand">Haru<span>No</span>Kaze</div>
-      <div class="subtitle">Portal Pemetaan Potensi</div>
-    </div>
-    <div class="accent-bar"></div>
-    <div class="body">
-      <p class="label">Sertifikat</p>
-      <h1 class="title">Pemetaan Potensi Karier Jepang</h1>
-      <p class="code">${certificateCode}</p>
-      <p class="name">${fullName}</p>
-      ${programInterest ? `<p class="program">Program minat: ${programInterest}</p>` : ""}
-      <div class="score-box">
-        <div class="score-num">${score}</div>
-        <div class="score-meta">
-          <div class="sl">Skor Tes Bahasa</div>
-          <div class="sv">${scoreLabel} · /100</div>
-        </div>
-      </div>
-      <div class="rec-box">
-        <strong>Rekomendasi Jalur</strong>
-        <p>${recommendation}</p>
-      </div>
-      <div class="footer">
+  <!-- PAGE 1: Cover -->
+  <div class="page">
+    <div class="side-bar"></div>
+    <div class="ribbon">HNZ<br/>Verified</div>
+    <div class="content">
+      <div class="logos">
         <div>
-          <div class="date">Diterbitkan: ${dateStr}</div>
-          <div class="tagline">harunokaze.id · Ekosistem Karier Jepang</div>
+          <div class="logo-text">wiwitan</div>
+          <div class="logo-sub">Improving lives · Improving quality of life</div>
         </div>
-        <div class="seal">HNZ<br/>Verified</div>
+        <div class="divider-dot"></div>
+        <div>
+          <div class="logo-text">Haru<span>No</span>Kaze</div>
+          <div class="logo-sub">春の風 · HARU NO KAZE</div>
+        </div>
       </div>
+
+      <h1 class="title">SERTIFIKASI PEMETAAN TALENTA</h1>
+      <div class="badge-wrap"><span class="badge">Dengan Bangga Diberikan Kepada :</span></div>
+      <p class="name">${name}</p>
+      <p class="role">
+        Sebagai peserta Seleksi Awal Program Pelatihan ke Jepang di LPK<br/>
+        Wiwitan Baru Sukabumi
+      </p>
+      <p class="body-text">
+        Berdasarkan hasil tersebut, peserta dinyatakan telah menyelesaikan seluruh tahapan seleksi awal.
+        Semoga hasil ini bisa menjadi bahan evaluasi dan pengembangan diri dalam mengikuti
+        pelatihan di LPK Wiwitan Baru Sukabumi.
+      </p>
+
+      <div class="meta-row">
+        <div class="meta-left">
+          <div><strong>Ditetapkan di:</strong> Sukabumi</div>
+          <div><strong>Tanggal:</strong> ${esc(dateStr)}</div>
+        </div>
+        <div class="sign">
+          <div class="sign-seal">HNZ<br/>Seal</div>
+          <div class="sign-name">Setiaki Murdi Pratomodono</div>
+          <div class="sign-title">Ketua LPK Wiwitan Baru Sukabumi</div>
+        </div>
+      </div>
+      <p class="code">${code}</p>
+    </div>
+  </div>
+
+  <!-- PAGE 2: Detail rekap 3 asesmen -->
+  <div class="page">
+    <div class="side-bar"></div>
+    <div class="content">
+      <p class="page2-header">Rekap Hasil Pemetaan Talenta</p>
+      <p class="page2-sub">${name} · ${code} · ${esc(dateStr)}</p>
+
+      <h2 class="section-title">Pemetaan Potensi Berpikir</h2>
+      <table class="report">
+        <tr><th>Skor</th><td>${esc(cfitSkor)}</td></tr>
+        <tr><th>IQ</th><td>${esc(cfitIq)}</td></tr>
+        <tr><th>Klasifikasi</th><td>${cfitKat}</td></tr>
+      </table>
+
+      <h2 class="section-title">Pemetaan Karakter &amp; Gaya Kerja</h2>
+      <table class="report">
+        <tr><th>Hasil</th><td>${papiHasil}</td></tr>
+        <tr><th>Catatan</th><td>${papiCatatan}</td></tr>
+      </table>
+
+      <h2 class="section-title">Pemetaan Kesiapan Belajar Bahasa</h2>
+      <table class="report">
+        <tr><th>Nilai</th><td>${esc(pimsleurNilai)}</td></tr>
+        <tr><th>Level Kesiapan Belajar Bahasa</th><td>${pimsleurLevel}</td></tr>
+        <tr><th>Catatan Evaluasi</th><td>${pimsleurCatatan}</td></tr>
+      </table>
     </div>
   </div>
 </body>

@@ -119,6 +119,15 @@ export function PapikostikResultPage() {
             </p>
           </div>
         ) : null}
+
+        {approved ? (
+          <Link
+            to="/certificate"
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-red py-3.5 text-sm font-bold text-white hover:bg-brand-red-hover"
+          >
+            Lihat & unduh sertifikat
+          </Link>
+        ) : null}
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
+  Award,
   ClipboardList,
   CreditCard,
   FileCheck,
@@ -214,8 +215,8 @@ function ParticipantHome({
             cta={papikostikDone ? "Lihat status" : "Belum tersedia"}
           />
           <ActionCard
-            icon={<FileCheck size={20} />}
-            title="Sertifikat pemetaan"
+            icon={<Award size={20} />}
+            title="Sertifikat Pemetaan"
             description="Tersedia setelah psikolog, QC, dan admin menyetujui hasil"
             href="/result/certificate"
             disabled={!finalApproved}
@@ -223,38 +224,27 @@ function ParticipantHome({
           />
         </div>
 
-        {pimsleurDone ? (
-          <div className="flex flex-col justify-between gap-4 rounded-2xl border border-brand-navy/8 bg-white p-6 sm:flex-row sm:items-center">
-            <div className="flex gap-3">
-              <MessageCircle className="mt-0.5 shrink-0 text-brand-red" size={20} />
-              <div>
-                <p className="text-sm font-bold text-brand-navy">Konsultasi lanjutan (opsional)</p>
-                <p className="mt-1 text-xs text-brand-navy/55">
-                  Diskusikan hasil Pimsleur dengan tim Harunokaze
-                </p>
-              </div>
-            </div>
-            <a
-              href={WHATSAPP_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-brand-navy px-5 py-2.5 text-sm font-bold text-white hover:bg-brand-navy-light"
-            >
-              Chat WhatsApp
-              <ArrowRight size={16} />
-            </a>
-          </div>
-        ) : null}
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <a
+            href={WHATSAPP_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-brand-navy/12 bg-white px-5 py-3 text-sm font-bold text-brand-navy hover:border-brand-red/30 hover:text-brand-red"
+          >
+            <MessageCircle size={18} />
+            Konsultasi lanjutan (WhatsApp)
+          </a>
+          <a
+            href={LANDING_URL}
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-brand-navy/12 bg-white px-5 py-3 text-sm font-bold text-brand-navy hover:border-brand-red/30 hover:text-brand-red"
+          >
+            ← Kembali ke website
+          </a>
+        </div>
       </div>
 
       <div className="lg:col-span-2">
         <ProgressSteps progress={progress} />
-        <a
-          href={LANDING_URL}
-          className="mt-4 block text-center text-xs text-brand-navy/40 transition-colors hover:text-brand-red"
-        >
-          ← Kembali ke website Harunokaze
-        </a>
       </div>
     </div>
   );

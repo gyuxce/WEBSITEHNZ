@@ -24,5 +24,8 @@ export const supabase = createClient<Database>(
 export const isSupabaseConfigured =
   Boolean(supabaseUrl && supabaseAnonKey && !supabaseUrl.includes("your-project"));
 
-export const PEMETAAN_PRICE = Number(import.meta.env.VITE_PEMETAAN_PRICE ?? 150000);
+const rawPrice = import.meta.env.VITE_PEMETAAN_PRICE;
+export const PEMETAAN_PRICE = Number.isFinite(Number(rawPrice)) && Number(rawPrice) > 0
+  ? Number(rawPrice)
+  : 150000;
 export const LANDING_URL = import.meta.env.VITE_LANDING_URL ?? "https://www.harunokaze.id";
