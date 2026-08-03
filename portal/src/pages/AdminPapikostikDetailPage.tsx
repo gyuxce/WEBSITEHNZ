@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Pencil, Save, X } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import {
   PAPI_FACTORS,
@@ -47,6 +47,7 @@ export function AdminPapikostikDetailPage() {
   const [error, setError] = useState("");
   const [saveMessage, setSaveMessage] = useState("");
   const [notes, setNotes] = useState("");
+  const [editingNotes, setEditingNotes] = useState(false);
 
   useEffect(() => {
     if (!userId || authLoading || profile?.role !== "admin") return;
@@ -66,6 +67,7 @@ export function AdminPapikostikDetailPage() {
       const detail = (first as PapikostikDetail) ?? null;
       setRow(detail);
       setNotes(detail?.psychologist_notes ?? "");
+      setEditingNotes(!detail?.psychologist_notes?.trim());
       setLoading(false);
     }
 
@@ -80,6 +82,12 @@ export function AdminPapikostikDetailPage() {
 
   async function saveReview() {
     if (!row) return;
+    const cleanNotes = notes.trim();
+    if (!cleanNotes) {
+      setError("Isi interpretasi psikolog terlebih dahulu sebelum menyimpan review.");
+      return;
+    }
+
     setSaving(true);
     setError("");
     setSaveMessage("");
@@ -89,7 +97,7 @@ export function AdminPapikostikDetailPage() {
       .from("papikostik_results")
       .update({
         review_status: "reviewed",
-        psychologist_notes: notes.trim() || null,
+        psychologist_notes: cleanNotes,
         reviewed_at: reviewedAt,
       })
       .eq("user_id", row.user_id);
@@ -103,11 +111,26 @@ export function AdminPapikostikDetailPage() {
     setRow({
       ...row,
       review_status: "reviewed",
-      psychologist_notes: notes.trim() || null,
+      psychologist_notes: cleanNotes,
       reviewed_at: reviewedAt,
     });
-    setSaveMessage("Review psikolog berhasil disimpan. Lanjutkan ke Review final untuk QC dan persetujuan admin.");
+    setNotes(cleanNotes);
+    setEditingNotes(false);
+    setSaveMessage("Interpretasi psikolog berhasil disimpan. Lanjutkan ke Review final untuk QC dan persetujuan admin.");
     setSaving(false);
+  }
+
+  function startEditingNotes() {
+    setEditingNotes(true);
+    setError("");
+    setSaveMessage("");
+  }
+
+  function cancelEditingNotes() {
+    setNotes(row?.psychologist_notes ?? "");
+    setEditingNotes(false);
+    setError("");
+    setSaveMessage("");
   }
 
   if (!authLoading && profile?.role !== "admin") {
@@ -215,32 +238,81 @@ export function AdminPapikostikDetailPage() {
       </div>
 
       <section className="mt-8 rounded-2xl border border-brand-navy/8 bg-white p-5">
-        <h2 className="font-display text-lg font-bold text-brand-navy">Review psikolog/admin</h2>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="font-display text-lg font-bold text-brand-navy">Review psikolog/admin</h2>
+            <p className="mt-1 text-sm text-brand-navy/50">
+              {editingNotes ? "Mode edit interpretasi" : "Mode baca interpretasi tersimpan"}
+            </p>
+          </div>
+          {!editingNotes ? (
+            <button
+              type="button"
+              onClick={startEditingNotes}
+              className="inline-flex items-center gap-2 rounded-xl border border-brand-navy/15 px-4 py-2.5 text-sm font-bold text-brand-navy hover:border-brand-red/40 hover:text-brand-red"
+            >
+              <Pencil size={16} /> Edit interpretasi
+            </button>
+          ) : null}
+        </div>
+
         <div className="mt-4">
-          <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-bold uppercase tracking-wide text-brand-navy/45">
-              Interpretasi psikolog
-            </span>
-            <textarea
-              value={notes}
-              onChange={(event) => setNotes(event.target.value)}
-              rows={8}
-              className="rounded-xl border border-brand-navy/12 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-red/30"
-              placeholder="Catatan detail untuk pembacaan psikolog/admin"
-            />
-          </label>
+          <span className="text-xs font-bold uppercase tracking-wide text-brand-navy/45">
+            Interpretasi psikolog
+          </span>
+          {editingNotes ? (
+            <>
+              <textarea
+                value={notes}
+                onChange={(event) => setNotes(event.target.value)}
+                rows={8}
+                autoFocus
+                className="mt-1.5 w-full rounded-xl border border-brand-navy/12 px-4 py-3 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-brand-red/30"
+                placeholder="Catatan detail untuk pembacaan psikolog/admin"
+              />
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => void saveReview()}
+                  disabled={saving}
+                  className="inline-flex items-center gap-2 rounded-xl bg-brand-red px-5 py-3 text-sm font-bold text-white disabled:opacity-50"
+                >
+                  <Save size={18} />
+                  {saving ? "Menyimpan..." : "Simpan interpretasi"}
+                </button>
+                <button
+                  type="button"
+                  onClick={cancelEditingNotes}
+                  disabled={saving}
+                  className="inline-flex items-center gap-2 rounded-xl border border-brand-navy/15 px-5 py-3 text-sm font-bold text-brand-navy disabled:opacity-50"
+                >
+                  <X size={18} /> Batal
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="mt-1.5 rounded-xl border border-brand-navy/8 bg-brand-bg/60 px-4 py-4">
+              {notes.trim() ? (
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-brand-navy/75">{notes}</p>
+              ) : (
+                <p className="text-sm italic text-brand-navy/45">
+                  Belum ada interpretasi psikolog yang disimpan.
+                </p>
+              )}
+              <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-brand-navy/8 pt-3 text-xs text-brand-navy/45">
+                <span className="inline-flex items-center gap-1.5 font-semibold">
+                  <CheckCircle2 size={14} className={row.review_status === "reviewed" ? "text-emerald-600" : "text-brand-navy/35"} />
+                  {row.review_status === "reviewed" ? "Review tersimpan" : "Belum direview"}
+                </span>
+                {row.reviewed_at ? (
+                  <span>Terakhir disimpan {new Date(row.reviewed_at).toLocaleString("id-ID")}</span>
+                ) : null}
+              </div>
+            </div>
+          )}
         </div>
         {error ? <p className="mt-4 text-sm text-brand-red">{error}</p> : null}
         {saveMessage ? <p className="mt-4 text-sm text-emerald-700">{saveMessage}</p> : null}
-        <button
-          type="button"
-          onClick={() => void saveReview()}
-          disabled={saving}
-          className="mt-5 inline-flex items-center gap-2 rounded-xl bg-brand-red px-5 py-3 text-sm font-bold text-white disabled:opacity-50"
-        >
-          <Save size={18} />
-          {saving ? "Menyimpan..." : "Simpan review"}
-        </button>
       </section>
 
       <section className="mt-8">
