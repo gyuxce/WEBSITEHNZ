@@ -14,6 +14,7 @@ Portal web calon siswa untuk daftar, bayar, tes, dan unduh sertifikat pemetaan p
 - CFIT: 4 subtes, instruksi dari PPTX, timer per subtes, gambar soal, penyimpanan jawaban, raw score per subtes, raw total, IQ, kategori, halaman hasil peserta, dan admin detail jawaban berdasarkan norma CFIT 3A
 - PAPI Kostick: 90 soal forced-choice, scoring 20 faktor, status hasil peserta, dan admin detail + review psikolog/admin
 - Review final admin: interpretasi psikolog, narasi peserta hasil QC, persetujuan final, dan penerbitan sertifikat
+- AI refine draft: membuat draft narasi peserta dari interpretasi psikolog dan data tiga tes melalui OpenRouter. Draft tetap harus diperiksa dan disetujui admin.
 - Legacy sertifikat HTML masih ada di `/result/legacy`
 
 ## Setup
@@ -33,6 +34,18 @@ Portal web calon siswa untuk daftar, bayar, tes, dan unduh sertifikat pemetaan p
    - `supabase/migrations/20260803000001_final_review_guardrails.sql`
 
 Untuk admin: set `profiles.role = 'admin'` pada user staf.
+
+### OpenRouter AI refine
+
+Fungsi `supabase/functions/refine-final-review` memanggil model OpenRouter dari server Supabase.
+API key tidak boleh diletakkan di frontend/Vercel. Di Supabase Dashboard buka **Edge Functions > Secrets** lalu tambahkan:
+
+- `OPENROUTER_API_KEY`: API key dari OpenRouter
+- `OPENROUTER_MODEL`: opsional, default `deepseek/deepseek-v4-flash-0731`
+- `OPENROUTER_SITE_URL`: opsional, default `https://www.harunokaze.id`
+- `OPENROUTER_APP_TITLE`: opsional, default `Harunokaze Portal`
+
+Admin mengisi interpretasi psikolog di halaman **Review final**, klik **Refine dengan AI**, memeriksa hasil, lalu menyimpan draft. AI tidak menerbitkan sertifikat dan tidak menggantikan persetujuan admin.
 
 #### Error `cannot execute CREATE TABLE in a read-only transaction`?
 

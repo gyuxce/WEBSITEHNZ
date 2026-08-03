@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Award, CheckCircle2, Save } from "lucide-react";
+import type { ReactNode } from "react";
+import { ArrowLeft, Award, CheckCircle2, Save, Sparkles } from "lucide-react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabase";
@@ -17,6 +18,7 @@ export function AdminFinalReviewPage() {
   const [qcNotes, setQcNotes] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [refining, setRefining] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -54,6 +56,50 @@ export function AdminFinalReviewPage() {
     [assessment],
   );
   const approved = assessment?.final_review_status === "approved";
+
+  async function refineWithAi() {
+    if (!userId || !assessment) return;
+    if (!allTestsComplete) {
+      setError("Selesaikan semua hasil tes sebelum menjalankan refine AI.");
+      return;
+    }
+    if (!psychologistInterpretation.trim()) {
+      setError("Isi interpretasi psikolog terlebih dahulu.");
+      return;
+    }
+
+    setRefining(true);
+    setError("");
+    setMessage("");
+    const { data, error: functionError } = await supabase.functions.invoke("refine-final-review", {
+      body: {
+        user_id: userId,
+        psychologist_interpretation: psychologistInterpretation,
+        participant_summary: participantSummary,
+        qc_notes: qcNotes,
+      },
+    });
+
+    if (functionError) {
+      setError(functionError.message || "Gagal menjalankan refine AI.");
+      setRefining(false);
+      return;
+    }
+    if (!data?.participant_summary) {
+      setError(data?.error || "AI tidak mengembalikan narasi.");
+      setRefining(false);
+      return;
+    }
+
+    setParticipantSummary(data.participant_summary);
+    const flags = Array.isArray(data.qc_flags) ? data.qc_flags : [];
+    setMessage(
+      flags.length > 0
+        ? `Draft AI dibuat. Periksa kembali: ${flags.join("; ")}`
+        : "Draft AI dibuat. Periksa narasi, lalu simpan sebagai draft QC.",
+    );
+    setRefining(false);
+  }
 
   async function saveDraft() {
     if (!userId || !assessment) return;
@@ -98,6 +144,19 @@ export function AdminFinalReviewPage() {
     setPublishing(true);
     setError("");
     setMessage("");
+
+    const { error: draftError } = await supabase.rpc("admin_upsert_final_review", {
+      p_user_id: userId,
+      p_psychologist_interpretation: psychologistInterpretation,
+      p_participant_summary: participantSummary,
+      p_qc_notes: qcNotes,
+    });
+    if (draftError) {
+      setError(draftError.message);
+      setPublishing(false);
+      return;
+    }
+
     const { data, error: publishError } = await supabase.rpc("admin_publish_assessment", {
       p_user_id: userId,
     });
@@ -190,6 +249,19 @@ export function AdminFinalReviewPage() {
           onChange={setParticipantSummary}
           placeholder="Tulis ulang dengan bahasa yang konsultatif, jelas, dan sesuai untuk peserta."
           disabled={approved}
+          action={
+            !approved ? (
+              <button
+                type="button"
+                onClick={() => void refineWithAi()}
+                disabled={refining || saving || publishing || !allTestsComplete}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-brand-navy px-3 py-1.5 text-[11px] font-bold text-white hover:bg-brand-navy-light disabled:opacity-50"
+              >
+                <Sparkles size={14} />
+                {refining ? "Menyusun..." : "Refine dengan AI"}
+              </button>
+            ) : null
+          }
         />
       </div>
 
@@ -212,7 +284,7 @@ export function AdminFinalReviewPage() {
             <button
               type="button"
               onClick={() => void saveDraft()}
-              disabled={saving || publishing || !allTestsComplete}
+              disabled={saving || refining || publishing || !allTestsComplete}
               className="inline-flex items-center gap-2 rounded-xl border border-brand-navy/15 px-5 py-3 text-sm font-bold text-brand-navy disabled:opacity-50"
             >
               <Save size={18} /> {saving ? "Menyimpan..." : "Simpan draft review"}
@@ -220,7 +292,7 @@ export function AdminFinalReviewPage() {
             <button
               type="button"
               onClick={() => void publishAssessment()}
-              disabled={saving || publishing || !allTestsComplete}
+              disabled={saving || refining || publishing || !allTestsComplete}
               className="inline-flex items-center gap-2 rounded-xl bg-brand-red px-5 py-3 text-sm font-bold text-white disabled:opacity-50"
             >
               <CheckCircle2 size={18} />
@@ -243,16 +315,21 @@ function ReviewField({
   onChange,
   placeholder,
   disabled,
+  action,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   placeholder: string;
   disabled: boolean;
+  action?: ReactNode;
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-xs font-bold uppercase tracking-wide text-brand-navy/45">{label}</span>
+      <span className="flex items-center justify-between gap-3 text-xs font-bold uppercase tracking-wide text-brand-navy/45">
+        <span>{label}</span>
+        {action}
+      </span>
       <textarea
         value={value}
         onChange={(event) => onChange(event.target.value)}
