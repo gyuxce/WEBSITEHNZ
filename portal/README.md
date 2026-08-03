@@ -104,7 +104,6 @@ Isi `.env`:
 ```env
 VITE_SUPABASE_URL=https://xxxx.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJ...
-VITE_PEMETAAN_PRICE=150000
 VITE_LANDING_URL=http://localhost:5173
 ```
 
@@ -123,7 +122,6 @@ Set secrets di Supabase Dashboard → Edge Functions:
 - `PIVOT_CLIENT_ID`
 - `PIVOT_CLIENT_SECRET`
 - `PIVOT_CALLBACK_API_KEY`
-- `PIVOT_PAYMENT_AMOUNT=150000`
 - `PIVOT_SUCCESS_URL`
 - `PIVOT_FAILURE_URL`
 - `PIVOT_EXPIRATION_URL`
@@ -156,7 +154,6 @@ PIVOT_BASE_URL=https://api.pivot-payment.com
 PIVOT_CLIENT_ID=<Client ID Production>
 PIVOT_CLIENT_SECRET=<Client Secret Production>
 PIVOT_CALLBACK_API_KEY=<Callback API Key Production>
-PIVOT_PAYMENT_AMOUNT=150000
 PIVOT_SUCCESS_URL=https://portal.harunokaze.id/payment?payment=success
 PIVOT_FAILURE_URL=https://portal.harunokaze.id/payment?payment=failure
 PIVOT_EXPIRATION_URL=https://portal.harunokaze.id/payment?payment=expired
@@ -204,5 +201,5 @@ portal/
 ## Production
 
 - Deploy portal ke Vercel/Netlify (build: `npm run build`, output: `dist/`)
-- Set env `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_PEMETAAN_PRICE`
+- Set env `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
 - Di landing, set `VITE_PORTAL_URL=https://portal.harunokaze.id`

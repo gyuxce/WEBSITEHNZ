@@ -172,7 +172,7 @@ export function PaymentPage() {
               value={amountInput}
               onChange={(e) => setAmountInput(e.target.value)}
               className="w-full bg-transparent py-3 font-display font-extrabold text-2xl text-brand-navy outline-none"
-              placeholder="150000"
+              placeholder="Masukkan nominal"
             />
           </div>
           {!amountValid && amountInput !== "" && (
