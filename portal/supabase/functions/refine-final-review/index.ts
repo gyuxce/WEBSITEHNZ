@@ -41,7 +41,10 @@ function messageContent(value: unknown): string {
   return value
     .map((part) => {
       if (typeof part === "string") return part;
-      if (isRecord(part) && typeof part.text === "string") return part.text;
+      if (isRecord(part)) {
+        if (typeof part.text === "string") return part.text;
+        if (typeof part.content === "string") return part.content;
+      }
       return "";
     })
     .join("\n")
@@ -127,6 +130,7 @@ function requestBody(model: string, messages: Array<{ role: string; content: str
     messages,
     temperature: 0.2,
     max_tokens: 1400,
+    reasoning: { effort: "none" },
   };
 
   if (structured) {
@@ -293,7 +297,16 @@ serve(async (req) => {
     const content = messageContent(message.content);
     const parsed = parseJsonCandidate(content);
     const refinedSummary = textValue(parsed?.participant_summary ?? content, 12000);
-    if (!refinedSummary) return jsonResponse({ error: "OpenRouter mengembalikan narasi kosong" }, 502);
+    if (!refinedSummary) {
+      const finishReason = textValue(firstChoice.finish_reason, 120);
+      const messageFields = Object.keys(message).join(", ") || "tidak ada";
+      return jsonResponse(
+        {
+          error: `OpenRouter mengembalikan narasi kosong (finish_reason: ${finishReason || "tidak diketahui"}; field message: ${messageFields}).`,
+        },
+        502,
+      );
+    }
 
     const qcFlags = Array.isArray(parsed?.qc_flags)
       ? parsed.qc_flags.filter((value): value is string => typeof value === "string").slice(0, 10)
