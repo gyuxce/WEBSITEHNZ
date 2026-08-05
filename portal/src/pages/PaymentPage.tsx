@@ -1,40 +1,86 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, ArrowRight, CreditCard, Loader2, ShieldCheck, XCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  CreditCard,
+  Loader2,
+  ReceiptText,
+  ShieldCheck,
+  XCircle,
+} from "lucide-react";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { useAuth } from "../contexts/AuthContext";
+import type { Database } from "../lib/database.types";
 import { supabase } from "../lib/supabase";
 
 type RedirectStatus = "success" | "failure" | "expired" | null;
+type ParticipantInvoice =
+  Database["public"]["Functions"]["get_own_assessment_invoice"]["Returns"][number];
 
 const POLL_INTERVAL_MS = 2500;
 const POLL_MAX_MS = 60000;
-const MIN_AMOUNT = 1000;
-const MAX_AMOUNT = 10_000_000;
+
+const formatPrice = (amount: number) =>
+  new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  }).format(amount);
+
+const formatDate = (value: string) =>
+  new Date(`${value}T00:00:00`).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 
 export function PaymentPage() {
   const { user, progress, refreshProfile } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [invoice, setInvoice] = useState<ParticipantInvoice | null>(null);
+  const [invoiceLoading, setInvoiceLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [confirmTimedOut, setConfirmTimedOut] = useState(false);
   const [redirectMessage, setRedirectMessage] = useState("");
   const handledRedirect = useRef(false);
-  const [amountInput, setAmountInput] = useState("");
 
-  const isPaid = progress?.payment_status === "verified" || progress?.payment_status === "paid";
-
+  const isPaid =
+    invoice?.status === "paid" ||
+    progress?.payment_status === "verified" ||
+    progress?.payment_status === "paid";
   const canStartLanguageTest =
     progress?.payment_status === "verified" || progress?.language_test_status === "available";
+  const isOverdue = Boolean(
+    invoice?.due_date &&
+      new Date(`${invoice.due_date}T23:59:59+07:00`).getTime() < Date.now(),
+  );
 
-  const formatPrice = (amount: number) =>
-    new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(amount);
+  const loadInvoice = useCallback(
+    async (showLoader = true) => {
+      if (!user) return;
+      if (showLoader) setInvoiceLoading(true);
 
-  const amount = Number(amountInput);
-  const amountValid = Number.isInteger(amount) && amount >= MIN_AMOUNT && amount <= MAX_AMOUNT;
+      const { data, error: invoiceError } = await supabase.rpc(
+        "get_own_assessment_invoice",
+      );
+      if (invoiceError) {
+        setError(invoiceError.message);
+      } else {
+        setInvoice(data?.[0] ?? null);
+      }
+      if (showLoader) setInvoiceLoading(false);
+    },
+    [user],
+  );
 
-  const clearPaymentParam = () => {
+  useEffect(() => {
+    void loadInvoice();
+  }, [loadInvoice]);
+
+  const clearPaymentParam = useCallback(() => {
     setSearchParams(
       (prev) => {
         prev.delete("payment");
@@ -42,9 +88,8 @@ export function PaymentPage() {
       },
       { replace: true },
     );
-  };
+  }, [setSearchParams]);
 
-  // Handle return-redirect dari Pivot: ?payment=success|failure|expired
   useEffect(() => {
     if (handledRedirect.current) return;
     const status = searchParams.get("payment") as RedirectStatus;
@@ -63,19 +108,16 @@ export function PaymentPage() {
       setRedirectMessage("Sesi pembayaran kedaluwarsa. Silakan coba lagi.");
       clearPaymentParam();
     }
-    // other values -> abaikan
-  }, [searchParams]);
+  }, [clearPaymentParam, searchParams]);
 
-  // Berhenti menunggu begitu status verified terdeteksi (real-time atau polling)
   useEffect(() => {
     if (confirming && isPaid) {
       setConfirming(false);
       setConfirmTimedOut(false);
       clearPaymentParam();
     }
-  }, [confirming, isPaid]);
+  }, [clearPaymentParam, confirming, isPaid]);
 
-  // Polling cadangan: webhook bisa telat sampai status terbaca
   useEffect(() => {
     if (!confirming) return;
     let active = true;
@@ -83,7 +125,7 @@ export function PaymentPage() {
 
     const tick = async () => {
       if (!active) return;
-      await refreshProfile();
+      await Promise.all([refreshProfile(), loadInvoice(false)]);
       elapsed += POLL_INTERVAL_MS;
       if (elapsed >= POLL_MAX_MS && active) {
         setConfirming(false);
@@ -97,21 +139,25 @@ export function PaymentPage() {
       active = false;
       clearInterval(id);
     };
-  }, [confirming, refreshProfile]);
+  }, [confirming, loadInvoice, refreshProfile]);
 
   const handlePayPivot = async () => {
-    if (!user) return;
-    if (!amountValid) {
-      setError(`Nominal harus antara ${formatPrice(MIN_AMOUNT)} dan ${formatPrice(MAX_AMOUNT)}.`);
+    if (!user || !invoice) {
+      setError("Tagihan pembayaran belum tersedia.");
       return;
     }
+    if (isOverdue) {
+      setError("Tagihan sudah melewati tanggal jatuh tempo. Hubungi admin untuk memperbaruinya.");
+      return;
+    }
+
     setLoading(true);
     setError("");
     setRedirectMessage("");
 
     try {
       const { data, error: fnError } = await supabase.functions.invoke("pivot-create", {
-        body: { amount },
+        body: { invoice_id: invoice.id },
       });
 
       if (fnError instanceof FunctionsHttpError) {
@@ -120,7 +166,7 @@ export function PaymentPage() {
           const errBody = await fnError.context.json();
           serverMsg = errBody?.error ?? serverMsg;
         } catch {
-          // body bukan JSON / sudah ter-consume
+          // The function may return an empty or already-consumed response body.
         }
         throw new Error(serverMsg);
       }
@@ -134,67 +180,43 @@ export function PaymentPage() {
     }
   };
 
-  const handleRecheckStatus = async () => {
-    setConfirmTimedOut(false);
-    setConfirming(true);
-  };
-
   return (
-    <div className="max-w-lg mx-auto">
-      <Link to="/dashboard" className="inline-flex items-center gap-1.5 text-sm text-brand-navy/50 hover:text-brand-red mb-6">
+    <div className="mx-auto max-w-lg">
+      <Link
+        to="/dashboard"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm text-brand-navy/50 hover:text-brand-red"
+      >
         <ArrowLeft size={16} /> Kembali ke dashboard
       </Link>
 
-      <div className="rounded-2xl border border-brand-navy/8 bg-white p-8 shadow-sm">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="h-12 w-12 rounded-xl bg-brand-red-soft text-brand-red flex items-center justify-center">
+      <div className="rounded-2xl border border-brand-navy/8 bg-white p-6 shadow-sm sm:p-8">
+        <div className="mb-6 flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-red-soft text-brand-red">
             <CreditCard size={24} />
           </div>
           <div>
-            <h1 className="font-display font-extrabold text-xl text-brand-navy">Pembayaran Pemetaan</h1>
-            <p className="text-xs text-brand-navy/50">Biaya akses tes potensi & bahasa</p>
+            <h1 className="font-display text-xl font-extrabold text-brand-navy">
+              Pembayaran Pemetaan
+            </h1>
+            <p className="text-xs text-brand-navy/50">Tagihan akses rangkaian tes</p>
           </div>
         </div>
 
-        <div className="rounded-xl bg-brand-bg p-5 mb-6">
-          <label htmlFor="amount" className="text-xs font-bold uppercase tracking-wide text-brand-navy/40">
-            Nominal pembayaran
-          </label>
-          <div className="mt-2 flex items-center gap-2 rounded-lg border border-brand-navy/12 bg-white px-3">
-            <span className="text-brand-navy/50 font-bold">Rp</span>
-            <input
-              id="amount"
-              type="number"
-              inputMode="numeric"
-              min={MIN_AMOUNT}
-              max={MAX_AMOUNT}
-              step={MIN_AMOUNT}
-              value={amountInput}
-              onChange={(e) => setAmountInput(e.target.value)}
-              className="w-full bg-transparent py-3 font-display font-extrabold text-2xl text-brand-navy outline-none"
-              placeholder="Masukkan nominal"
-            />
+        {invoiceLoading ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="animate-spin text-brand-red" size={28} />
           </div>
-          {!amountValid && amountInput !== "" && (
-            <p className="mt-2 text-xs text-brand-red">
-              Nominal harus antara {formatPrice(MIN_AMOUNT)} dan {formatPrice(MAX_AMOUNT)}.
-            </p>
-          )}
-          <p className="text-xs text-brand-navy/45 mt-3">
-            Masukkan nominal sesuai kesepakatan. Pembayaran aman via Paper.id (QRIS, transfer bank, e-wallet).
-          </p>
-        </div>
-
-        {isPaid ? (
+        ) : isPaid ? (
           <div className="space-y-4">
-            <div className="flex items-center gap-3 rounded-xl bg-emerald-50 text-emerald-700 px-4 py-3 text-sm font-semibold">
+            {invoice ? <InvoiceSummary invoice={invoice} /> : null}
+            <div className="flex items-center gap-3 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
               <ShieldCheck size={20} />
-              Pembayaran berhasil! Tes Pimsleur sudah terbuka.
+              Pembayaran berhasil. Tes Pimsleur sudah terbuka.
             </div>
             {canStartLanguageTest && progress?.language_test_status !== "completed" && (
               <Link
                 to="/test/pimsleur"
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-red text-white font-bold py-3.5 text-sm hover:bg-brand-red-hover transition-colors"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-red py-3.5 text-sm font-bold text-white transition-colors hover:bg-brand-red-hover"
               >
                 Lanjut ke Tes Pimsleur
                 <ArrowRight size={18} />
@@ -203,7 +225,7 @@ export function PaymentPage() {
             {progress?.language_test_status === "completed" && (
               <Link
                 to="/result/pimsleur"
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-navy text-white font-bold py-3.5 text-sm hover:bg-brand-navy-light transition-colors"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-navy py-3.5 text-sm font-bold text-white transition-colors hover:bg-brand-navy-light"
               >
                 Lihat hasil Pimsleur
                 <ArrowRight size={18} />
@@ -212,71 +234,123 @@ export function PaymentPage() {
           </div>
         ) : confirming ? (
           <div className="space-y-4">
-            <div className="flex items-center gap-3 rounded-xl bg-brand-red-soft text-brand-navy px-4 py-4 text-sm font-semibold">
+            {invoice ? <InvoiceSummary invoice={invoice} /> : null}
+            <div className="flex items-center gap-3 rounded-xl bg-brand-red-soft px-4 py-4 text-sm font-semibold text-brand-navy">
               <Loader2 size={20} className="animate-spin text-brand-red" />
               <div>
-                <p className="font-bold">Menunggu konfirmasi pembayaran…</p>
+                <p className="font-bold">Menunggu konfirmasi pembayaran</p>
                 <p className="mt-1 text-xs font-medium text-brand-navy/55">
-                  Pembayaranmu sedang diverifikasi. Halaman ini akan diperbarui otomatis.
+                  Status akan diperbarui otomatis setelah callback Pivot diterima.
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3 rounded-xl border border-brand-navy/8 px-4 py-3 text-xs text-brand-navy/50">
-              <ShieldCheck size={16} className="shrink-0 text-emerald-600" />
-              Sudah bayar? Biarkan terbuka — status bayar terkunci otomatis begitu diverifikasi.
-            </div>
+          </div>
+        ) : !invoice ? (
+          <div className="rounded-xl border border-brand-navy/8 bg-brand-bg p-5 text-center">
+            <ReceiptText className="mx-auto text-brand-navy/35" size={30} />
+            <p className="mt-3 text-sm font-bold text-brand-navy">Tagihan belum tersedia</p>
+            <p className="mt-1 text-xs leading-relaxed text-brand-navy/50">
+              Admin akan menetapkan nominal pembayaran untuk akun ini.
+            </p>
           </div>
         ) : confirmTimedOut ? (
           <div className="space-y-4">
-            <div className="flex items-start gap-3 rounded-xl bg-amber-50 text-amber-700 px-4 py-3 text-sm font-semibold">
+            <InvoiceSummary invoice={invoice} />
+            <div className="flex items-start gap-3 rounded-xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
               <XCircle size={20} className="mt-0.5 shrink-0" />
               <div>
                 <p className="font-bold">Konfirmasi belum diterima</p>
                 <p className="mt-1 text-xs font-medium text-amber-700/80">
-                  Pembayaranmu mungkin masih diproses. Cek status lagi, atau jika belum dibayar, mulai sesi baru.
+                  Pembayaran mungkin masih diproses. Periksa lagi sebelum membuat sesi baru.
                 </p>
               </div>
             </div>
             <button
               type="button"
-              onClick={handleRecheckStatus}
-              disabled={loading}
-              className="w-full rounded-xl border border-brand-navy/15 text-brand-navy font-bold py-3.5 text-sm hover:bg-brand-navy/2 transition-colors disabled:opacity-50"
+              onClick={() => {
+                setConfirmTimedOut(false);
+                setConfirming(true);
+              }}
+              className="w-full rounded-xl border border-brand-navy/15 py-3.5 text-sm font-bold text-brand-navy transition-colors hover:bg-brand-navy/2"
             >
               Cek status pembayaran
             </button>
             <button
               type="button"
               onClick={() => setConfirmTimedOut(false)}
-              className="w-full rounded-xl bg-brand-red text-white font-bold py-3.5 text-sm hover:bg-brand-red-hover transition-colors"
+              className="w-full rounded-xl bg-brand-red py-3.5 text-sm font-bold text-white transition-colors hover:bg-brand-red-hover"
             >
               Mulai pembayaran baru
             </button>
           </div>
         ) : (
-          <>
+          <div className="space-y-4">
+            <InvoiceSummary invoice={invoice} />
             {error && (
-              <p className="text-sm text-brand-red bg-brand-red-soft rounded-lg px-3 py-2 mb-4">{error}</p>
+              <p className="rounded-lg bg-brand-red-soft px-3 py-2 text-sm text-brand-red">
+                {error}
+              </p>
             )}
             {redirectMessage && (
-              <p className="text-sm text-brand-red bg-brand-red-soft rounded-lg px-3 py-2 mb-4">{redirectMessage}</p>
+              <p className="rounded-lg bg-brand-red-soft px-3 py-2 text-sm text-brand-red">
+                {redirectMessage}
+              </p>
             )}
-
+            {isOverdue ? (
+              <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">
+                Tagihan melewati jatuh tempo. Hubungi admin untuk memperbarui tagihan.
+              </p>
+            ) : null}
             <button
               type="button"
               onClick={handlePayPivot}
-              disabled={loading || !amountValid}
-              className="w-full rounded-xl bg-brand-red text-white font-bold py-3.5 text-sm hover:bg-brand-red-hover transition-colors disabled:opacity-50"
+              disabled={loading || isOverdue}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-red py-3.5 text-sm font-bold text-white transition-colors hover:bg-brand-red-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {loading
-                ? "Memproses..."
-                : amountValid
-                  ? `Bayar ${formatPrice(amount)}`
-                  : "Masukkan nominal"}
+              {loading ? <Loader2 className="animate-spin" size={18} /> : <CreditCard size={18} />}
+              {loading ? "Memproses..." : `Bayar ${formatPrice(invoice.amount)}`}
             </button>
-
-          </>
+            <div className="flex items-center justify-center gap-2 text-xs text-brand-navy/45">
+              <ShieldCheck size={15} className="text-emerald-600" />
+              Diproses melalui Pivot Payment
+            </div>
+          </div>
         )}
+
+        {!invoiceLoading && error && (isPaid || confirming || !invoice) ? (
+          <p className="mt-4 rounded-lg bg-brand-red-soft px-3 py-2 text-sm text-brand-red">
+            {error}
+          </p>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function InvoiceSummary({ invoice }: { invoice: ParticipantInvoice }) {
+  return (
+    <div className="rounded-xl bg-brand-bg p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-xs font-bold uppercase text-brand-navy/40">Nomor tagihan</p>
+          <p className="mt-1 break-all text-sm font-bold text-brand-navy">
+            {invoice.invoice_number}
+          </p>
+        </div>
+        <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-bold uppercase text-brand-navy/55">
+          {invoice.status === "paid" ? "Lunas" : "Menunggu"}
+        </span>
+      </div>
+      <div className="mt-5 border-t border-brand-navy/8 pt-4">
+        <p className="text-sm text-brand-navy/60">{invoice.description}</p>
+        <p className="mt-2 font-display text-2xl font-extrabold text-brand-navy">
+          {formatPrice(invoice.amount)}
+        </p>
+        {invoice.due_date ? (
+          <p className="mt-2 text-xs text-brand-navy/45">
+            Jatuh tempo {formatDate(invoice.due_date)}
+          </p>
+        ) : null}
       </div>
     </div>
   );

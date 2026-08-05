@@ -40,6 +40,44 @@ export interface Database {
         };
         Relationships: [];
       };
+      assessment_invoices: {
+        Row: {
+          id: string;
+          user_id: string;
+          invoice_number: string;
+          amount: number;
+          currency: "IDR";
+          description: string;
+          status: "issued" | "paid" | "cancelled";
+          due_date: string | null;
+          issued_at: string;
+          paid_at: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          invoice_number: string;
+          amount: number;
+          currency?: "IDR";
+          description?: string;
+          status?: "issued" | "paid" | "cancelled";
+          due_date?: string | null;
+          issued_at?: string;
+          paid_at?: string | null;
+          created_by?: string | null;
+        };
+        Update: {
+          amount?: number;
+          description?: string;
+          status?: "issued" | "paid" | "cancelled";
+          due_date?: string | null;
+          issued_at?: string;
+          paid_at?: string | null;
+        };
+        Relationships: [];
+      };
       pimsleur_results: {
         Row: {
           id: string;
@@ -274,8 +312,10 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
+          invoice_id: string | null;
           order_id: string;
           amount: number;
+          currency: "IDR";
           status: string;
           midtrans_transaction_id: string | null;
           provider: string;
@@ -288,8 +328,10 @@ export interface Database {
         };
         Insert: {
           user_id: string;
+          invoice_id?: string | null;
           order_id: string;
           amount: number;
+          currency?: "IDR";
           status?: string;
           midtrans_transaction_id?: string | null;
           provider?: string;
@@ -299,6 +341,9 @@ export interface Database {
           payment_type?: string;
         };
         Update: {
+          invoice_id?: string | null;
+          amount?: number;
+          currency?: "IDR";
           status?: string;
           midtrans_transaction_id?: string | null;
           provider?: string;
@@ -395,6 +440,51 @@ export interface Database {
     Views: Record<string, never>;
     Functions: {
       is_admin: { Args: Record<string, never>; Returns: boolean };
+      admin_list_assessment_invoices: {
+        Args: Record<string, never>;
+        Returns: {
+          user_id: string;
+          full_name: string;
+          email: string | null;
+          whatsapp: string | null;
+          city: string | null;
+          invoice_id: string | null;
+          invoice_number: string | null;
+          amount: number | null;
+          currency: "IDR" | null;
+          description: string | null;
+          invoice_status: "issued" | "paid" | "cancelled" | null;
+          due_date: string | null;
+          issued_at: string | null;
+          paid_at: string | null;
+          progress_payment_status: "pending" | "paid" | "verified";
+          last_payment_status: string | null;
+          last_payment_at: string | null;
+        }[];
+      };
+      admin_upsert_assessment_invoice: {
+        Args: {
+          p_user_id: string;
+          p_amount: number;
+          p_description: string;
+          p_due_date: string | null;
+        };
+        Returns: Database["public"]["Tables"]["assessment_invoices"]["Row"];
+      };
+      get_own_assessment_invoice: {
+        Args: Record<string, never>;
+        Returns: {
+          id: string;
+          invoice_number: string;
+          amount: number;
+          currency: "IDR";
+          description: string;
+          status: "issued" | "paid";
+          due_date: string | null;
+          issued_at: string;
+          paid_at: string | null;
+        }[];
+      };
       admin_list_pimsleur_results: {
         Args: Record<string, never>;
         Returns: {
@@ -605,6 +695,7 @@ export interface Database {
 
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type UserProgress = Database["public"]["Tables"]["user_progress"]["Row"];
+export type AssessmentInvoice = Database["public"]["Tables"]["assessment_invoices"]["Row"];
 export type PimsleurResult = Database["public"]["Tables"]["pimsleur_results"]["Row"];
 export type CfitResult = Database["public"]["Tables"]["cfit_results"]["Row"];
 export type PapikostikResult = Database["public"]["Tables"]["papikostik_results"]["Row"];

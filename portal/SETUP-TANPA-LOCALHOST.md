@@ -22,9 +22,7 @@ Buka **Supabase** → **Settings** → **API**:
 ```env
 VITE_SUPABASE_URL=https://abcdefgh.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-VITE_MIDTRANS_CLIENT_KEY=                    # kosongkan dulu boleh
-VITE_PEMETAAN_PRICE=150000
-VITE_LANDING_URL=https://nama-landing.vercel.app
+VITE_LANDING_URL=https://www.harunokaze.id
 ```
 
 ---
@@ -67,7 +65,11 @@ VITE_PORTAL_URL=https://nama-portal.vercel.app
 3. Env: `VITE_PORTAL_URL` = URL portal dari langkah atas
 4. Deploy
 
-Setelah deploy, **update** kedua `.env` dengan URL Vercel yang asli.
+Setelah deploy, **update** environment variable kedua project dengan URL domain yang asli.
+
+Kredensial Pivot bukan environment variable Vercel. Simpan seluruh `PIVOT_*` di Supabase Edge
+Functions Secrets sesuai daftar pada `README.md`, lalu gunakan endpoint production
+`https://api.pivot-payment.com`.
 
 ---
 
@@ -78,7 +80,7 @@ Buka di browser (tidak perlu localhost):
 - Landing: `https://nama-landing.vercel.app`
 - Portal daftar: `https://nama-portal.vercel.app/register`
 
-Flow: Daftar → Login → Bayar (Mode sandbox) → Tes → Sertifikat
+Flow: Daftar → Login → Admin membuat tagihan → Bayar via Pivot → Tes → Sertifikat
 
 ---
 
@@ -96,4 +98,5 @@ Update Supabase Auth URL ke URL Vercel
 Buka dari HP / browser — tanpa localhost
 ```
 
-Midtrans bisa ditambah belakangan; untuk sekarang cukup **Mode sandbox** di halaman pembayaran portal.
+Pembayaran portal hanya memakai Pivot production. Nominal dibuat per peserta dari menu admin dan
+tidak diisi sendiri oleh peserta.

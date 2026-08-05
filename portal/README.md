@@ -8,7 +8,7 @@ Portal web calon siswa untuk daftar, bayar, tes, dan unduh sertifikat pemetaan p
 
 - Register / login / logout / lupa password
 - Dashboard progress pemetaan
-- Pembayaran pemetaan melalui Pivot Payment
+- Tagihan per peserta dan pembayaran melalui Pivot Payment
 - **Tes Pimsleur** (aptitude bahasa, seksi 2–6, timer 25 menit, grade A–F)
 - Hasil Pimsleur + admin daftar/detail skor
 - CFIT: 4 subtes, instruksi dari PPTX, timer per subtes, gambar soal, penyimpanan jawaban, raw score per subtes, raw total, IQ, kategori, halaman hasil peserta, dan admin detail jawaban berdasarkan norma CFIT 3A
@@ -29,11 +29,13 @@ Portal web calon siswa untuk daftar, bayar, tes, dan unduh sertifikat pemetaan p
    - `supabase/migrations/20260722000000_cfit_papikostik_progress.sql`
    - `supabase/migrations/20260723000000_cfit_low_score_floor.sql`
    - `supabase/migrations/20260724000000_papikostik_results.sql`
+   - `supabase/migrations/20260730000000_pivot_payment.sql`
    - `supabase/migrations/20260731000000_certificate_admin_unlock.sql`
    - `supabase/migrations/20260803000000_final_review_workflow.sql`
    - `supabase/migrations/20260803000001_final_review_guardrails.sql`
    - `supabase/migrations/20260803000002_unify_papi_final_review.sql`
    - `supabase/migrations/20260803000003_final_review_narrative_source.sql`
+   - `supabase/migrations/20260805000000_assessment_invoices.sql`
 
 Untuk admin: set `profiles.role = 'admin'` pada user staf.
 
@@ -113,7 +115,7 @@ Deploy ke Supabase:
 
 ```bash
 supabase functions deploy pivot-create
-supabase functions deploy pivot-webhook
+supabase functions deploy pivot-webhook --no-verify-jwt
 ```
 
 Set secrets di Supabase Dashboard → Edge Functions:
@@ -130,6 +132,10 @@ Set secrets di Supabase Dashboard → Edge Functions:
 Callback URL Pivot: `https://xxxx.supabase.co/functions/v1/pivot-webhook`
 
 Gunakan kredensial dan Callback API Key production setelah akun Pivot live diaktifkan.
+Endpoint production wajib memakai `https://api.pivot-payment.com`. Fungsi akan menolak endpoint
+atau checkout URL sandbox agar transaksi uji tidak tercampur dengan pembayaran peserta.
+Webhook dideploy dengan `--no-verify-jwt` karena dipanggil server Pivot, bukan user Supabase;
+permintaan tetap wajib lolos validasi `PIVOT_CALLBACK_API_KEY` di dalam function.
 
 ### 4. Database payment metadata
 
@@ -138,13 +144,18 @@ Editor:
 
 ```text
 supabase/migrations/20260730000000_pivot_payment.sql
+supabase/migrations/20260805000000_assessment_invoices.sql
 ```
+
+Admin membuat tagihan dari `/admin/payments`. Peserta hanya melihat nominal yang sudah ditetapkan;
+nominal tidak dikirim dari input browser. Callback baru membuka tes jika referensi, pemilik invoice,
+nominal, dan mata uang cocok dengan data server.
 
 Deploy functions:
 
 ```bash
 supabase functions deploy pivot-create
-supabase functions deploy pivot-webhook
+supabase functions deploy pivot-webhook --no-verify-jwt
 ```
 
 Set secrets di Supabase Edge Functions:
