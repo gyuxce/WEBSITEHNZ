@@ -82,9 +82,7 @@ export function AdminPaymentsPage() {
     () => ({
       issued: rows.filter((row) => row.invoice_status === "issued").length,
       paid: rows.filter((row) => row.invoice_status === "paid").length,
-      legacy: rows.filter(
-        (row) => !row.invoice_id && ["paid", "verified"].includes(row.progress_payment_status),
-      ).length,
+      legacy: rows.filter((row) => hasLegacyPaymentAccess(row)).length,
       missing: rows.filter(
         (row) => !row.invoice_id && row.progress_payment_status === "pending",
       ).length,
@@ -215,83 +213,109 @@ export function AdminPaymentsPage() {
           </p>
         </div>
       ) : (
-        <div className="mt-6 overflow-x-auto rounded-xl border border-brand-navy/8 bg-white">
-          <table className="w-full min-w-[900px] text-left text-sm">
-            <thead className="border-b border-brand-navy/8 bg-brand-bg text-xs uppercase text-brand-navy/45">
-              <tr>
-                <th className="px-4 py-3 font-bold">Peserta</th>
-                <th className="px-4 py-3 font-bold">Tagihan</th>
-                <th className="px-4 py-3 font-bold">Nominal</th>
-                <th className="px-4 py-3 font-bold">Status</th>
-                <th className="px-4 py-3 text-right font-bold">Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredRows.map((row) => (
-                <tr
-                  key={row.user_id}
-                  className="border-b border-brand-navy/5 align-top last:border-0"
-                >
-                  <td className="px-4 py-4">
-                    <p className="font-semibold text-brand-navy">{row.full_name}</p>
-                    <p className="mt-1 text-xs text-brand-navy/45">{row.email ?? "-"}</p>
+        <>
+          <div className="mt-6 space-y-3 md:hidden">
+            {filteredRows.map((row) => (
+              <article key={row.user_id} className="rounded-xl border border-brand-navy/8 bg-white p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-brand-navy">{row.full_name}</p>
+                    <p className="mt-1 break-all text-xs text-brand-navy/45">{row.email ?? "-"}</p>
                     {row.whatsapp ? (
                       <p className="mt-0.5 text-xs text-brand-navy/45">{row.whatsapp}</p>
                     ) : null}
-                  </td>
-                  <td className="px-4 py-4">
-                    <p className="font-mono text-xs font-semibold text-brand-navy/70">
+                  </div>
+                  <InvoiceStatus
+                    status={row.invoice_status}
+                    legacyVerified={hasLegacyPaymentAccess(row)}
+                  />
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-3 border-t border-brand-navy/8 pt-3 text-xs">
+                  <div>
+                    <p className="font-bold uppercase text-brand-navy/40">Tagihan</p>
+                    <p className="mt-1 break-all font-mono font-semibold text-brand-navy/70">
                       {row.invoice_number ?? "Belum dibuat"}
                     </p>
-                    {row.due_date ? (
-                      <p className="mt-2 text-xs text-brand-navy/45">
-                        Jatuh tempo {formatDate(`${row.due_date}T00:00:00`)}
-                      </p>
-                    ) : null}
-                  </td>
-                  <td className="px-4 py-4 font-bold text-brand-navy">
-                    {row.amount ? formatPrice(row.amount) : "-"}
-                  </td>
-                  <td className="px-4 py-4">
-                    <InvoiceStatus
-                      status={row.invoice_status}
-                      legacyVerified={
-                        !row.invoice_id &&
-                        ["paid", "verified"].includes(row.progress_payment_status)
-                      }
-                    />
-                    {row.last_payment_status ? (
-                      <p className="mt-2 text-xs text-brand-navy/45">
-                        Transaksi terakhir: {paymentStatusLabel(row.last_payment_status)}
-                      </p>
-                    ) : null}
-                  </td>
-                  <td className="px-4 py-4 text-right">
-                    <button
-                      type="button"
-                      onClick={() => openEditor(row)}
-                      disabled={
-                        row.invoice_status === "paid" ||
-                        (!row.invoice_id &&
-                          ["paid", "verified"].includes(row.progress_payment_status))
-                      }
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-brand-navy/12 px-3 py-2 text-xs font-bold text-brand-navy transition-colors hover:border-brand-red/30 hover:text-brand-red disabled:cursor-not-allowed disabled:opacity-35"
-                    >
-                      {row.invoice_id ? <Pencil size={14} /> : <Plus size={14} />}
-                      {row.invoice_status === "paid" ||
-                      (!row.invoice_id &&
-                        ["paid", "verified"].includes(row.progress_payment_status))
-                        ? "Sudah aktif"
-                        : row.invoice_id
-                          ? "Edit"
-                          : "Buat tagihan"}
-                    </button>
-                  </td>
+                  </div>
+                  <div>
+                    <p className="font-bold uppercase text-brand-navy/40">Nominal</p>
+                    <p className="mt-1 font-bold text-brand-navy">
+                      {row.amount ? formatPrice(row.amount) : "-"}
+                    </p>
+                  </div>
+                </div>
+                {row.due_date ? (
+                  <p className="mt-3 text-xs text-brand-navy/45">
+                    Jatuh tempo {formatDate(`${row.due_date}T00:00:00`)}
+                  </p>
+                ) : null}
+                {row.last_payment_status ? (
+                  <p className="mt-2 text-xs text-brand-navy/45">
+                    Transaksi terakhir: {paymentStatusLabel(row.last_payment_status)}
+                  </p>
+                ) : null}
+                <InvoiceActionButton row={row} onOpen={openEditor} fullWidth />
+              </article>
+            ))}
+          </div>
+
+          <div className="mt-6 hidden overflow-x-auto rounded-xl border border-brand-navy/8 bg-white md:block">
+            <table className="w-full min-w-[900px] text-left text-sm">
+              <thead className="border-b border-brand-navy/8 bg-brand-bg text-xs uppercase text-brand-navy/45">
+                <tr>
+                  <th className="px-4 py-3 font-bold">Peserta</th>
+                  <th className="px-4 py-3 font-bold">Tagihan</th>
+                  <th className="px-4 py-3 font-bold">Nominal</th>
+                  <th className="px-4 py-3 font-bold">Status</th>
+                  <th className="px-4 py-3 text-right font-bold">Aksi</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {filteredRows.map((row) => (
+                  <tr
+                    key={row.user_id}
+                    className="border-b border-brand-navy/5 align-top last:border-0"
+                  >
+                    <td className="px-4 py-4">
+                      <p className="font-semibold text-brand-navy">{row.full_name}</p>
+                      <p className="mt-1 text-xs text-brand-navy/45">{row.email ?? "-"}</p>
+                      {row.whatsapp ? (
+                        <p className="mt-0.5 text-xs text-brand-navy/45">{row.whatsapp}</p>
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-4">
+                      <p className="font-mono text-xs font-semibold text-brand-navy/70">
+                        {row.invoice_number ?? "Belum dibuat"}
+                      </p>
+                      {row.due_date ? (
+                        <p className="mt-2 text-xs text-brand-navy/45">
+                          Jatuh tempo {formatDate(`${row.due_date}T00:00:00`)}
+                        </p>
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-4 font-bold text-brand-navy">
+                      {row.amount ? formatPrice(row.amount) : "-"}
+                    </td>
+                    <td className="px-4 py-4">
+                      <InvoiceStatus
+                        status={row.invoice_status}
+                        legacyVerified={hasLegacyPaymentAccess(row)}
+                      />
+                      {row.last_payment_status ? (
+                        <p className="mt-2 text-xs text-brand-navy/45">
+                          Transaksi terakhir: {paymentStatusLabel(row.last_payment_status)}
+                        </p>
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-4 text-right">
+                      <InvoiceActionButton row={row} onOpen={openEditor} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {editing ? (
@@ -401,6 +425,41 @@ export function AdminPaymentsPage() {
         </div>
       ) : null}
     </div>
+  );
+}
+
+function hasLegacyPaymentAccess(row: InvoiceAdminRow) {
+  return !row.invoice_id && ["paid", "verified"].includes(row.progress_payment_status);
+}
+
+function isInvoiceLocked(row: InvoiceAdminRow) {
+  return row.invoice_status === "paid" || hasLegacyPaymentAccess(row);
+}
+
+function InvoiceActionButton({
+  row,
+  onOpen,
+  fullWidth = false,
+}: {
+  row: InvoiceAdminRow;
+  onOpen: (row: InvoiceAdminRow) => void;
+  fullWidth?: boolean;
+}) {
+  const locked = isInvoiceLocked(row);
+  const label = locked ? "Sudah aktif" : row.invoice_id ? "Edit" : "Buat tagihan";
+
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(row)}
+      disabled={locked}
+      className={`inline-flex items-center gap-1.5 rounded-lg border border-brand-navy/12 px-3 py-2 text-xs font-bold text-brand-navy transition-colors hover:border-brand-red/30 hover:text-brand-red disabled:cursor-not-allowed disabled:opacity-35 ${
+        fullWidth ? "mt-4 w-full justify-center py-2.5" : ""
+      }`}
+    >
+      {locked ? <CheckCircle2 size={14} /> : row.invoice_id ? <Pencil size={14} /> : <Plus size={14} />}
+      {label}
+    </button>
   );
 }
 
