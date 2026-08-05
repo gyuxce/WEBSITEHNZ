@@ -45,6 +45,7 @@ export function PaymentPage() {
   const [confirming, setConfirming] = useState(false);
   const [confirmTimedOut, setConfirmTimedOut] = useState(false);
   const [redirectMessage, setRedirectMessage] = useState("");
+  const [showPaymentSuccessDialog, setShowPaymentSuccessDialog] = useState(false);
   const handledRedirect = useRef(false);
   const statusCheckInFlight = useRef(false);
 
@@ -115,6 +116,7 @@ export function PaymentPage() {
     if (confirming && isPaid) {
       setConfirming(false);
       setConfirmTimedOut(false);
+      setShowPaymentSuccessDialog(true);
       clearPaymentParam();
     }
   }, [clearPaymentParam, confirming, isPaid]);
@@ -208,6 +210,11 @@ export function PaymentPage() {
       setLoading(false);
     }
   };
+
+  const nextTestPath =
+    progress?.language_test_status === "completed" ? "/result/pimsleur" : "/test/pimsleur";
+  const nextTestLabel =
+    progress?.language_test_status === "completed" ? "Lihat hasil Pimsleur" : "Lanjut ke Tes Pimsleur";
 
   return (
     <div className="mx-auto max-w-lg">
@@ -352,6 +359,47 @@ export function PaymentPage() {
           </p>
         ) : null}
       </div>
+
+      {showPaymentSuccessDialog && isPaid ? (
+        <div className="fixed inset-0 z-50 flex items-end bg-brand-navy/45 p-4 sm:items-center sm:justify-center">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="payment-success-title"
+            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl sm:p-8"
+          >
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+              <ShieldCheck size={36} strokeWidth={2.5} />
+            </div>
+            <div className="mt-5 text-center">
+              <p className="text-xs font-bold uppercase text-emerald-600">Pembayaran diterima</p>
+              <h2 id="payment-success-title" className="mt-2 font-display text-2xl font-extrabold text-brand-navy">
+                Pembayaran berhasil
+              </h2>
+              <p className="mt-3 text-sm leading-relaxed text-brand-navy/60">
+                Tagihan {invoice ? formatPrice(invoice.amount) : ""} sudah lunas. Akses Tes Pimsleur
+                sekarang sudah dibuka.
+              </p>
+            </div>
+            <div className="mt-7 space-y-3">
+              <Link
+                to={nextTestPath}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-red py-3.5 text-sm font-bold text-white transition-colors hover:bg-brand-red-hover"
+              >
+                {nextTestLabel}
+                <ArrowRight size={18} />
+              </Link>
+              <Link
+                to="/dashboard"
+                onClick={() => setShowPaymentSuccessDialog(false)}
+                className="flex w-full items-center justify-center rounded-xl border border-brand-navy/12 py-3 text-sm font-bold text-brand-navy transition-colors hover:bg-brand-bg"
+              >
+                Kembali ke dashboard
+              </Link>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
