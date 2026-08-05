@@ -46,6 +46,7 @@ export function PaymentPage() {
   const [confirmTimedOut, setConfirmTimedOut] = useState(false);
   const [redirectMessage, setRedirectMessage] = useState("");
   const handledRedirect = useRef(false);
+  const statusCheckInFlight = useRef(false);
 
   const isPaid =
     invoice?.status === "paid" ||
@@ -118,12 +119,40 @@ export function PaymentPage() {
     }
   }, [clearPaymentParam, confirming, isPaid]);
 
+  const checkPaymentStatus = useCallback(async () => {
+    if (!invoice || isPaid || statusCheckInFlight.current) return;
+    statusCheckInFlight.current = true;
+
+    try {
+      const { error: fnError } = await supabase.functions.invoke("pivot-status", {
+        body: { invoice_id: invoice.id },
+      });
+      if (fnError instanceof FunctionsHttpError) {
+        let serverMsg = "Status pembayaran belum dapat diperiksa";
+        try {
+          const errBody = await fnError.context.json();
+          serverMsg = errBody?.error ?? serverMsg;
+        } catch {
+          // The response body can be empty or already consumed.
+        }
+        throw new Error(serverMsg);
+      }
+      if (fnError) throw fnError;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Status pembayaran belum dapat diperiksa");
+    } finally {
+      statusCheckInFlight.current = false;
+    }
+  }, [invoice, isPaid]);
+
   useEffect(() => {
     if (!confirming) return;
     let active = true;
     let elapsed = 0;
 
     const tick = async () => {
+      if (!active) return;
+      await checkPaymentStatus();
       if (!active) return;
       await Promise.all([refreshProfile(), loadInvoice(false)]);
       elapsed += POLL_INTERVAL_MS;
@@ -139,7 +168,7 @@ export function PaymentPage() {
       active = false;
       clearInterval(id);
     };
-  }, [confirming, loadInvoice, refreshProfile]);
+  }, [checkPaymentStatus, confirming, loadInvoice, refreshProfile]);
 
   const handlePayPivot = async () => {
     if (!user || !invoice) {
@@ -240,7 +269,7 @@ export function PaymentPage() {
               <div>
                 <p className="font-bold">Menunggu konfirmasi pembayaran</p>
                 <p className="mt-1 text-xs font-medium text-brand-navy/55">
-                  Status akan diperbarui otomatis setelah callback Pivot diterima.
+                  Status diperbarui otomatis. Kami juga memeriksa status langsung ke Pivot.
                 </p>
               </div>
             </div>

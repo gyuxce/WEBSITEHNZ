@@ -115,6 +115,7 @@ Deploy ke Supabase:
 
 ```bash
 supabase functions deploy pivot-create
+supabase functions deploy pivot-status
 supabase functions deploy pivot-webhook --no-verify-jwt
 ```
 
@@ -155,6 +156,7 @@ Deploy functions:
 
 ```bash
 supabase functions deploy pivot-create
+supabase functions deploy pivot-status
 supabase functions deploy pivot-webhook --no-verify-jwt
 ```
 
