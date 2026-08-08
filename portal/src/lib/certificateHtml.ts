@@ -47,6 +47,8 @@ export function buildCertificateHtml(data: CertificateData): string {
       : "-";
   const pimsleurLevel = esc(data.pimsleurStatusLabel ?? "Belum tersedia");
   const pimsleurCatatan = esc(data.pimsleurRecommendation ?? "Belum ada catatan evaluasi.");
+  const certificateAssetBase =
+    typeof window !== "undefined" ? `${window.location.origin}/certificate` : "/certificate";
 
   return `<!DOCTYPE html>
 <html lang="id">
@@ -80,44 +82,27 @@ export function buildCertificateHtml(data: CertificateData): string {
       width: 28px;
       background: linear-gradient(180deg, #e61935 0%, #0f2240 55%, #0f2240 100%);
     }
-    .ribbon {
-      position: absolute;
-      top: 28px; right: 36px;
-      width: 72px; height: 72px;
-      background: #e61935;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: 0.06em;
-      text-align: center;
-      line-height: 1.2;
-      box-shadow: 0 6px 16px rgba(230,25,53,0.35);
-    }
-    .content { padding: 48px 56px 48px 64px; }
+    .content { padding: 44px 56px 48px 64px; }
     .logos {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 20px;
-      margin-bottom: 28px;
+      gap: 24px;
+      min-height: 104px;
+      margin-bottom: 24px;
     }
-    .logo-text {
-      font-family: 'Outfit', sans-serif;
-      font-weight: 800;
-      font-size: 18px;
-      color: #0f2240;
+    .logos > div:not(.divider-dot) { display: none; }
+    .logo-image {
+      display: block;
+      object-fit: contain;
     }
-    .logo-text span { color: #e61935; }
-    .logo-sub {
-      font-size: 9px;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: rgba(15,34,64,0.45);
-      font-weight: 700;
+    .logo-hnz {
+      width: 78px;
+      height: 104px;
+    }
+    .logo-wiwitan {
+      width: 232px;
+      height: 76px;
     }
     .divider-dot {
       width: 6px; height: 6px;
@@ -185,21 +170,11 @@ export function buildCertificateHtml(data: CertificateData): string {
       text-align: center;
       min-width: 220px;
     }
-    .sign-seal {
-      width: 64px; height: 64px;
-      margin: 0 auto 8px;
-      border: 2.5px solid #e61935;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Outfit', sans-serif;
-      font-size: 9px;
-      font-weight: 800;
-      color: #e61935;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      line-height: 1.25;
+    .sign-line {
+      width: 190px;
+      height: 42px;
+      margin: 0 auto 4px;
+      border-bottom: 1px solid rgba(15,34,64,0.35);
     }
     .sign-name {
       font-size: 13px;
@@ -280,14 +255,15 @@ export function buildCertificateHtml(data: CertificateData): string {
   <!-- PAGE 1: Cover -->
   <div class="page">
     <div class="side-bar"></div>
-    <div class="ribbon">HNZ<br/>Verified</div>
     <div class="content">
       <div class="logos">
         <div>
           <div class="logo-text">wiwitan</div>
           <div class="logo-sub">Improving lives · Improving quality of life</div>
         </div>
+        <img class="logo-image logo-hnz" src="${certificateAssetBase}/logo-harunokaze.png" alt="Harunokaze" />
         <div class="divider-dot"></div>
+        <img class="logo-image logo-wiwitan" src="${certificateAssetBase}/logo-wiwitan.png" alt="Wiwitan" />
         <div>
           <div class="logo-text">Haru<span>No</span>Kaze</div>
           <div class="logo-sub">春の風 · HARU NO KAZE</div>
@@ -313,7 +289,7 @@ export function buildCertificateHtml(data: CertificateData): string {
           <div><strong>Tanggal:</strong> ${esc(dateStr)}</div>
         </div>
         <div class="sign">
-          <div class="sign-seal">HNZ<br/>Seal</div>
+          <div class="sign-line"></div>
           <div class="sign-name">Setiaki Murdi Pratomodono</div>
           <div class="sign-title">Ketua LPK Wiwitan Baru Sukabumi</div>
         </div>
