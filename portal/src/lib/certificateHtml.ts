@@ -170,11 +170,12 @@ export function buildCertificateHtml(data: CertificateData): string {
       text-align: center;
       min-width: 220px;
     }
-    .sign-line {
+    .signature-image {
+      display: block;
       width: 190px;
-      height: 42px;
+      height: 58px;
       margin: 0 auto 4px;
-      border-bottom: 1px solid rgba(15,34,64,0.35);
+      object-fit: contain;
     }
     .sign-name {
       font-size: 13px;
@@ -289,7 +290,7 @@ export function buildCertificateHtml(data: CertificateData): string {
           <div><strong>Tanggal:</strong> ${esc(dateStr)}</div>
         </div>
         <div class="sign">
-          <div class="sign-line"></div>
+          <img class="signature-image" src="${certificateAssetBase}/signature-aki.png" alt="Tanda tangan Ketua LPK" />
           <div class="sign-name">Setiaki Murdi Pratomodono</div>
           <div class="sign-title">Ketua LPK Wiwitan Baru Sukabumi</div>
         </div>
