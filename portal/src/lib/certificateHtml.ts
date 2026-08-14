@@ -1,3 +1,5 @@
+import type { CertificateAssetUrls } from "./certificateAssets";
+
 export type CertificateData = {
   fullName: string;
   certificateCode: string;
@@ -25,7 +27,10 @@ function esc(value: string | number | null | undefined): string {
     .replace(/"/g, "&quot;");
 }
 
-export function buildCertificateHtml(data: CertificateData): string {
+export function buildCertificateHtml(
+  data: CertificateData,
+  assets: CertificateAssetUrls,
+): string {
   const dateStr = new Date(data.issuedAt).toLocaleString("id-ID", {
     day: "numeric",
     month: "long",
@@ -47,8 +52,6 @@ export function buildCertificateHtml(data: CertificateData): string {
       : "-";
   const pimsleurLevel = esc(data.pimsleurStatusLabel ?? "Belum tersedia");
   const pimsleurCatatan = esc(data.pimsleurRecommendation ?? "Belum ada catatan evaluasi.");
-  const certificateAssetBase =
-    typeof window !== "undefined" ? `${window.location.origin}/certificate` : "/certificate";
 
   return `<!DOCTYPE html>
 <html lang="id">
@@ -262,9 +265,9 @@ export function buildCertificateHtml(data: CertificateData): string {
           <div class="logo-text">wiwitan</div>
           <div class="logo-sub">Improving lives · Improving quality of life</div>
         </div>
-        <img class="logo-image logo-hnz" src="${certificateAssetBase}/logo-harunokaze.png" alt="Harunokaze" />
+        <img class="logo-image logo-hnz" src="${assets.logoHarunokaze}" alt="Harunokaze" />
         <div class="divider-dot"></div>
-        <img class="logo-image logo-wiwitan" src="${certificateAssetBase}/logo-wiwitan.png" alt="Wiwitan" />
+        <img class="logo-image logo-wiwitan" src="${assets.logoWiwitan}" alt="Wiwitan" />
         <div>
           <div class="logo-text">Haru<span>No</span>Kaze</div>
           <div class="logo-sub">春の風 · HARU NO KAZE</div>
@@ -290,7 +293,7 @@ export function buildCertificateHtml(data: CertificateData): string {
           <div><strong>Tanggal:</strong> ${esc(dateStr)}</div>
         </div>
         <div class="sign">
-          <img class="signature-image" src="${certificateAssetBase}/signature-aki.png" alt="Tanda tangan Ketua LPK" />
+          <img class="signature-image" src="${assets.signatureAki}" alt="Tanda tangan Ketua LPK" />
           <div class="sign-name">Setiaki Murdi Pratomodono</div>
           <div class="sign-title">Ketua LPK Wiwitan Baru Sukabumi</div>
         </div>
