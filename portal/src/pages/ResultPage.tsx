@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, Award, Download } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabase";
-import { buildCertificateHtml } from "../lib/certificateHtml";
 import type { Database } from "../lib/database.types";
 
 type Certificate = Database["public"]["Tables"]["certificates"]["Row"];
@@ -89,31 +88,27 @@ export function ResultPage() {
     load();
   }, [user, canView, profile?.program_interest, refreshProfile]);
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!certificate || !profile) return;
 
-    const html = buildCertificateHtml({
-      fullName: profile.full_name,
-      certificateCode: certificate.certificate_code,
-      issuedAt: certificate.issued_at,
-      cfitRawTotal: null,
-      cfitIq: null,
-      cfitCategory: null,
-      papiHasil: null,
-      papiCatatan: certificate.recommendation,
-      pimsleurScore: certificate.score,
-      pimsleurGrade: null,
-      pimsleurStatusLabel: null,
-      pimsleurRecommendation: certificate.recommendation,
-    });
-
-    const blob = new Blob([html], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `sertifikat-pemetaan-${certificate.certificate_code}.html`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const { downloadCertificatePdf } = await import("../lib/certificatePdf");
+    await downloadCertificatePdf(
+      {
+        fullName: profile.full_name,
+        certificateCode: certificate.certificate_code,
+        issuedAt: certificate.issued_at,
+        cfitRawTotal: null,
+        cfitIq: null,
+        cfitCategory: null,
+        papiHasil: null,
+        papiCatatan: certificate.recommendation,
+        pimsleurScore: certificate.score,
+        pimsleurGrade: null,
+        pimsleurStatusLabel: null,
+        pimsleurRecommendation: certificate.recommendation,
+      },
+      `sertifikat-pemetaan-${certificate.certificate_code}.pdf`,
+    );
   };
 
   if (!canView) {
@@ -168,11 +163,11 @@ export function ResultPage() {
 
         <button
           type="button"
-          onClick={handleDownload}
+          onClick={() => void handleDownload()}
           className="mt-8 inline-flex items-center gap-2 rounded-xl bg-brand-navy text-white font-bold px-6 py-3.5 text-sm hover:bg-brand-navy-light transition-colors"
         >
           <Download size={18} />
-          Unduh Sertifikat
+          Unduh Sertifikat PDF
         </button>
       </div>
     </div>

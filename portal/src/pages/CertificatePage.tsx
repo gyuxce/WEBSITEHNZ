@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Award, Download, ExternalLink } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
-import { buildCertificateHtml } from "../lib/certificateHtml";
+import type { CertificateData } from "../lib/certificateHtml";
 import { LANDING_URL, supabase } from "../lib/supabase";
 import type { Database } from "../lib/database.types";
 
@@ -24,6 +24,8 @@ export function CertificatePage() {
   const [papi, setPapi] = useState<PapikostikStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [downloadError, setDownloadError] = useState("");
+  const [downloading, setDownloading] = useState(false);
 
   const approved = progress?.result_status === "completed";
 
@@ -71,31 +73,40 @@ export function CertificatePage() {
     void load();
   }, [user, approved]);
 
-  function handleDownload() {
-    if (!certificate || !profile) return;
+  async function handleDownload() {
+    if (!certificate || !profile || downloading) return;
 
-    const html = buildCertificateHtml({
-      fullName: profile.full_name,
-      certificateCode: certificate.certificate_code,
-      issuedAt: certificate.issued_at,
-      cfitRawTotal: cfit?.raw_total ?? null,
-      cfitIq: cfit?.iq ?? null,
-      cfitCategory: cfit?.category ?? null,
-      papiHasil: papi?.final_summary
-        ? papi.final_summary.split("\n")[0].slice(0, 120)
-        : "Telah direview psikolog dan disetujui admin",
-      papiCatatan: papi?.final_summary ?? null,
-      pimsleurScore: pimsleur?.score_total ?? null,
-      pimsleurGrade: pimsleur?.grade ?? null,
-      pimsleurStatusLabel: pimsleur?.status_label ?? null,
-      pimsleurRecommendation: pimsleur?.recommendation ?? null,
-    });
-    const url = URL.createObjectURL(new Blob([html], { type: "text/html" }));
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `sertifikat-pemetaan-${certificate.certificate_code}.html`;
-    anchor.click();
-    URL.revokeObjectURL(url);
+    setDownloading(true);
+    setDownloadError("");
+    try {
+      const { downloadCertificatePdf } = await import("../lib/certificatePdf");
+      const payload: CertificateData = {
+        fullName: profile.full_name,
+        certificateCode: certificate.certificate_code,
+        issuedAt: certificate.issued_at,
+        cfitRawTotal: cfit?.raw_total ?? null,
+        cfitIq: cfit?.iq ?? null,
+        cfitCategory: cfit?.category ?? null,
+        papiHasil: papi?.final_summary
+          ? papi.final_summary.split("\n")[0].slice(0, 120)
+          : "Telah direview psikolog dan disetujui admin",
+        papiCatatan: papi?.final_summary ?? null,
+        pimsleurScore: pimsleur?.score_total ?? null,
+        pimsleurGrade: pimsleur?.grade ?? null,
+        pimsleurStatusLabel: pimsleur?.status_label ?? null,
+        pimsleurRecommendation: pimsleur?.recommendation ?? null,
+      };
+      await downloadCertificatePdf(
+        payload,
+        `sertifikat-pemetaan-${certificate.certificate_code}.pdf`,
+      );
+    } catch (err) {
+      setDownloadError(
+        err instanceof Error ? err.message : "Gagal mengunduh sertifikat PDF.",
+      );
+    } finally {
+      setDownloading(false);
+    }
   }
 
   if (!approved) {
@@ -190,14 +201,22 @@ export function CertificatePage() {
           </p>
         </div>
 
+        {downloadError ? (
+          <p className="mt-6 text-sm text-brand-red">{downloadError}</p>
+        ) : null}
+
         <button
           type="button"
-          onClick={handleDownload}
-          className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-red px-6 py-3.5 text-sm font-bold text-white hover:bg-brand-red-hover"
+          onClick={() => void handleDownload()}
+          disabled={downloading}
+          className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-red px-6 py-3.5 text-sm font-bold text-white hover:bg-brand-red-hover disabled:cursor-not-allowed disabled:opacity-70"
         >
           <Download size={18} />
-          Unduh Sertifikat (HTML/PDF via print)
+          {downloading ? "Menyiapkan PDF…" : "Unduh Sertifikat PDF"}
         </button>
+        <p className="mt-3 text-xs leading-relaxed text-brand-navy/45">
+          File PDF sudah menyertakan logo dan tanda tangan, jadi aman dibuka di HP maupun laptop.
+        </p>
 
         <a
           href={LANDING_URL}
