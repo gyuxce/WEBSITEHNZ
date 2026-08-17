@@ -3,9 +3,19 @@ import { Reveal } from "../components/Reveal";
 import { instagramUrl, soloKfiProgram } from "../data/content";
 import logoHarunokaze from "../assets/images/solo-kfi/logo-harunokaze.png";
 import logoKasuga from "../assets/images/solo-kfi/logo-kasuga-farm.png";
-import logisticsImg from "../assets/images/solo-kfi/solo-logistics-trucks.jpg";
+import workerImg from "../assets/images/solo-kfi/solo-warehouse-worker.jpg";
+import trucksImg from "../assets/images/solo-kfi/solo-logistics-trucks.jpg";
+import walkingImg from "../assets/images/solo-kfi/solo-drivers-walking.jpg";
+
+const galleryImages = {
+  worker: workerImg,
+  trucks: trucksImg,
+  walking: walkingImg,
+} as const;
 
 export function SoloKfi() {
+  const [worker, trucks, walking] = soloKfiProgram.gallery;
+
   return (
     <section id="hnz-solo" className="py-20 md:py-28 bg-white relative overflow-hidden">
       <div
@@ -87,22 +97,44 @@ export function SoloKfi() {
                 </span>
               </div>
 
-              <div className="relative aspect-[16/10] overflow-hidden">
-                <img
-                  src={logisticsImg}
-                  alt={soloKfiProgram.imageAlt}
-                  className="h-full w-full object-cover object-center"
-                  loading="lazy"
-                  decoding="async"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-brand-navy-deep/45 via-transparent to-transparent" />
-                <div className="absolute bottom-4 left-4 right-4 flex flex-wrap items-end justify-between gap-3">
-                  <p className="text-sm font-semibold text-white drop-shadow-sm max-w-[16rem] leading-snug">
-                    Jalur persiapan karier Driver di Jepang
-                  </p>
-                  <span className="sm:hidden inline-flex rounded-full bg-white/95 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-navy">
-                    {soloKfiProgram.badge}
-                  </span>
+              <div className="relative grid grid-cols-5 grid-rows-2 gap-1.5 p-1.5 bg-white min-h-[280px] sm:min-h-[320px]">
+                <div className="relative col-span-3 row-span-2 overflow-hidden rounded-xl">
+                  <img
+                    src={galleryImages[worker.key]}
+                    alt={worker.alt}
+                    className="h-full w-full object-cover object-[center_20%]"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-brand-navy-deep/50 via-transparent to-transparent" />
+                  <div className="absolute bottom-3 left-3 right-3 flex flex-wrap items-end justify-between gap-2">
+                    <p className="text-sm font-semibold text-white drop-shadow-sm max-w-[14rem] leading-snug">
+                      Jalur persiapan karier Driver di Jepang
+                    </p>
+                    <span className="sm:hidden inline-flex rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-navy">
+                      {soloKfiProgram.badge}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="relative col-span-2 overflow-hidden rounded-xl">
+                  <img
+                    src={galleryImages[trucks.key]}
+                    alt={trucks.alt}
+                    className="h-full w-full object-cover object-center"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </div>
+
+                <div className="relative col-span-2 overflow-hidden rounded-xl">
+                  <img
+                    src={galleryImages[walking.key]}
+                    alt={walking.alt}
+                    className="h-full w-full object-cover object-[center_30%]"
+                    loading="lazy"
+                    decoding="async"
+                  />
                 </div>
               </div>
             </figure>
