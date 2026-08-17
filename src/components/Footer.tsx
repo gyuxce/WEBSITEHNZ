@@ -27,10 +27,10 @@ export function Footer() {
           <div>
             <h5 className="text-xs font-bold uppercase tracking-widest text-white/40 mb-4">Jelajahi</h5>
             <ul className="flex flex-col gap-2.5 text-sm">
-              <li><a href="#ekosistem" className="hover:text-white transition-colors">Ekosistem</a></li>
+              <li><a href="#tentang" className="hover:text-white transition-colors">Tentang</a></li>
               <li><a href="#tahapan" className="hover:text-white transition-colors">Tahapan Peserta</a></li>
-              <li><a href="#solo" className="hover:text-white transition-colors">Harunokaze Solo × KFI</a></li>
-              <li><a href="#program" className="hover:text-white transition-colors">Program Kerja Jepang</a></li>
+              <li><a href="#hnz-solo" className="hover:text-white transition-colors">Program HNZ Solo</a></li>
+              <li><a href="#ekosistem" className="hover:text-white transition-colors">Ekosistem Harunokaze</a></li>
               <li><a href="#pemetaan" className="hover:text-white transition-colors">Pemetaan Potensi</a></li>
             </ul>
           </div>

@@ -4,10 +4,10 @@ import { ecosystemRoles } from "../data/content";
 
 export function Ecosystem() {
   return (
-    <section id="ekosistem" className="py-20 md:py-28">
+    <section id="tentang" className="py-20 md:py-28">
       <div className="max-w-7xl mx-auto px-6 md:px-10">
         <SectionHeading
-          eyebrow="Apa itu Harunokaze"
+          eyebrow="Tentang Harunokaze"
           title="Satu ekosistem, tiga peran yang saling melengkapi"
           description="Harunokaze bukan nama lain dari LPK. Harunokaze adalah ekosistem yang menaungi perjalanan karier Jepang secara menyeluruh, dengan LPK & SO Wiwitan Baru sebagai motor pendidikan dan pelatihannya."
         />

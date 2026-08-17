@@ -3,11 +3,11 @@ export const portalUrl =
   import.meta.env.VITE_PORTAL_URL ?? "https://portal.harunokaze.id";
 
 export const navLinks = [
-  { href: "#ekosistem", label: "Ekosistem" },
+  { href: "#tentang", label: "Tentang" },
   { href: "#tahapan", label: "Tahapan" },
-  { href: "#solo", label: "Solo" },
-  { href: "#program", label: "Program" },
-  { href: "#pemetaan", label: "Pemetaan Potensi" },
+  { href: "#hnz-solo", label: "HNZ Solo" },
+  { href: "#ekosistem", label: "Ekosistem" },
+  { href: "#pemetaan", label: "Pemetaan" },
   { href: "#alumni", label: "Alumni" },
   { href: "#faq", label: "FAQ" },
 ];
@@ -15,11 +15,11 @@ export const navLinks = [
 export const instagramUrl = "https://www.instagram.com/harunokaze.id/";
 
 export const soloKfiProgram = {
-  eyebrow: "Program Terbaru",
-  title: "Harunokaze Solo",
+  eyebrow: "Jalur Terbaru",
+  title: "Program HNZ Solo",
   subtitle: "Persiapan Karier Driver di Jepang",
   description:
-    "Harunokaze berkolaborasi dengan LPK Kasuga Farm Indonesia dalam Program Harunokaze Solo untuk jalur persiapan karier Driver di Jepang. Program dilaksanakan di Solo sebagai jalur terbaru di ekosistem Harunokaze.",
+    "Harunokaze berkolaborasi dengan LPK Kasuga Farm Indonesia dalam Program HNZ Solo untuk jalur persiapan karier Driver di Jepang. Program dilaksanakan di Solo sebagai jalur terbaru di ekosistem Harunokaze.",
   highlights: [
     "Seleksi awal untuk kandidat yang serius menuju jalur Driver di Jepang",
     "Pendidikan bahasa Jepang dan persiapan karier di Solo bersama LPK Kasuga Farm Indonesia",
@@ -30,7 +30,7 @@ export const soloKfiProgram = {
   ctaLabel: "Lihat Info Terbaru di Instagram",
   badge: "Solo · Driver Jepang",
   imageAlt:
-    "Program Harunokaze Solo bersama LPK Kasuga Farm Indonesia untuk persiapan karier Driver di Jepang.",
+    "Program HNZ Solo bersama LPK Kasuga Farm Indonesia untuk persiapan karier Driver di Jepang.",
 };
 
 export const heroStats = [
@@ -109,7 +109,16 @@ export const journeyStages = [
   },
 ];
 
-export const programs = [
+export type ProgramItem = {
+  icon: string;
+  title: string;
+  description: string;
+  meta: string;
+  href?: string;
+  hrefLabel?: string;
+};
+
+export const programs: ProgramItem[] = [
   {
     icon: "語",
     title: "Pelatihan Bahasa & Karakter",
@@ -118,7 +127,7 @@ export const programs = [
     meta: "Training Program",
   },
   {
-    icon: "🏗️",
+    icon: "建",
     title: "Program Bidang Konstruksi",
     description:
       "Persiapan kerja Jepang di sektor konstruksi, mencakup kompetensi teknis dasar dan kesiapan lapangan.",
@@ -132,21 +141,30 @@ export const programs = [
     meta: "Sektor Berkembang",
   },
   {
-    icon: "🤝",
+    icon: "運",
+    title: "Program Bidang Kerja Driver",
+    description:
+      "Jalur persiapan karier Driver di Jepang melalui Program HNZ Solo, berkolaborasi dengan LPK Kasuga Farm Indonesia di Solo.",
+    meta: "Program HNZ Solo",
+    href: "#hnz-solo",
+    hrefLabel: "Info lengkap",
+  },
+  {
+    icon: "協",
     title: "Job Opportunity Collaborator",
     description:
       "Kolaborasi dengan mitra penyedia lowongan kerja resmi di Jepang untuk memastikan penempatan yang sah dan terpantau.",
     meta: "Kolaborator",
   },
   {
-    icon: "🎓",
+    icon: "教",
     title: "Training Program Collaborator",
     description:
       "Kerja sama dengan lembaga pelatihan & pendidikan bahasa untuk memperkuat kualitas kurikulum dan pengajar.",
     meta: "Kolaborator",
   },
   {
-    icon: "✓",
+    icon: "追",
     title: "Kelas Persiapan Tambahan",
     description:
       "Modular class untuk peserta yang butuh persiapan interview matching atau ujian SSW secara terpisah.",
