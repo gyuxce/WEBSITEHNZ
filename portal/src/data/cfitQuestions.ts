@@ -31,7 +31,7 @@ export const CFIT_GENERAL_INSTRUCTIONS = [
   "Tes CFIT terbagi menjadi 4 subtes berurutan dengan waktu pengerjaan berbeda.",
   "Kerjakan sesuai urutan subtes yang tampil di layar.",
   "Pastikan jawaban benar-benar terisi sebelum lanjut. Jika waktu habis, sistem otomatis melanjutkan ke subtes berikutnya.",
-  "Subtes 1 terdiri dari 13 soal selama 3 menit, Subtes 2 terdiri dari 14 soal selama 4 menit, Subtes 3 terdiri dari 13 soal selama 3 menit, dan Subtes 4 terdiri dari 10 soal selama 2.5 menit.",
+  "Subtes 1 terdiri dari 13 soal selama 7 menit, Subtes 2 terdiri dari 14 soal selama 8 menit, Subtes 3 terdiri dari 13 soal selama 7 menit, dan Subtes 4 terdiri dari 10 soal selama 6.5 menit.",
 ];
 
 export const CFIT_SUBTEST_GUIDE: Record<CfitSubtestId, string[]> = {
@@ -77,7 +77,7 @@ export const CFIT_SUBTESTS: CfitSubtest[] = [
     title: "Subtes 1",
     instruction:
       "Lengkapi pola gambar dengan memilih satu jawaban yang paling tepat.",
-    durationSeconds: 3 * 60,
+    durationSeconds: 7 * 60,
     answerMode: "single",
     questions: makeQuestions(1, 13, "single"),
   },
@@ -86,7 +86,7 @@ export const CFIT_SUBTESTS: CfitSubtest[] = [
     title: "Subtes 2",
     instruction:
       "Pilih dua gambar yang berbeda dari kelompok gambar yang tersedia.",
-    durationSeconds: 4 * 60,
+    durationSeconds: 8 * 60,
     answerMode: "multiple",
     questions: makeQuestions(2, 14, "multiple"),
   },
@@ -95,7 +95,7 @@ export const CFIT_SUBTESTS: CfitSubtest[] = [
     title: "Subtes 3",
     instruction:
       "Pilih bagian yang paling tepat untuk melengkapi gambar utama.",
-    durationSeconds: 3 * 60,
+    durationSeconds: 7 * 60,
     answerMode: "single",
     questions: makeQuestions(3, 13, "single"),
   },
@@ -104,7 +104,7 @@ export const CFIT_SUBTESTS: CfitSubtest[] = [
     title: "Subtes 4",
     instruction:
       "Pilih gambar yang paling sesuai dengan hubungan pola pada soal.",
-    durationSeconds: 150,
+    durationSeconds: 6 * 60 + 30,
     answerMode: "single",
     questions: makeQuestions(4, 10, "single"),
   },

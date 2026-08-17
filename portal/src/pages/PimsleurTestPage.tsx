@@ -195,7 +195,7 @@ export function PimsleurTestPage() {
           </h1>
           <p className="mt-3 text-sm leading-relaxed text-brand-navy/55">
             Mengukur kemampuan belajar bahasa asing. Durasi total{" "}
-            <strong className="text-brand-navy">25 menit</strong> untuk tahap 2–6. Nomor tahap
+            <strong className="text-brand-navy">30 menit</strong> untuk tahap 2–6. Nomor tahap
             mengikuti materi audio (tahap 1 tidak digunakan). Audio diputar sendiri pada tahap yang
             membutuhkan suara.
           </p>
@@ -218,7 +218,7 @@ export function PimsleurTestPage() {
             onClick={() => void handleStart()}
             className="mt-8 w-full rounded-xl bg-brand-red py-3.5 text-sm font-bold text-white hover:bg-brand-red-hover sm:w-auto sm:px-8"
           >
-            Mulai tes 25 menit
+            Mulai tes 30 menit
           </button>
         </div>
       </div>

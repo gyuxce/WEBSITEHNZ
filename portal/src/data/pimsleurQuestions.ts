@@ -11,7 +11,7 @@ export type PimsleurQuestion = {
   hint?: string;
 };
 
-export const PIMSLEUR_DURATION_SEC = 25 * 60; // 25 menit
+export const PIMSLEUR_DURATION_SEC = 30 * 60; // 30 menit
 export const PIMSLEUR_MAX_SCORE = 101;
 
 /** Audio path — upload file ke portal/public/audio/pimsleur/ */
