@@ -5,11 +5,26 @@ export const portalUrl =
 export const navLinks = [
   { href: "#ekosistem", label: "Ekosistem" },
   { href: "#tahapan", label: "Tahapan" },
+  { href: "#solo", label: "Solo" },
   { href: "#program", label: "Program" },
   { href: "#pemetaan", label: "Pemetaan Potensi" },
   { href: "#alumni", label: "Alumni" },
   { href: "#faq", label: "FAQ" },
 ];
+
+export const instagramUrl = "https://www.instagram.com/harunokaze.id/";
+
+export const soloKfiProgram = {
+  eyebrow: "Program Terbaru",
+  title: "Harunokaze Solo",
+  subtitle: "Persiapan Karier Driver di Jepang",
+  description:
+    "Harunokaze berkolaborasi dengan LPK Kasuga Farm Indonesia dalam Program Harunokaze Solo untuk jalur persiapan karier Driver di Jepang. Program dilaksanakan di Solo melalui proses seleksi, pendidikan bahasa Jepang, serta persiapan menuju peluang kerja di Jepang.",
+  ctaLabel: "Lihat Info Terbaru di Instagram",
+  badge: "Solo · Driver Jepang",
+  imageAlt:
+    "Program Harunokaze Solo bersama LPK Kasuga Farm Indonesia untuk persiapan karier Driver di Jepang.",
+};
 
 export const heroStats = [
   { value: "6", label: "Tahap pendampingan end-to-end" },
