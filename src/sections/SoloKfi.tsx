@@ -7,7 +7,7 @@ import logisticsImg from "../assets/images/solo-kfi/solo-logistics-trucks.jpg";
 
 export function SoloKfi() {
   return (
-    <section id="solo" className="py-20 md:py-28 bg-white relative overflow-hidden">
+    <section id="hnz-solo" className="py-20 md:py-28 bg-white relative overflow-hidden">
       <div
         className="pointer-events-none absolute -right-24 top-10 h-72 w-72 rounded-full opacity-40"
         style={{
