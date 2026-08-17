@@ -19,7 +19,14 @@ export const soloKfiProgram = {
   title: "Harunokaze Solo",
   subtitle: "Persiapan Karier Driver di Jepang",
   description:
-    "Harunokaze berkolaborasi dengan LPK Kasuga Farm Indonesia dalam Program Harunokaze Solo untuk jalur persiapan karier Driver di Jepang. Program dilaksanakan di Solo melalui proses seleksi, pendidikan bahasa Jepang, serta persiapan menuju peluang kerja di Jepang.",
+    "Harunokaze berkolaborasi dengan LPK Kasuga Farm Indonesia dalam Program Harunokaze Solo untuk jalur persiapan karier Driver di Jepang. Program dilaksanakan di Solo sebagai jalur terbaru di ekosistem Harunokaze.",
+  highlights: [
+    "Seleksi awal untuk kandidat yang serius menuju jalur Driver di Jepang",
+    "Pendidikan bahasa Jepang dan persiapan karier di Solo bersama LPK Kasuga Farm Indonesia",
+    "Pendampingan menuju peluang kerja setelah tahap persiapan selesai",
+  ],
+  ctaNote:
+    "Ringkasan program ada di sini. Jadwal, batch, dan info terbaru yang paling update kami bagikan di Instagram Harunokaze.",
   ctaLabel: "Lihat Info Terbaru di Instagram",
   badge: "Solo · Driver Jepang",
   imageAlt:

@@ -1,7 +1,7 @@
 import { ArrowUpRight } from "lucide-react";
 import { Reveal } from "../components/Reveal";
 import { instagramUrl, soloKfiProgram } from "../data/content";
-import logoHarunokaze from "../assets/images/logo-hnz-transparent.png";
+import logoHarunokaze from "../assets/images/solo-kfi/logo-harunokaze.png";
 import logoKasuga from "../assets/images/solo-kfi/logo-kasuga-farm.png";
 import logisticsImg from "../assets/images/solo-kfi/solo-logistics-trucks.jpg";
 
@@ -30,11 +30,24 @@ export function SoloKfi() {
             {soloKfiProgram.description}
           </p>
 
+          <ul className="mt-6 flex flex-col gap-3 max-w-xl">
+            {soloKfiProgram.highlights.map((item) => (
+              <li key={item} className="flex gap-3 text-sm text-brand-navy/65 leading-relaxed">
+                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-brand-red shrink-0" />
+                {item}
+              </li>
+            ))}
+          </ul>
+
+          <p className="mt-6 text-sm text-brand-navy/45 leading-relaxed max-w-xl">
+            {soloKfiProgram.ctaNote}
+          </p>
+
           <a
             href={instagramUrl}
             target="_blank"
             rel="noreferrer"
-            className="mt-8 inline-flex items-center gap-2 rounded-full bg-brand-red px-7 py-3.5 text-sm font-bold text-white transition-all hover:bg-brand-red-hover hover:-translate-y-0.5"
+            className="mt-5 inline-flex items-center gap-2 rounded-full bg-brand-red px-7 py-3.5 text-sm font-bold text-white transition-all hover:bg-brand-red-hover hover:-translate-y-0.5"
           >
             {soloKfiProgram.ctaLabel}
             <ArrowUpRight size={16} strokeWidth={2.5} />
@@ -47,21 +60,27 @@ export function SoloKfi() {
             <figure className="relative overflow-hidden rounded-2xl border border-brand-navy/8 bg-brand-bg shadow-xl shadow-brand-navy/8">
               <div className="flex items-center justify-between gap-4 border-b border-brand-navy/8 bg-white px-5 py-4">
                 <div className="flex items-center gap-3 min-w-0">
-                  <img
-                    src={logoHarunokaze}
-                    alt="Harunokaze"
-                    className="h-11 w-auto object-contain"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                  <span className="text-brand-navy/25 font-display font-bold text-lg leading-none">×</span>
-                  <img
-                    src={logoKasuga}
-                    alt="LPK Kasuga Farm Indonesia"
-                    className="h-12 w-auto object-contain"
-                    loading="lazy"
-                    decoding="async"
-                  />
+                  <div className="flex h-12 w-[6.75rem] items-center justify-center sm:h-14 sm:w-32">
+                    <img
+                      src={logoHarunokaze}
+                      alt="Harunokaze"
+                      className="max-h-full max-w-full object-contain"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </div>
+                  <span className="text-brand-navy/25 font-display font-bold text-lg leading-none shrink-0">
+                    ×
+                  </span>
+                  <div className="flex h-12 w-[6.75rem] items-center justify-center sm:h-14 sm:w-32">
+                    <img
+                      src={logoKasuga}
+                      alt="LPK Kasuga Farm Indonesia"
+                      className="max-h-full max-w-full object-contain"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </div>
                 </div>
                 <span className="hidden sm:inline-flex shrink-0 rounded-full bg-brand-navy px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
                   {soloKfiProgram.badge}
