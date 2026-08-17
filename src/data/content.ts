@@ -31,6 +31,20 @@ export const soloKfiProgram = {
   badge: "Solo · Driver Jepang",
   imageAlt:
     "Program HNZ Solo bersama LPK Kasuga Farm Indonesia untuk persiapan karier Driver di Jepang.",
+  gallery: [
+    {
+      key: "worker" as const,
+      alt: "Kandidat program driver di lingkungan kerja logistik Jepang",
+    },
+    {
+      key: "trucks" as const,
+      alt: "Armada truk logistik Jepang untuk jalur karier driver",
+    },
+    {
+      key: "walking" as const,
+      alt: "Tim operasional logistik Jepang di area distribusi",
+    },
+  ],
 };
 
 export const heroStats = [
