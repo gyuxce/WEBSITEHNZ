@@ -1,6 +1,6 @@
 import { MessageCircle } from "lucide-react";
 import { Logo } from "./Logo";
-import { whatsappUrl } from "../data/content";
+import { instagramUrl, whatsappUrl } from "../data/content";
 
 function InstagramGlyph() {
   return (
@@ -29,6 +29,7 @@ export function Footer() {
             <ul className="flex flex-col gap-2.5 text-sm">
               <li><a href="#ekosistem" className="hover:text-white transition-colors">Ekosistem</a></li>
               <li><a href="#tahapan" className="hover:text-white transition-colors">Tahapan Peserta</a></li>
+              <li><a href="#solo" className="hover:text-white transition-colors">Harunokaze Solo × KFI</a></li>
               <li><a href="#program" className="hover:text-white transition-colors">Program Kerja Jepang</a></li>
               <li><a href="#pemetaan" className="hover:text-white transition-colors">Pemetaan Potensi</a></li>
             </ul>
@@ -54,7 +55,12 @@ export function Footer() {
                 </a>
               </li>
               <li>
-                <a href="#" className="inline-flex items-center gap-1.5 hover:text-white transition-colors">
+                <a
+                  href={instagramUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 hover:text-white transition-colors"
+                >
                   <InstagramGlyph /> Instagram
                 </a>
               </li>

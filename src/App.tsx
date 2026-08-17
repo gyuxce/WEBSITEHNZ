@@ -10,6 +10,7 @@ import { MobileCtaBar } from "./components/MobileCtaBar";
 import { Hero } from "./sections/Hero";
 import { Ecosystem } from "./sections/Ecosystem";
 import { Journey } from "./sections/Journey";
+import { SoloKfi } from "./sections/SoloKfi";
 import { Programs } from "./sections/Programs";
 import { Mapping } from "./sections/Mapping";
 import { WhyUs } from "./sections/WhyUs";
@@ -56,6 +57,7 @@ export default function App() {
           <TrustBadges />
           <Ecosystem />
           <Journey />
+          <SoloKfi />
           <Programs />
           <Mapping />
           <WhyUs />
