@@ -17,6 +17,15 @@ import { supabase } from "../lib/supabase";
 
 type InvoiceAdminRow =
   Database["public"]["Functions"]["admin_list_assessment_invoices"]["Returns"][number];
+type PaymentFilter = "all" | "new" | "pending" | "paid" | "paid_today";
+
+const FILTER_OPTIONS: Array<{ value: PaymentFilter; label: string }> = [
+  { value: "all", label: "Semua" },
+  { value: "new", label: "Daftar 24 jam" },
+  { value: "pending", label: "Menunggu" },
+  { value: "paid", label: "Lunas" },
+  { value: "paid_today", label: "Lunas hari ini" },
+];
 
 const DEFAULT_DESCRIPTION = "Pemetaan Potensi Harunokaze";
 const DEFAULT_ASSESSMENT_AMOUNT = 99000;
@@ -35,6 +44,33 @@ const formatDate = (value: string) =>
     year: "numeric",
   });
 
+const formatDateTime = (value: string | null) =>
+  value
+    ? new Date(value).toLocaleString("id-ID", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "-";
+
+const isToday = (value: string | null) => {
+  if (!value) return false;
+  const date = new Date(value);
+  const today = new Date();
+  return date.toDateString() === today.toDateString();
+};
+
+const isWithinLastHours = (value: string | null, hours: number) => {
+  if (!value) return false;
+  const elapsed = Date.now() - new Date(value).getTime();
+  return elapsed >= 0 && elapsed <= hours * 60 * 60 * 1000;
+};
+
+const isPaidRow = (row: InvoiceAdminRow) =>
+  row.invoice_status === "paid" || ["paid", "verified"].includes(row.progress_payment_status);
+
 export function AdminPaymentsPage() {
   const { profile, loading: authLoading } = useAuth();
   const [rows, setRows] = useState<InvoiceAdminRow[]>([]);
@@ -42,6 +78,7 @@ export function AdminPaymentsPage() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<PaymentFilter>("all");
   const [editing, setEditing] = useState<InvoiceAdminRow | null>(null);
   const [description, setDescription] = useState(DEFAULT_DESCRIPTION);
   const [dueDate, setDueDate] = useState("");
@@ -70,18 +107,36 @@ export function AdminPaymentsPage() {
 
   const filteredRows = useMemo(() => {
     const normalized = query.trim().toLowerCase();
-    if (!normalized) return rows;
-    return rows.filter((row) =>
-      [row.full_name, row.email, row.whatsapp, row.invoice_number]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(normalized)),
-    );
-  }, [query, rows]);
+    return rows
+      .filter((row) => {
+        if (filter === "new") return isWithinLastHours(row.registered_at, 24);
+        if (filter === "pending") return row.invoice_status === "issued";
+        if (filter === "paid") return isPaidRow(row);
+        if (filter === "paid_today") return isPaidRow(row) && isToday(row.paid_at);
+        return true;
+      })
+      .filter((row) =>
+        [row.full_name, row.email, row.whatsapp, row.invoice_number]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(normalized)),
+      )
+      .sort((left, right) => {
+        const leftDate = new Date(
+          left.paid_at ?? left.last_payment_at ?? left.registered_at,
+        ).getTime();
+        const rightDate = new Date(
+          right.paid_at ?? right.last_payment_at ?? right.registered_at,
+        ).getTime();
+        return rightDate - leftDate;
+      });
+  }, [filter, query, rows]);
 
   const totals = useMemo(
     () => ({
+      registeredToday: rows.filter((row) => isToday(row.registered_at)).length,
       issued: rows.filter((row) => row.invoice_status === "issued").length,
-      paid: rows.filter((row) => row.invoice_status === "paid").length,
+      paidToday: rows.filter((row) => isPaidRow(row) && isToday(row.paid_at)).length,
+      paid: rows.filter((row) => isPaidRow(row)).length,
       legacy: rows.filter((row) => hasLegacyPaymentAccess(row)).length,
       missing: rows.filter(
         (row) => !row.invoice_id && row.progress_payment_status === "pending",
@@ -151,19 +206,27 @@ export function AdminPaymentsPage() {
             Tagihan peserta
           </h1>
           <p className="mt-1 text-sm text-brand-navy/50">
-            Nominal peserta otomatis Rp99.000. Admin cukup memantau status dan mengatur detail tagihan.
+            Pantau peserta, status, waktu daftar, dan waktu pembayaran otomatis.
           </p>
         </div>
         <div className="flex flex-wrap gap-2 text-xs font-bold">
           <span className="rounded-full bg-brand-bg px-3 py-2 text-brand-navy/55">
-            Belum dibuat {totals.missing}
+            Daftar hari ini {totals.registeredToday}
           </span>
           <span className="rounded-full bg-amber-50 px-3 py-2 text-amber-700">
             Menunggu {totals.issued}
           </span>
           <span className="rounded-full bg-emerald-50 px-3 py-2 text-emerald-700">
-            Lunas {totals.paid}
+            Lunas hari ini {totals.paidToday}
           </span>
+          <span className="rounded-full bg-sky-50 px-3 py-2 text-sky-700">
+            Total lunas {totals.paid}
+          </span>
+          {totals.missing > 0 ? (
+            <span className="rounded-full bg-brand-bg px-3 py-2 text-brand-navy/55">
+              Belum dibuat {totals.missing}
+            </span>
+          ) : null}
           {totals.legacy > 0 ? (
             <span className="rounded-full bg-sky-50 px-3 py-2 text-sky-700">
               Akses lama {totals.legacy}
@@ -184,6 +247,23 @@ export function AdminPaymentsPage() {
           placeholder="Cari nama, email, WhatsApp, atau nomor tagihan"
           className="w-full rounded-xl border border-brand-navy/10 bg-white py-3 pl-10 pr-4 text-sm text-brand-navy outline-none transition focus:border-brand-red/40 focus:ring-2 focus:ring-brand-red/10"
         />
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        {FILTER_OPTIONS.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => setFilter(option.value)}
+            className={`rounded-full px-3 py-2 text-xs font-bold transition-colors ${
+              filter === option.value
+                ? "bg-brand-navy text-white"
+                : "bg-white text-brand-navy/55 hover:bg-brand-bg hover:text-brand-navy"
+            }`}
+          >
+            {option.label}
+          </button>
+        ))}
       </div>
 
       {notice ? (
@@ -211,7 +291,14 @@ export function AdminPaymentsPage() {
         <>
           <div className="mt-6 space-y-3 md:hidden">
             {filteredRows.map((row) => (
-              <article key={row.user_id} className="rounded-xl border border-brand-navy/8 bg-white p-4">
+              <article
+                key={row.user_id}
+                className={`rounded-xl border bg-white p-4 ${
+                  isWithinLastHours(row.paid_at, 1)
+                    ? "border-emerald-300 ring-2 ring-emerald-100"
+                    : "border-brand-navy/8"
+                }`}
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="truncate font-semibold text-brand-navy">{row.full_name}</p>
@@ -219,6 +306,9 @@ export function AdminPaymentsPage() {
                     {row.whatsapp ? (
                       <p className="mt-0.5 text-xs text-brand-navy/45">{row.whatsapp}</p>
                     ) : null}
+                    <p className="mt-0.5 text-xs text-brand-navy/45">
+                      Terdaftar {formatDateTime(row.registered_at)}
+                    </p>
                   </div>
                   <InvoiceStatus
                     status={row.invoice_status}
@@ -244,24 +334,22 @@ export function AdminPaymentsPage() {
                     Jatuh tempo {formatDate(`${row.due_date}T00:00:00`)}
                   </p>
                 ) : null}
-                {row.last_payment_status ? (
-                  <p className="mt-2 text-xs text-brand-navy/45">
-                    Transaksi terakhir: {paymentStatusLabel(row.last_payment_status)}
-                  </p>
-                ) : null}
+                <PaymentTiming row={row} />
                 <InvoiceActionButton row={row} onOpen={openEditor} fullWidth />
               </article>
             ))}
           </div>
 
           <div className="mt-6 hidden overflow-x-auto rounded-xl border border-brand-navy/8 bg-white md:block">
-            <table className="w-full min-w-[900px] text-left text-sm">
+            <table className="w-full min-w-[1200px] text-left text-sm">
               <thead className="border-b border-brand-navy/8 bg-brand-bg text-xs uppercase text-brand-navy/45">
                 <tr>
                   <th className="px-4 py-3 font-bold">Peserta</th>
+                  <th className="px-4 py-3 font-bold">Terdaftar</th>
                   <th className="px-4 py-3 font-bold">Tagihan</th>
                   <th className="px-4 py-3 font-bold">Nominal</th>
                   <th className="px-4 py-3 font-bold">Status</th>
+                  <th className="px-4 py-3 font-bold">Pembayaran</th>
                   <th className="px-4 py-3 text-right font-bold">Aksi</th>
                 </tr>
               </thead>
@@ -269,7 +357,9 @@ export function AdminPaymentsPage() {
                 {filteredRows.map((row) => (
                   <tr
                     key={row.user_id}
-                    className="border-b border-brand-navy/5 align-top last:border-0"
+                    className={`border-b border-brand-navy/5 align-top last:border-0 ${
+                      isWithinLastHours(row.paid_at, 1) ? "bg-emerald-50/60" : ""
+                    }`}
                   >
                     <td className="px-4 py-4">
                       <p className="font-semibold text-brand-navy">{row.full_name}</p>
@@ -277,6 +367,9 @@ export function AdminPaymentsPage() {
                       {row.whatsapp ? (
                         <p className="mt-0.5 text-xs text-brand-navy/45">{row.whatsapp}</p>
                       ) : null}
+                    </td>
+                    <td className="px-4 py-4 text-xs text-brand-navy/55">
+                      {formatDateTime(row.registered_at)}
                     </td>
                     <td className="px-4 py-4">
                       <p className="font-mono text-xs font-semibold text-brand-navy/70">
@@ -296,11 +389,9 @@ export function AdminPaymentsPage() {
                         status={row.invoice_status}
                         legacyVerified={hasLegacyPaymentAccess(row)}
                       />
-                      {row.last_payment_status ? (
-                        <p className="mt-2 text-xs text-brand-navy/45">
-                          Transaksi terakhir: {paymentStatusLabel(row.last_payment_status)}
-                        </p>
-                      ) : null}
+                    </td>
+                    <td className="px-4 py-4">
+                      <PaymentTiming row={row} />
                     </td>
                     <td className="px-4 py-4 text-right">
                       <InvoiceActionButton row={row} onOpen={openEditor} />
@@ -425,6 +516,45 @@ export function AdminPaymentsPage() {
 
 function hasLegacyPaymentAccess(row: InvoiceAdminRow) {
   return !row.invoice_id && ["paid", "verified"].includes(row.progress_payment_status);
+}
+
+function PaymentTiming({ row }: { row: InvoiceAdminRow }) {
+  if (isPaidRow(row)) {
+    if (!row.paid_at) {
+      return <p className="text-xs font-semibold text-emerald-700">Akses aktif</p>;
+    }
+
+    const recent = isWithinLastHours(row.paid_at, 1);
+    return (
+      <div>
+        {recent ? (
+          <span className="inline-flex rounded-full bg-emerald-100 px-2 py-1 text-[11px] font-bold text-emerald-700">
+            Baru saja
+          </span>
+        ) : (
+          <p className="text-xs font-semibold text-emerald-700">Berhasil</p>
+        )}
+        <p className="mt-1 text-xs text-brand-navy/55">{formatDateTime(row.paid_at)}</p>
+      </div>
+    );
+  }
+
+  if (row.last_payment_status) {
+    return (
+      <div>
+        <p className="text-xs font-semibold text-brand-navy/65">
+          {paymentStatusLabel(row.last_payment_status)}
+        </p>
+        {row.last_payment_at ? (
+          <p className="mt-1 text-xs text-brand-navy/45">
+            Dibuat {formatDateTime(row.last_payment_at)}
+          </p>
+        ) : null}
+      </div>
+    );
+  }
+
+  return <p className="text-xs text-brand-navy/45">Belum ada transaksi</p>;
 }
 
 function isInvoiceLocked(row: InvoiceAdminRow) {

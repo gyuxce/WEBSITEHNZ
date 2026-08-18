@@ -448,6 +448,7 @@ export interface Database {
           email: string | null;
           whatsapp: string | null;
           city: string | null;
+          registered_at: string;
           invoice_id: string | null;
           invoice_number: string | null;
           amount: number | null;
