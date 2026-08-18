@@ -209,12 +209,12 @@ export function AdminRecapPage() {
   const activityTodayCount = useMemo(() => rows.filter(hasActivityToday).length, [rows]);
   const recentActivityCount = useMemo(() => rows.filter(hasRecentActivity).length, [rows]);
 
-  if (!authLoading && profile?.role !== "admin") {
+  if (!authLoading && !isAssessmentStaffRole(profile?.role)) {
     return <Navigate to="/dashboard" replace />;
   }
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-7xl">
       <Link
         to="/dashboard"
         className="mb-6 inline-flex items-center gap-1.5 text-sm text-brand-navy/50 hover:text-brand-red"

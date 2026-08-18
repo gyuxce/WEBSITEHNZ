@@ -11,6 +11,7 @@ export function PortalLayout() {
   const onDashboard = location.pathname === "/dashboard";
   const isAdmin = profile?.role === "admin";
   const isPsychologist = isPsychologistRole(profile?.role);
+  const isStaff = isAdmin || isPsychologist;
   const onStaffArea = location.pathname.startsWith("/admin") || location.pathname.startsWith("/psychologist");
   const staffPath = isAdmin ? "/admin/pimsleur" : "/psychologist/recap";
 
@@ -41,7 +42,7 @@ export function PortalLayout() {
                 {isAdmin || isPsychologist ? "Panel" : "Beranda"}
               </span>
             </Link>
-            {isAdmin || isPsychologist ? (
+            {isStaff ? (
               <Link
                 to={staffPath}
                 className={`inline-flex items-center gap-1.5 text-sm font-semibold transition-colors rounded-full px-3 py-1.5 ${
@@ -65,7 +66,9 @@ export function PortalLayout() {
           </div>
         </div>
       </header>
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+      <main
+        className={`${isStaff ? "max-w-7xl" : "max-w-5xl"} mx-auto px-4 py-8 sm:px-6`}
+      >
         <Outlet />
       </main>
     </div>
