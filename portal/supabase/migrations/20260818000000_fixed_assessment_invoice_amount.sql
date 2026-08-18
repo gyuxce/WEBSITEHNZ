@@ -63,26 +63,26 @@ begin
 
   if not exists (
     select 1
-    from public.profiles
-    where id = auth.uid()
-      and role = 'participant'
+    from public.profiles profile
+    where profile.id = auth.uid()
+      and profile.role = 'participant'
   ) then
     raise exception 'participant not found';
   end if;
 
   select *
   into current_invoice
-  from public.assessment_invoices
-  where user_id = auth.uid()
+  from public.assessment_invoices invoice
+  where invoice.user_id = auth.uid()
   for update;
 
   if current_invoice.id is null then
     -- Legacy participants with verified access must not receive a second invoice.
     if exists (
       select 1
-      from public.user_progress
-      where user_id = auth.uid()
-        and payment_status in ('paid', 'verified')
+      from public.user_progress progress
+      where progress.user_id = auth.uid()
+        and progress.payment_status in ('paid', 'verified')
     ) then
       return;
     end if;
@@ -121,17 +121,17 @@ begin
     if current_invoice.id is null then
       select *
       into current_invoice
-      from public.assessment_invoices
-      where user_id = auth.uid()
+      from public.assessment_invoices invoice
+      where invoice.user_id = auth.uid()
       for update;
     end if;
   elsif current_invoice.status <> 'paid' then
     -- Preserve legacy or already-verified access if the invoice record is stale.
     if exists (
       select 1
-      from public.user_progress
-      where user_id = auth.uid()
-        and payment_status in ('paid', 'verified')
+      from public.user_progress progress
+      where progress.user_id = auth.uid()
+        and progress.payment_status in ('paid', 'verified')
     ) then
       return query
       select
@@ -149,16 +149,16 @@ begin
 
     select exists (
       select 1
-      from public.payments
-      where invoice_id = current_invoice.id
-        and status = 'pending'
-        and created_at > now() - interval '15 minutes'
+      from public.payments payment
+      where payment.invoice_id = current_invoice.id
+        and payment.status = 'pending'
+        and payment.created_at > now() - interval '15 minutes'
     )
     into has_active_payment;
 
     -- Do not rewrite an invoice while its provider session is still active.
     if not has_active_payment then
-      update public.assessment_invoices
+      update public.assessment_invoices invoice
       set
         amount = default_amount,
         currency = 'IDR',
@@ -166,15 +166,15 @@ begin
         paid_at = null,
         issued_at = case
           when current_invoice.status = 'cancelled' then now()
-          else issued_at
+          else current_invoice.issued_at
         end,
         updated_at = now()
-      where id = current_invoice.id;
+      where invoice.id = current_invoice.id;
 
       select *
       into current_invoice
-      from public.assessment_invoices
-      where id = current_invoice.id;
+      from public.assessment_invoices invoice
+      where invoice.id = current_invoice.id;
     end if;
   end if;
 
