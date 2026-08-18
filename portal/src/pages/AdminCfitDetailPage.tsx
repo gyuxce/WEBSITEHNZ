@@ -10,6 +10,7 @@ import {
 } from "../data/cfitQuestions";
 import { calculateCfitIqFromNorm } from "../data/cfitScoring";
 import { supabase } from "../lib/supabase";
+import { isAssessmentStaffRole, isPsychologistRole } from "../lib/access";
 import type { Json } from "../lib/database.types";
 
 type CfitDetail = {
@@ -41,9 +42,10 @@ export function AdminCfitDetailPage() {
   const [row, setRow] = useState<CfitDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const listPath = isPsychologistRole(profile?.role) ? "/psychologist/cfit" : "/admin/cfit";
 
   useEffect(() => {
-    if (!userId || authLoading || profile?.role !== "admin") return;
+    if (!userId || authLoading || !isAssessmentStaffRole(profile?.role)) return;
 
     async function load() {
       const { data, error: qError } = await supabase.rpc("admin_get_cfit_detail", {
@@ -72,7 +74,7 @@ export function AdminCfitDetailPage() {
   const displayIq = row?.iq ?? fallback?.iq ?? null;
   const displayCategory = row?.category ?? fallback?.category ?? null;
 
-  if (!authLoading && profile?.role !== "admin") {
+  if (!authLoading && !isAssessmentStaffRole(profile?.role)) {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -88,7 +90,7 @@ export function AdminCfitDetailPage() {
     return (
       <div className="mx-auto max-w-lg py-12 text-center">
         <p className="text-sm text-brand-red">{error || "Hasil CFIT tidak ditemukan."}</p>
-        <Link to="/admin/cfit" className="mt-4 inline-block text-sm font-semibold text-brand-red">
+        <Link to={listPath} className="mt-4 inline-block text-sm font-semibold text-brand-red">
           Kembali
         </Link>
       </div>
@@ -98,7 +100,7 @@ export function AdminCfitDetailPage() {
   return (
     <div className="mx-auto max-w-5xl">
       <Link
-        to="/admin/cfit"
+        to={listPath}
         className="mb-6 inline-flex items-center gap-1.5 text-sm text-brand-navy/50 hover:text-brand-red"
       >
         <ArrowLeft size={16} /> Daftar hasil CFIT

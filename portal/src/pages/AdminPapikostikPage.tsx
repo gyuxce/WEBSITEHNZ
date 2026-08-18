@@ -3,6 +3,7 @@ import { Link, Navigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabase";
+import { isAssessmentStaffRole, isPsychologistRole } from "../lib/access";
 
 type AdminPapikostikRow = {
   id: string;
@@ -25,9 +26,12 @@ export function AdminPapikostikPage() {
   const [rows, setRows] = useState<AdminPapikostikRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const detailBasePath = isPsychologistRole(profile?.role)
+    ? "/psychologist/papikostik"
+    : "/admin/papikostik";
 
   useEffect(() => {
-    if (authLoading || profile?.role !== "admin") return;
+    if (authLoading || !isAssessmentStaffRole(profile?.role)) return;
 
     async function load() {
       const { data, error: qError } = await supabase.rpc("admin_list_papikostik_results");
@@ -45,7 +49,7 @@ export function AdminPapikostikPage() {
     void load();
   }, [authLoading, profile?.role]);
 
-  if (!authLoading && profile?.role !== "admin") {
+  if (!authLoading && !isAssessmentStaffRole(profile?.role)) {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -136,7 +140,7 @@ export function AdminPapikostikPage() {
                   </td>
                   <td className="px-4 py-3">
                     <Link
-                      to={`/admin/papikostik/${row.user_id}`}
+                      to={`${detailBasePath}/${row.user_id}`}
                       className="text-xs font-bold text-brand-red hover:underline"
                     >
                       Detail

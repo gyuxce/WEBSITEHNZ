@@ -5,6 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { CFIT_TOTAL_QUESTIONS } from "../data/cfitQuestions";
 import { calculateCfitIqFromNorm } from "../data/cfitScoring";
 import { supabase } from "../lib/supabase";
+import { isAssessmentStaffRole, isPsychologistRole } from "../lib/access";
 
 type AdminCfitRow = {
   id: string;
@@ -31,9 +32,10 @@ export function AdminCfitPage() {
   const [rows, setRows] = useState<AdminCfitRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const detailBasePath = isPsychologistRole(profile?.role) ? "/psychologist/cfit" : "/admin/cfit";
 
   useEffect(() => {
-    if (authLoading || profile?.role !== "admin") return;
+    if (authLoading || !isAssessmentStaffRole(profile?.role)) return;
 
     async function load() {
       const { data, error: qError } = await supabase.rpc("admin_list_cfit_results");
@@ -51,7 +53,7 @@ export function AdminCfitPage() {
     void load();
   }, [authLoading, profile?.role]);
 
-  if (!authLoading && profile?.role !== "admin") {
+  if (!authLoading && !isAssessmentStaffRole(profile?.role)) {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -127,7 +129,7 @@ export function AdminCfitPage() {
                   </td>
                   <td className="px-4 py-3">
                     <Link
-                      to={`/admin/cfit/${row.user_id}`}
+                      to={`${detailBasePath}/${row.user_id}`}
                       className="text-xs font-bold text-brand-red hover:underline"
                     >
                       Detail

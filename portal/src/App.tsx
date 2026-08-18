@@ -1,6 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
-import { ProtectedRoute, GuestRoute } from "./components/ProtectedRoute";
+import { ProtectedRoute, GuestRoute, RoleRoute } from "./components/ProtectedRoute";
 import { PortalLayout } from "./components/PortalLayout";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
@@ -43,29 +43,43 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             <Route element={<PortalLayout />}>
               <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/payment" element={<PaymentPage />} />
-              <Route path="/test/pimsleur" element={<PimsleurTestPage />} />
-              <Route path="/test/cfit" element={<CfitTestPage />} />
-              <Route path="/test/papikostik" element={<PapikostikTestPage />} />
-              <Route path="/result/pimsleur" element={<PimsleurResultPage />} />
-              <Route path="/result/cfit" element={<CfitResultPage />} />
-              <Route path="/result/papikostik" element={<PapikostikResultPage />} />
-              <Route path="/result/certificate" element={<CertificatePage />} />
-              <Route path="/certificate" element={<CertificatePage />} />
-              <Route path="/admin/pimsleur" element={<AdminPimsleurPage />} />
-              <Route path="/admin/pimsleur/:userId" element={<AdminPimsleurDetailPage />} />
-              <Route path="/admin/cfit" element={<AdminCfitPage />} />
-              <Route path="/admin/cfit/:userId" element={<AdminCfitDetailPage />} />
-              <Route path="/admin/papikostik" element={<AdminPapikostikPage />} />
-              <Route path="/admin/papikostik/:userId" element={<AdminPapikostikDetailPage />} />
-              <Route path="/admin/recap" element={<AdminRecapPage />} />
-              <Route path="/admin/payments" element={<AdminPaymentsPage />} />
-              <Route path="/admin/review/:userId" element={<AdminFinalReviewPage />} />
-              {/* Legacy routes now point to the gated final review flow. */}
-              <Route path="/test/language" element={<Navigate to="/test/pimsleur" replace />} />
-              <Route path="/test/character" element={<Navigate to="/test/papikostik" replace />} />
-              <Route path="/result" element={<Navigate to="/result/pimsleur" replace />} />
-              <Route path="/result/legacy" element={<Navigate to="/result/certificate" replace />} />
+              <Route element={<RoleRoute allowedRoles={["participant"]} />}>
+                <Route path="/payment" element={<PaymentPage />} />
+                <Route path="/test/pimsleur" element={<PimsleurTestPage />} />
+                <Route path="/test/cfit" element={<CfitTestPage />} />
+                <Route path="/test/papikostik" element={<PapikostikTestPage />} />
+                <Route path="/result/pimsleur" element={<PimsleurResultPage />} />
+                <Route path="/result/cfit" element={<CfitResultPage />} />
+                <Route path="/result/papikostik" element={<PapikostikResultPage />} />
+                <Route path="/result/certificate" element={<CertificatePage />} />
+                <Route path="/certificate" element={<CertificatePage />} />
+                {/* Legacy routes now point to the gated final review flow. */}
+                <Route path="/test/language" element={<Navigate to="/test/pimsleur" replace />} />
+                <Route path="/test/character" element={<Navigate to="/test/papikostik" replace />} />
+                <Route path="/result" element={<Navigate to="/result/pimsleur" replace />} />
+                <Route path="/result/legacy" element={<Navigate to="/result/certificate" replace />} />
+              </Route>
+              <Route element={<RoleRoute allowedRoles={["admin"]} />}>
+                <Route path="/admin/pimsleur" element={<AdminPimsleurPage />} />
+                <Route path="/admin/pimsleur/:userId" element={<AdminPimsleurDetailPage />} />
+                <Route path="/admin/cfit" element={<AdminCfitPage />} />
+                <Route path="/admin/cfit/:userId" element={<AdminCfitDetailPage />} />
+                <Route path="/admin/papikostik" element={<AdminPapikostikPage />} />
+                <Route path="/admin/papikostik/:userId" element={<AdminPapikostikDetailPage />} />
+                <Route path="/admin/recap" element={<AdminRecapPage />} />
+                <Route path="/admin/payments" element={<AdminPaymentsPage />} />
+                <Route path="/admin/review/:userId" element={<AdminFinalReviewPage />} />
+              </Route>
+              <Route element={<RoleRoute allowedRoles={["psychologist"]} />}>
+                <Route path="/psychologist" element={<DashboardPage />} />
+                <Route path="/psychologist/pimsleur" element={<AdminPimsleurPage />} />
+                <Route path="/psychologist/pimsleur/:userId" element={<AdminPimsleurDetailPage />} />
+                <Route path="/psychologist/cfit" element={<AdminCfitPage />} />
+                <Route path="/psychologist/cfit/:userId" element={<AdminCfitDetailPage />} />
+                <Route path="/psychologist/papikostik" element={<AdminPapikostikPage />} />
+                <Route path="/psychologist/papikostik/:userId" element={<AdminPapikostikDetailPage />} />
+                <Route path="/psychologist/recap" element={<AdminRecapPage />} />
+              </Route>
             </Route>
           </Route>
 

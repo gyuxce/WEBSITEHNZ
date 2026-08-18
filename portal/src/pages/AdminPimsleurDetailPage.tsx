@@ -3,6 +3,7 @@ import { Link, Navigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabase";
+import { isAssessmentStaffRole, isPsychologistRole } from "../lib/access";
 import {
   getQuestionsForSection,
   PIMSLEUR_MAX_SCORE,
@@ -36,9 +37,12 @@ export function AdminPimsleurDetailPage() {
   const [row, setRow] = useState<Detail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const listPath = isPsychologistRole(profile?.role)
+    ? "/psychologist/pimsleur"
+    : "/admin/pimsleur";
 
   useEffect(() => {
-    if (!userId || authLoading || profile?.role !== "admin") return;
+    if (!userId || authLoading || !isAssessmentStaffRole(profile?.role)) return;
 
     async function load() {
       const { data, error: qError } = await supabase.rpc("admin_get_pimsleur_detail", {
@@ -59,7 +63,7 @@ export function AdminPimsleurDetailPage() {
     void load();
   }, [userId, authLoading, profile?.role]);
 
-  if (!authLoading && profile?.role !== "admin") {
+  if (!authLoading && !isAssessmentStaffRole(profile?.role)) {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -75,7 +79,7 @@ export function AdminPimsleurDetailPage() {
     return (
       <div className="mx-auto max-w-lg py-12 text-center">
         <p className="text-sm text-brand-red">{error || "Hasil tidak ditemukan."}</p>
-        <Link to="/admin/pimsleur" className="mt-4 inline-block text-sm font-semibold text-brand-red">
+        <Link to={listPath} className="mt-4 inline-block text-sm font-semibold text-brand-red">
           Kembali
         </Link>
       </div>
@@ -87,7 +91,7 @@ export function AdminPimsleurDetailPage() {
   return (
     <div className="mx-auto max-w-3xl">
       <Link
-        to="/admin/pimsleur"
+        to={listPath}
         className="mb-6 inline-flex items-center gap-1.5 text-sm text-brand-navy/50 hover:text-brand-red"
       >
         <ArrowLeft size={16} /> Daftar hasil

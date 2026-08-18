@@ -4,6 +4,7 @@ import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { PIMSLEUR_MAX_SCORE } from "../data/pimsleurQuestions";
 import { supabase } from "../lib/supabase";
+import { isAssessmentStaffRole, isPsychologistRole } from "../lib/access";
 
 type PimsleurRow = {
   user_id: string;
@@ -115,9 +116,11 @@ export function AdminRecapPage() {
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<RecapFilter>("all");
+  const isPsychologist = isPsychologistRole(profile?.role);
+  const detailBasePath = isPsychologist ? "/psychologist" : "/admin";
 
   useEffect(() => {
-    if (authLoading || profile?.role !== "admin") return;
+    if (authLoading || !isAssessmentStaffRole(profile?.role)) return;
 
     async function load() {
       const [pimsleurResponse, cfitResponse, papikostikResponse] = await Promise.all([
@@ -222,7 +225,7 @@ export function AdminRecapPage() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="mb-1 text-xs font-bold uppercase tracking-widest text-brand-red">
-            Admin-only
+            {isPsychologist ? "Area psikolog" : "Admin-only"}
           </p>
           <h1 className="font-display text-2xl font-extrabold text-brand-navy">
             Rekap asesmen peserta
@@ -364,18 +367,20 @@ export function AdminRecapPage() {
                   <td className="px-4 py-4">
                     <div className="flex flex-col items-start gap-1.5 text-xs font-bold">
                       <DetailLink
-                        href={row.pimsleur ? `/admin/pimsleur/${row.userId}` : null}
+                        href={row.pimsleur ? `${detailBasePath}/pimsleur/${row.userId}` : null}
                         label="Pimsleur"
                       />
-                      <DetailLink href={row.cfit ? `/admin/cfit/${row.userId}` : null} label="CFIT" />
+                      <DetailLink href={row.cfit ? `${detailBasePath}/cfit/${row.userId}` : null} label="CFIT" />
                       <DetailLink
-                        href={row.papikostik ? `/admin/papikostik/${row.userId}` : null}
+                        href={row.papikostik ? `${detailBasePath}/papikostik/${row.userId}` : null}
                         label="PAPI"
                       />
-                      <DetailLink
-                        href={isComplete(row) ? `/admin/review/${row.userId}` : null}
-                        label="Review final"
-                      />
+                      {!isPsychologist ? (
+                        <DetailLink
+                          href={isComplete(row) ? `/admin/review/${row.userId}` : null}
+                          label="Review final"
+                        />
+                      ) : null}
                     </div>
                   </td>
                 </tr>

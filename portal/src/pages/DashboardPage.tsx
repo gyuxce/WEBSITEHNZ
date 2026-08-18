@@ -14,6 +14,7 @@ import {
 import { useAuth } from "../contexts/AuthContext";
 import { ProgressSteps } from "../components/ProgressSteps";
 import { LANDING_URL } from "../lib/supabase";
+import { isPsychologistRole } from "../lib/access";
 
 const WHATSAPP_URL = "https://wa.me/message/DWVTJESHI2RQC1";
 
@@ -25,7 +26,90 @@ export function DashboardPage() {
     return <AdminHome name={profile?.full_name?.split(" ")[0] ?? "Admin"} />;
   }
 
+  if (isPsychologistRole(profile?.role)) {
+    return <PsychologistHome name={profile?.full_name?.split(" ")[0] ?? "Psikolog"} />;
+  }
+
   return <ParticipantHome profileName={profile?.full_name?.split(" ")[0] ?? "Peserta"} progress={progress} />;
+}
+
+function PsychologistHome({ name }: { name: string }) {
+  return (
+    <div className="mx-auto max-w-3xl space-y-6">
+      <div>
+        <p className="mb-1 text-xs font-bold uppercase tracking-widest text-brand-red">
+          Panel psikolog
+        </p>
+        <h1 className="font-display text-2xl font-extrabold text-brand-navy md:text-3xl">
+          Halo, {name}
+        </h1>
+        <p className="mt-2 text-sm leading-relaxed text-brand-navy/55">
+          Kelola pembacaan hasil asesmen peserta dan tulis interpretasi psikolog. Menu pembayaran dan
+          persetujuan sertifikat tidak tersedia di area ini.
+        </p>
+      </div>
+
+      <Link
+        to="/psychologist/papikostik"
+        className="flex items-center justify-between gap-4 rounded-2xl border border-brand-navy/8 bg-white p-6 transition-all hover:border-brand-red/20 hover:shadow-md"
+      >
+        <div className="flex items-start gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-red-soft text-brand-red">
+            <FileCheck size={24} />
+          </div>
+          <div>
+            <p className="font-display text-lg font-bold text-brand-navy">Antrean review PAPI Kostick</p>
+            <p className="mt-1 text-sm text-brand-navy/50">
+              Baca profil faktor dan isi interpretasi psikolog peserta
+            </p>
+          </div>
+        </div>
+        <ArrowRight className="shrink-0 text-brand-red" size={20} />
+      </Link>
+
+      <Link
+        to="/psychologist/recap"
+        className="flex items-center justify-between gap-4 rounded-2xl border border-brand-navy/8 bg-white p-6 transition-all hover:border-brand-red/20 hover:shadow-md"
+      >
+        <div className="flex items-start gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-red-soft text-brand-red">
+            <ClipboardList size={24} />
+          </div>
+          <div>
+            <p className="font-display text-lg font-bold text-brand-navy">Rekap asesmen peserta</p>
+            <p className="mt-1 text-sm text-brand-navy/50">
+              Lihat ringkasan tiga tes, waktu pengerjaan, dan status kelengkapan
+            </p>
+          </div>
+        </div>
+        <ArrowRight className="shrink-0 text-brand-red" size={20} />
+      </Link>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Link
+          to="/psychologist/pimsleur"
+          className="rounded-2xl border border-brand-navy/8 bg-white p-5 transition-all hover:border-brand-red/20 hover:shadow-md"
+        >
+          <p className="font-display font-bold text-brand-navy">Hasil Pimsleur</p>
+          <p className="mt-1 text-sm text-brand-navy/50">Lihat skor dan detail jawaban peserta</p>
+        </Link>
+        <Link
+          to="/psychologist/cfit"
+          className="rounded-2xl border border-brand-navy/8 bg-white p-5 transition-all hover:border-brand-red/20 hover:shadow-md"
+        >
+          <p className="font-display font-bold text-brand-navy">Hasil CFIT</p>
+          <p className="mt-1 text-sm text-brand-navy/50">Lihat IQ, kategori, dan detail jawaban</p>
+        </Link>
+      </div>
+
+      <a
+        href={LANDING_URL}
+        className="block text-center text-xs text-brand-navy/40 transition-colors hover:text-brand-red"
+      >
+        ← Kembali ke website Harunokaze
+      </a>
+    </div>
+  );
 }
 
 function AdminHome({ name }: { name: string }) {

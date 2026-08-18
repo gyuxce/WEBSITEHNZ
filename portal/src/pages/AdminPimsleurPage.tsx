@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabase";
 import { PIMSLEUR_MAX_SCORE } from "../data/pimsleurQuestions";
+import { isAssessmentStaffRole, isPsychologistRole } from "../lib/access";
 
 type AdminRow = {
   id: string;
@@ -27,9 +28,12 @@ export function AdminPimsleurPage() {
   const [rows, setRows] = useState<AdminRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const detailBasePath = isPsychologistRole(profile?.role)
+    ? "/psychologist/pimsleur"
+    : "/admin/pimsleur";
 
   useEffect(() => {
-    if (authLoading || profile?.role !== "admin") return;
+    if (authLoading || !isAssessmentStaffRole(profile?.role)) return;
 
     async function load() {
       const { data, error: qError } = await supabase.rpc("admin_list_pimsleur_results");
@@ -47,7 +51,7 @@ export function AdminPimsleurPage() {
     void load();
   }, [authLoading, profile?.role]);
 
-  if (!authLoading && profile?.role !== "admin") {
+  if (!authLoading && !isAssessmentStaffRole(profile?.role)) {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -121,7 +125,7 @@ export function AdminPimsleurPage() {
                   </td>
                   <td className="px-4 py-3">
                     <Link
-                      to={`/admin/pimsleur/${row.user_id}`}
+                      to={`${detailBasePath}/${row.user_id}`}
                       className="text-xs font-bold text-brand-red hover:underline"
                     >
                       Detail

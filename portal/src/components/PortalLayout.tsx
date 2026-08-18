@@ -3,13 +3,16 @@ import { LogOut, LayoutDashboard, Shield } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { Logo } from "./Logo";
 import { useAuth } from "../contexts/AuthContext";
+import { isPsychologistRole } from "../lib/access";
 
 export function PortalLayout() {
   const { profile, signOut } = useAuth();
   const location = useLocation();
   const onDashboard = location.pathname === "/dashboard";
   const isAdmin = profile?.role === "admin";
-  const onAdmin = location.pathname.startsWith("/admin");
+  const isPsychologist = isPsychologistRole(profile?.role);
+  const onStaffArea = location.pathname.startsWith("/admin") || location.pathname.startsWith("/psychologist");
+  const staffPath = isAdmin ? "/admin/pimsleur" : "/psychologist/recap";
 
   return (
     <div className="min-h-screen bg-brand-bg">
@@ -19,9 +22,9 @@ export function PortalLayout() {
           <div className="flex items-center gap-2 sm:gap-3">
             <span className="hidden sm:flex items-center gap-2 text-sm text-brand-navy/60 font-medium">
               {profile?.full_name}
-              {isAdmin ? (
+              {isAdmin || isPsychologist ? (
                 <span className="rounded-full bg-brand-navy px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-                  Admin
+                  {isAdmin ? "Admin" : "Psikolog"}
                 </span>
               ) : null}
             </span>
@@ -34,19 +37,21 @@ export function PortalLayout() {
               }`}
             >
               <LayoutDashboard size={16} />
-              <span className="hidden sm:inline">{isAdmin ? "Panel" : "Beranda"}</span>
+              <span className="hidden sm:inline">
+                {isAdmin || isPsychologist ? "Panel" : "Beranda"}
+              </span>
             </Link>
-            {isAdmin ? (
+            {isAdmin || isPsychologist ? (
               <Link
-                to="/admin/pimsleur"
+                to={staffPath}
                 className={`inline-flex items-center gap-1.5 text-sm font-semibold transition-colors rounded-full px-3 py-1.5 ${
-                  onAdmin
+                  onStaffArea
                     ? "bg-brand-navy text-white"
                     : "text-brand-navy/70 hover:text-brand-red"
                 }`}
               >
                 <Shield size={16} />
-                <span className="hidden sm:inline">Admin</span>
+                <span className="hidden sm:inline">{isAdmin ? "Admin" : "Psikolog"}</span>
               </Link>
             ) : null}
             <button

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, Pencil, Save, X } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import { isAssessmentStaffRole, isPsychologistRole } from "../lib/access";
 import {
   PAPI_FACTORS,
   PAPI_QUESTIONS,
@@ -48,9 +49,12 @@ export function AdminPapikostikDetailPage() {
   const [saveMessage, setSaveMessage] = useState("");
   const [notes, setNotes] = useState("");
   const [editingNotes, setEditingNotes] = useState(false);
+  const listPath = isPsychologistRole(profile?.role)
+    ? "/psychologist/papikostik"
+    : "/admin/papikostik";
 
   useEffect(() => {
-    if (!userId || authLoading || profile?.role !== "admin") return;
+    if (!userId || authLoading || !isAssessmentStaffRole(profile?.role)) return;
 
     async function load() {
       const { data, error: qError } = await supabase.rpc("admin_get_papikostik_detail", {
@@ -92,21 +96,22 @@ export function AdminPapikostikDetailPage() {
     setError("");
     setSaveMessage("");
 
-    const reviewedAt = new Date().toISOString();
-    const { error: updateError } = await supabase
-      .from("papikostik_results")
-      .update({
-        review_status: "reviewed",
-        psychologist_notes: cleanNotes,
-        reviewed_at: reviewedAt,
-      })
-      .eq("user_id", row.user_id);
+    const { data, error: updateError } = await supabase.rpc(
+      "psychologist_save_papikostik_review",
+      {
+        p_user_id: row.user_id,
+        p_notes: cleanNotes,
+      },
+    );
 
     if (updateError) {
       setError(updateError.message);
       setSaving(false);
       return;
     }
+
+    const saved = data?.[0];
+    const reviewedAt = saved?.reviewed_at ?? new Date().toISOString();
 
     setRow({
       ...row,
@@ -116,7 +121,11 @@ export function AdminPapikostikDetailPage() {
     });
     setNotes(cleanNotes);
     setEditingNotes(false);
-    setSaveMessage("Interpretasi psikolog berhasil disimpan. Lanjutkan ke Review final untuk QC dan persetujuan admin.");
+    setSaveMessage(
+      isPsychologistRole(profile?.role)
+        ? "Interpretasi psikolog berhasil disimpan. Hasil menunggu QC admin."
+        : "Interpretasi psikolog berhasil disimpan. Lanjutkan ke Review final untuk QC dan persetujuan admin.",
+    );
     setSaving(false);
   }
 
@@ -133,7 +142,7 @@ export function AdminPapikostikDetailPage() {
     setSaveMessage("");
   }
 
-  if (!authLoading && profile?.role !== "admin") {
+  if (!authLoading && !isAssessmentStaffRole(profile?.role)) {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -149,7 +158,7 @@ export function AdminPapikostikDetailPage() {
     return (
       <div className="mx-auto max-w-lg py-12 text-center">
         <p className="text-sm text-brand-red">{error}</p>
-        <Link to="/admin/papikostik" className="mt-4 inline-block text-sm font-semibold text-brand-red">
+        <Link to={listPath} className="mt-4 inline-block text-sm font-semibold text-brand-red">
           Kembali
         </Link>
       </div>
@@ -160,7 +169,7 @@ export function AdminPapikostikDetailPage() {
     return (
       <div className="mx-auto max-w-lg py-12 text-center">
         <p className="text-sm text-brand-red">Hasil PAPI Kostick tidak ditemukan.</p>
-        <Link to="/admin/papikostik" className="mt-4 inline-block text-sm font-semibold text-brand-red">
+        <Link to={listPath} className="mt-4 inline-block text-sm font-semibold text-brand-red">
           Kembali
         </Link>
       </div>
@@ -170,7 +179,7 @@ export function AdminPapikostikDetailPage() {
   return (
     <div className="mx-auto max-w-6xl">
       <Link
-        to="/admin/papikostik"
+        to={listPath}
         className="mb-6 inline-flex items-center gap-1.5 text-sm text-brand-navy/50 hover:text-brand-red"
       >
         <ArrowLeft size={16} /> Daftar hasil PAPI

@@ -17,7 +17,7 @@ export interface Database {
           birth_date: string | null;
           program_interest: string | null;
           city: string | null;
-          role: "participant" | "admin";
+          role: "participant" | "admin" | "psychologist";
           created_at: string;
           updated_at: string;
         };
@@ -28,7 +28,7 @@ export interface Database {
           birth_date?: string | null;
           program_interest?: string | null;
           city?: string | null;
-          role?: "participant" | "admin";
+          role?: "participant" | "admin" | "psychologist";
         };
         Update: {
           full_name?: string;
@@ -36,7 +36,7 @@ export interface Database {
           birth_date?: string | null;
           program_interest?: string | null;
           city?: string | null;
-          role?: "participant" | "admin";
+          role?: "participant" | "admin" | "psychologist";
         };
         Relationships: [];
       };
@@ -691,6 +691,15 @@ export interface Database {
         Returns: {
           certificate_id: string;
           certificate_code: string;
+        }[];
+      };
+      psychologist_save_papikostik_review: {
+        Args: { p_user_id: string; p_notes: string };
+        Returns: {
+          user_id: string;
+          review_status: string;
+          psychologist_notes: string | null;
+          reviewed_at: string | null;
         }[];
       };
       get_own_papikostik_status: {
