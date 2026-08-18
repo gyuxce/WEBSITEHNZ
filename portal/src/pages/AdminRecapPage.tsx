@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ClipboardList } from "lucide-react";
+import { ArrowLeft, Clock, Search } from "lucide-react";
 import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { PIMSLEUR_MAX_SCORE } from "../data/pimsleurQuestions";
@@ -51,11 +51,70 @@ type RecapRow = {
   papikostik: PapikostikRow | null;
 };
 
+type RecapFilter = "all" | "today" | "recent" | "complete" | "incomplete";
+
+const FILTER_OPTIONS: Array<{ value: RecapFilter; label: string }> = [
+  { value: "all", label: "Semua" },
+  { value: "recent", label: "Aktivitas 24 jam" },
+  { value: "today", label: "Hari ini" },
+  { value: "incomplete", label: "Belum lengkap" },
+  { value: "complete", label: "Lengkap" },
+];
+
+const formatDateTime = (value: string | null) =>
+  value
+    ? new Date(value).toLocaleString("id-ID", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "-";
+
+const isToday = (value: string | null) => {
+  if (!value) return false;
+  return new Date(value).toDateString() === new Date().toDateString();
+};
+
+const isWithinLastHours = (value: string | null, hours: number) => {
+  if (!value) return false;
+  const elapsed = Date.now() - new Date(value).getTime();
+  return elapsed >= 0 && elapsed <= hours * 60 * 60 * 1000;
+};
+
+function getCompletedAtValues(row: RecapRow) {
+  return [row.pimsleur?.completed_at, row.cfit?.completed_at, row.papikostik?.completed_at].filter(
+    (value): value is string => Boolean(value),
+  );
+}
+
+function getLatestCompletedAt(row: RecapRow) {
+  return getCompletedAtValues(row).reduce<string | null>((latest, value) => {
+    if (!latest || new Date(value).getTime() > new Date(latest).getTime()) return value;
+    return latest;
+  }, null);
+}
+
+function hasActivityToday(row: RecapRow) {
+  return getCompletedAtValues(row).some((value) => isToday(value));
+}
+
+function hasRecentActivity(row: RecapRow) {
+  return getCompletedAtValues(row).some((value) => isWithinLastHours(value, 24));
+}
+
+function isComplete(row: RecapRow) {
+  return Boolean(row.pimsleur && row.cfit && row.papikostik);
+}
+
 export function AdminRecapPage() {
   const { profile, loading: authLoading } = useAuth();
   const [rows, setRows] = useState<RecapRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<RecapFilter>("all");
 
   useEffect(() => {
     if (authLoading || profile?.role !== "admin") return;
@@ -110,20 +169,42 @@ export function AdminRecapPage() {
         getRow(result).papikostik = result;
       }
 
-      setRows(
-        [...recapMap.values()].sort((a, b) => a.fullName.localeCompare(b.fullName, "id")),
-      );
+      setRows([...recapMap.values()]);
       setLoading(false);
     }
 
     void load();
   }, [authLoading, profile?.role]);
 
-  const completedCount = useMemo(
-    () =>
-      rows.filter((row) => row.pimsleur && row.cfit && row.papikostik).length,
-    [rows],
-  );
+  const filteredRows = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+
+    return rows
+      .filter((row) => {
+        if (filter === "recent") return hasRecentActivity(row);
+        if (filter === "today") return hasActivityToday(row);
+        if (filter === "complete") return isComplete(row);
+        if (filter === "incomplete") return !isComplete(row);
+        return true;
+      })
+      .filter((row) =>
+        [row.fullName, row.email, row.whatsapp, row.city]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(normalized)),
+      )
+      .sort((left, right) => {
+        const leftDate = getLatestCompletedAt(left);
+        const rightDate = getLatestCompletedAt(right);
+        return (
+          (rightDate ? new Date(rightDate).getTime() : 0) -
+          (leftDate ? new Date(leftDate).getTime() : 0)
+        );
+      });
+  }, [filter, query, rows]);
+
+  const completedCount = useMemo(() => rows.filter(isComplete).length, [rows]);
+  const activityTodayCount = useMemo(() => rows.filter(hasActivityToday).length, [rows]);
+  const recentActivityCount = useMemo(() => rows.filter(hasRecentActivity).length, [rows]);
 
   if (!authLoading && profile?.role !== "admin") {
     return <Navigate to="/dashboard" replace />;
@@ -147,14 +228,55 @@ export function AdminRecapPage() {
             Rekap asesmen peserta
           </h1>
           <p className="mt-1 max-w-2xl text-sm leading-relaxed text-brand-navy/50">
-            Ringkasan Pimsleur, CFIT, dan PAPI Kostick dalam satu tampilan. Kesimpulan akhir tetap
-            diisi manual oleh psikolog/admin.
+            Ringkasan Pimsleur, CFIT, dan PAPI Kostick. Waktu diambil dari saat peserta menyelesaikan
+            masing-masing tes.
           </p>
         </div>
-        <div className="flex items-center gap-2 rounded-xl bg-brand-bg px-4 py-3 text-sm font-semibold text-brand-navy/65">
-          <ClipboardList size={18} className="text-brand-red" />
-          {completedCount}/{rows.length} lengkap
+        <div className="flex flex-wrap gap-2 text-xs font-bold">
+          <span className="rounded-full bg-brand-bg px-3 py-2 text-brand-navy/55">
+            Peserta {rows.length}
+          </span>
+          <span className="rounded-full bg-sky-50 px-3 py-2 text-sky-700">
+            Aktivitas 24 jam {recentActivityCount}
+          </span>
+          <span className="rounded-full bg-brand-bg px-3 py-2 text-brand-navy/55">
+            Hari ini {activityTodayCount}
+          </span>
+          <span className="rounded-full bg-emerald-50 px-3 py-2 text-emerald-700">
+            Lengkap {completedCount}
+          </span>
         </div>
+      </div>
+
+      <div className="relative mt-6">
+        <Search
+          size={17}
+          className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-brand-navy/35"
+        />
+        <input
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Cari nama, email, WhatsApp, atau kota"
+          className="w-full rounded-xl border border-brand-navy/10 bg-white py-3 pl-10 pr-4 text-sm text-brand-navy outline-none transition focus:border-brand-red/40 focus:ring-2 focus:ring-brand-red/10"
+        />
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        {FILTER_OPTIONS.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => setFilter(option.value)}
+            className={`rounded-full px-3 py-2 text-xs font-bold transition-colors ${
+              filter === option.value
+                ? "bg-brand-navy text-white"
+                : "bg-white text-brand-navy/55 hover:bg-brand-bg hover:text-brand-navy"
+            }`}
+          >
+            {option.label}
+          </button>
+        ))}
       </div>
 
       {loading || authLoading ? (
@@ -170,12 +292,17 @@ export function AdminRecapPage() {
         </div>
       ) : rows.length === 0 ? (
         <p className="mt-6 text-sm text-brand-navy/50">Belum ada hasil asesmen peserta.</p>
+      ) : filteredRows.length === 0 ? (
+        <p className="mt-6 text-sm text-brand-navy/50">
+          Tidak ada peserta yang sesuai dengan pencarian atau filter ini.
+        </p>
       ) : (
         <div className="mt-6 overflow-x-auto rounded-2xl border border-brand-navy/8 bg-white">
-          <table className="min-w-[980px] w-full text-left text-sm">
+          <table className="min-w-[1160px] w-full text-left text-sm">
             <thead className="border-b border-brand-navy/8 bg-brand-bg text-xs uppercase tracking-wide text-brand-navy/45">
               <tr>
                 <th className="px-4 py-3 font-bold">Peserta</th>
+                <th className="px-4 py-3 font-bold">Aktivitas terakhir</th>
                 <th className="px-4 py-3 font-bold">Pimsleur</th>
                 <th className="px-4 py-3 font-bold">CFIT</th>
                 <th className="px-4 py-3 font-bold">PAPI Kostick</th>
@@ -183,50 +310,70 @@ export function AdminRecapPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
+              {filteredRows.map((row) => (
                 <tr key={row.userId} className="border-b border-brand-navy/5 align-top last:border-0">
                   <td className="px-4 py-4">
                     <p className="font-semibold text-brand-navy">{row.fullName}</p>
-                    <p className="mt-1 text-xs text-brand-navy/45">
-                      {row.email ?? "-"}
-                      {row.whatsapp ? ` - ${row.whatsapp}` : ""}
-                      {row.city ? ` - ${row.city}` : ""}
-                    </p>
+                    <div className="mt-1 space-y-0.5 text-xs leading-relaxed text-brand-navy/45">
+                      <p className="break-all">{row.email ?? "Email belum tersedia"}</p>
+                      <p>WhatsApp: {row.whatsapp ?? "-"}</p>
+                      <p>Kota: {row.city ?? "-"}</p>
+                    </div>
+                  </td>
+                  <td className="px-4 py-4">
+                    <CompletionTime value={getLatestCompletedAt(row)} />
                   </td>
                   <td className="px-4 py-4">
                     <Status done={Boolean(row.pimsleur)} />
                     {row.pimsleur ? (
-                      <p className="mt-2 text-xs text-brand-navy/65">
-                        {row.pimsleur.score_total}/{PIMSLEUR_MAX_SCORE} - Grade {row.pimsleur.grade}
-                      </p>
+                      <>
+                        <p className="mt-2 text-xs text-brand-navy/65">
+                          {row.pimsleur.score_total}/{PIMSLEUR_MAX_SCORE} - Grade {row.pimsleur.grade}
+                        </p>
+                        <CompletionTime value={row.pimsleur.completed_at} />
+                      </>
                     ) : null}
                   </td>
                   <td className="px-4 py-4">
                     <Status done={Boolean(row.cfit)} />
                     {row.cfit ? (
-                      <p className="mt-2 text-xs text-brand-navy/65">
-                        Raw {row.cfit.raw_total ?? "-"}/50 - IQ {row.cfit.iq ?? "-"}
-                        <br />
-                        {row.cfit.category ?? "Kategori belum tersedia"}
-                      </p>
+                      <>
+                        <p className="mt-2 text-xs text-brand-navy/65">
+                          Raw {row.cfit.raw_total ?? "-"}/50 - IQ {row.cfit.iq ?? "-"}
+                          <br />
+                          {row.cfit.category ?? "Kategori belum tersedia"}
+                        </p>
+                        <CompletionTime value={row.cfit.completed_at} />
+                      </>
                     ) : null}
                   </td>
                   <td className="px-4 py-4">
                     <Status done={Boolean(row.papikostik)} />
                     {row.papikostik ? (
-                      <p className="mt-2 text-xs text-brand-navy/65">
-                        {row.papikostik.total_all ?? 0}/90 -{" "}
-                        {row.papikostik.review_status === "reviewed" ? "Reviewed" : "Menunggu review"}
-                      </p>
+                      <>
+                        <p className="mt-2 text-xs text-brand-navy/65">
+                          {row.papikostik.total_all ?? 0}/90 - {" "}
+                          {row.papikostik.review_status === "reviewed"
+                            ? "Reviewed"
+                            : "Menunggu review"}
+                        </p>
+                        <CompletionTime value={row.papikostik.completed_at} />
+                      </>
                     ) : null}
                   </td>
                   <td className="px-4 py-4">
                     <div className="flex flex-col items-start gap-1.5 text-xs font-bold">
-                      <DetailLink href={row.pimsleur ? `/admin/pimsleur/${row.userId}` : null} label="Pimsleur" />
-                      <DetailLink href={row.cfit ? `/admin/cfit/${row.userId}` : null} label="CFIT" />
-                      <DetailLink href={row.papikostik ? `/admin/papikostik/${row.userId}` : null} label="PAPI" />
                       <DetailLink
-                        href={row.pimsleur && row.cfit && row.papikostik ? `/admin/review/${row.userId}` : null}
+                        href={row.pimsleur ? `/admin/pimsleur/${row.userId}` : null}
+                        label="Pimsleur"
+                      />
+                      <DetailLink href={row.cfit ? `/admin/cfit/${row.userId}` : null} label="CFIT" />
+                      <DetailLink
+                        href={row.papikostik ? `/admin/papikostik/${row.userId}` : null}
+                        label="PAPI"
+                      />
+                      <DetailLink
+                        href={isComplete(row) ? `/admin/review/${row.userId}` : null}
                         label="Review final"
                       />
                     </div>
@@ -238,6 +385,17 @@ export function AdminRecapPage() {
         </div>
       )}
     </div>
+  );
+}
+
+function CompletionTime({ value }: { value: string | null }) {
+  if (!value) return null;
+
+  return (
+    <p className="mt-2 inline-flex items-start gap-1 text-[11px] leading-relaxed text-brand-navy/45">
+      <Clock size={12} className="mt-0.5 shrink-0" />
+      {formatDateTime(value)}
+    </p>
   );
 }
 
