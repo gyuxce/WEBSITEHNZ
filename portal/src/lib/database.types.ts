@@ -78,6 +78,53 @@ export interface Database {
         };
         Relationships: [];
       };
+      assessment_attempts: {
+        Row: {
+          id: string;
+          user_id: string;
+          assessment_type: "pimsleur" | "cfit" | "papikostik";
+          status: "in_progress" | "completed";
+          duration_seconds: number;
+          started_at: string;
+          deadline_at: string;
+          step_started_at: string;
+          step_deadline_at: string | null;
+          current_step: number;
+          answers: Json;
+          last_saved_at: string;
+          completed_at: string | null;
+          timed_out: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          assessment_type: "pimsleur" | "cfit" | "papikostik";
+          status?: "in_progress" | "completed";
+          duration_seconds: number;
+          started_at?: string;
+          deadline_at: string;
+          step_started_at?: string;
+          step_deadline_at?: string | null;
+          current_step?: number;
+          answers?: Json;
+          last_saved_at?: string;
+          completed_at?: string | null;
+          timed_out?: boolean;
+        };
+        Update: {
+          status?: "in_progress" | "completed";
+          deadline_at?: string;
+          step_started_at?: string;
+          step_deadline_at?: string | null;
+          current_step?: number;
+          answers?: Json;
+          last_saved_at?: string;
+          completed_at?: string | null;
+          timed_out?: boolean;
+        };
+        Relationships: [];
+      };
       pimsleur_results: {
         Row: {
           id: string;
@@ -440,6 +487,82 @@ export interface Database {
     Views: Record<string, never>;
     Functions: {
       is_admin: { Args: Record<string, never>; Returns: boolean };
+      start_assessment_attempt: {
+        Args: {
+          p_assessment_type: "pimsleur" | "cfit" | "papikostik";
+          p_duration_seconds: number;
+          p_step_duration_seconds?: number | null;
+        };
+        Returns: {
+          id: string;
+          assessment_type: "pimsleur" | "cfit" | "papikostik";
+          status: "in_progress" | "completed";
+          duration_seconds: number;
+          started_at: string;
+          deadline_at: string;
+          step_started_at: string;
+          step_deadline_at: string | null;
+          current_step: number;
+          answers: Json;
+          last_saved_at: string;
+          completed_at: string | null;
+          timed_out: boolean;
+        }[];
+      };
+      save_assessment_attempt: {
+        Args: {
+          p_attempt_id: string;
+          p_answers: Json;
+          p_current_step?: number;
+        };
+        Returns: {
+          id: string;
+          status: "in_progress" | "completed";
+          deadline_at: string;
+          step_deadline_at: string | null;
+          current_step: number;
+          answers: Json;
+          last_saved_at: string;
+          completed_at: string | null;
+          timed_out: boolean;
+        }[];
+      };
+      advance_assessment_attempt: {
+        Args: {
+          p_attempt_id: string;
+          p_current_step: number;
+          p_step_duration_seconds: number;
+        };
+        Returns: {
+          id: string;
+          status: "in_progress" | "completed";
+          deadline_at: string;
+          step_started_at: string;
+          step_deadline_at: string | null;
+          current_step: number;
+          answers: Json;
+          last_saved_at: string;
+          completed_at: string | null;
+          timed_out: boolean;
+        }[];
+      };
+      finish_assessment_attempt: {
+        Args: {
+          p_attempt_id: string;
+          p_answers: Json;
+          p_current_step?: number;
+        };
+        Returns: {
+          id: string;
+          status: "in_progress" | "completed";
+          deadline_at: string;
+          current_step: number;
+          answers: Json;
+          last_saved_at: string;
+          completed_at: string | null;
+          timed_out: boolean;
+        }[];
+      };
       admin_list_assessment_invoices: {
         Args: Record<string, never>;
         Returns: {

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, Clock, FileCheck } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
@@ -10,6 +10,13 @@ import {
   type PapiChoice,
   type PapiQuestion,
 } from "../data/papikostikQuestions";
+import {
+  finishAssessmentAttempt,
+  getJsonRecord,
+  getRemainingSeconds,
+  saveAssessmentAttempt,
+  startAssessmentAttempt,
+} from "../lib/assessmentAttempts";
 import { supabase } from "../lib/supabase";
 import type { Json } from "../lib/database.types";
 
@@ -28,8 +35,14 @@ export function PapikostikTestPage() {
   const [answers, setAnswers] = useState<PapiAnswers>({});
   const [remaining, setRemaining] = useState(PAPI_DURATION_SECONDS);
   const [submitting, setSubmitting] = useState(false);
+  const [attemptId, setAttemptId] = useState<string | null>(null);
+  const [deadlineAt, setDeadlineAt] = useState<string | null>(null);
+  const [attemptLoading, setAttemptLoading] = useState(false);
   const [error, setError] = useState("");
   const startedAtRef = useRef<string | null>(null);
+  const resumeCheckedRef = useRef(false);
+  const finishRef = useRef<((force?: boolean) => Promise<void>) | null>(null);
+  const finishingRef = useRef(false);
 
   const cfitDone = progress?.cfit_test_status === "completed";
   const alreadyDone = progress?.papikostik_test_status === "completed";
@@ -37,34 +50,87 @@ export function PapikostikTestPage() {
   const answeredCount = useMemo(() => Object.keys(answers).length, [answers]);
   const allAnswered = answeredCount === PAPI_QUESTIONS.length;
 
+  const applyAttempt = useCallback((attempt: Awaited<ReturnType<typeof startAssessmentAttempt>>) => {
+    resumeCheckedRef.current = true;
+    setAttemptId(attempt.id);
+    setDeadlineAt(attempt.deadline_at);
+    setRemaining(getRemainingSeconds(attempt.deadline_at));
+    setCurrentIndex(Math.min(Math.max(attempt.current_step, 0), PAPI_QUESTIONS.length - 1));
+    setAnswers(getJsonRecord(attempt.answers) as PapiAnswers);
+    startedAtRef.current = attempt.started_at;
+    setStarted(true);
+  }, []);
+
   useEffect(() => {
-    if (!started || submitting) return;
-    const timer = window.setInterval(() => {
-      setRemaining((value) => Math.max(value - 1, 0));
-    }, 1000);
+    if (
+      !user ||
+      !cfitDone ||
+      alreadyDone ||
+      progress?.papikostik_test_status !== "in_progress" ||
+      resumeCheckedRef.current
+    ) {
+      return;
+    }
+
+    resumeCheckedRef.current = true;
+    setAttemptLoading(true);
+    void startAssessmentAttempt("papikostik", PAPI_DURATION_SECONDS)
+      .then(applyAttempt)
+      .catch((attemptError) => {
+        setError(attemptError instanceof Error ? attemptError.message : "Sesi PAPI gagal dipulihkan.");
+      })
+      .finally(() => setAttemptLoading(false));
+  }, [alreadyDone, applyAttempt, cfitDone, progress?.papikostik_test_status, user]);
+
+  useEffect(() => {
+    if (!started || !deadlineAt || submitting) return;
+
+    const tick = () => {
+      const nextRemaining = getRemainingSeconds(deadlineAt);
+      setRemaining(nextRemaining);
+      if (nextRemaining <= 0) void finishRef.current?.(true);
+    };
+
+    tick();
+    const timer = window.setInterval(tick, 1000);
     return () => window.clearInterval(timer);
-  }, [started, submitting]);
+  }, [deadlineAt, started, submitting]);
+
+  useEffect(() => {
+    if (!started || !attemptId || submitting || attemptLoading) return;
+
+    const timer = window.setTimeout(() => {
+      void saveAssessmentAttempt(attemptId, answers as Json, currentIndex).catch((saveError) => {
+        setError(saveError instanceof Error ? saveError.message : "Jawaban belum tersimpan.");
+      });
+    }, 500);
+
+    return () => window.clearTimeout(timer);
+  }, [answers, attemptId, attemptLoading, currentIndex, started, submitting]);
 
   async function handleStart() {
     if (!user) return;
     setSubmitting(true);
+    setAttemptLoading(true);
     setError("");
-    startedAtRef.current = new Date().toISOString();
 
-    const { error: progressError } = await supabase
-      .from("user_progress")
-      .update({ papikostik_test_status: "in_progress" })
-      .eq("user_id", user.id);
+    try {
+      const attempt = await startAssessmentAttempt("papikostik", PAPI_DURATION_SECONDS);
+      const { error: progressError } = await supabase
+        .from("user_progress")
+        .update({ papikostik_test_status: "in_progress" })
+        .eq("user_id", user.id);
 
-    if (progressError) {
+      if (progressError) throw progressError;
+
+      applyAttempt(attempt);
+      await refreshProfile();
+    } catch (startError) {
+      setError(startError instanceof Error ? startError.message : "Sesi PAPI belum berhasil dibuat.");
+    } finally {
+      setAttemptLoading(false);
       setSubmitting(false);
-      setError(progressError.message);
-      return;
     }
-
-    await refreshProfile();
-    setStarted(true);
-    setSubmitting(false);
   }
 
   function selectAnswer(questionId: string, choice: PapiChoice) {
@@ -82,13 +148,14 @@ export function PapikostikTestPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  async function handleFinish() {
-    if (!user) return;
-    if (!allAnswered) {
+  const handleFinish = useCallback(async (force = false) => {
+    if (!user || finishingRef.current) return;
+    if (!force && !allAnswered) {
       setError("Lengkapi semua 90 soal terlebih dahulu.");
       return;
     }
 
+    finishingRef.current = true;
     setSubmitting(true);
     setError("");
     const completedAt = new Date();
@@ -111,10 +178,22 @@ export function PapikostikTestPage() {
       completed_at: completedAt.toISOString(),
     });
 
-    if (insertError) {
+    if (insertError && insertError.code !== "23505") {
+      finishingRef.current = false;
       setSubmitting(false);
       setError(insertError.message);
       return;
+    }
+
+    if (attemptId) {
+      try {
+        await finishAssessmentAttempt(attemptId, answers as Json, currentIndex);
+      } catch (attemptError) {
+        finishingRef.current = false;
+        setSubmitting(false);
+        setError(attemptError instanceof Error ? attemptError.message : "Sesi PAPI belum berhasil ditutup.");
+        return;
+      }
     }
 
     const { error: progressError } = await supabase
@@ -127,6 +206,7 @@ export function PapikostikTestPage() {
       .eq("user_id", user.id);
 
     if (progressError) {
+      finishingRef.current = false;
       setSubmitting(false);
       setError(progressError.message);
       return;
@@ -135,7 +215,9 @@ export function PapikostikTestPage() {
     await refreshProfile();
     setSubmitting(false);
     navigate("/result/papikostik", { replace: true });
-  }
+  }, [allAnswered, answers, attemptId, currentIndex, navigate, refreshProfile, user]);
+
+  finishRef.current = handleFinish;
 
   if (alreadyDone) {
     return (
@@ -158,6 +240,14 @@ export function PapikostikTestPage() {
         <Link to="/dashboard" className="mt-4 inline-block text-sm font-semibold text-brand-red">
           Kembali ke dashboard
         </Link>
+      </div>
+    );
+  }
+
+  if (attemptLoading) {
+    return (
+      <div className="mx-auto max-w-lg py-12 text-center">
+        <p className="text-sm text-brand-navy/60">Memulihkan sesi PAPI Kostick...</p>
       </div>
     );
   }

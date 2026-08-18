@@ -10,7 +10,15 @@ import {
   SECTION4_WORD_LIST,
   type PimsleurQuestion,
 } from "../data/pimsleurQuestions";
+import {
+  finishAssessmentAttempt,
+  getJsonRecord,
+  getRemainingSeconds,
+  saveAssessmentAttempt,
+  startAssessmentAttempt,
+} from "../lib/assessmentAttempts";
 import { scorePimsleur } from "../lib/pimsleurScoring";
+import type { Json } from "../lib/database.types";
 import { supabase } from "../lib/supabase";
 
 function formatTime(totalSeconds: number) {
@@ -27,9 +35,13 @@ export function PimsleurTestPage() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [remaining, setRemaining] = useState(PIMSLEUR_DURATION_SEC);
   const [submitting, setSubmitting] = useState(false);
+  const [attemptId, setAttemptId] = useState<string | null>(null);
+  const [deadlineAt, setDeadlineAt] = useState<string | null>(null);
+  const [attemptLoading, setAttemptLoading] = useState(false);
   const [error, setError] = useState("");
   const startedAtRef = useRef<string | null>(null);
   const finishingRef = useRef(false);
+  const resumeCheckedRef = useRef(false);
 
   const sectionMeta = PIMSLEUR_SECTIONS[sectionIndex];
   const questions = useMemo(
@@ -56,6 +68,37 @@ export function PimsleurTestPage() {
     progress?.payment_status === "verified" || progress?.payment_status === "paid";
   const alreadyDone = progress?.language_test_status === "completed";
   const canTake = Boolean(paymentOk && !alreadyDone);
+
+  const applyAttempt = useCallback((attempt: Awaited<ReturnType<typeof startAssessmentAttempt>>) => {
+    resumeCheckedRef.current = true;
+    setAttemptId(attempt.id);
+    setDeadlineAt(attempt.deadline_at);
+    setRemaining(getRemainingSeconds(attempt.deadline_at));
+    setSectionIndex(Math.min(Math.max(attempt.current_step, 0), PIMSLEUR_SECTIONS.length - 1));
+    setAnswers(getJsonRecord(attempt.answers) as Record<string, string>);
+    startedAtRef.current = attempt.started_at;
+    setStarted(true);
+  }, []);
+
+  useEffect(() => {
+    if (
+      !user ||
+      !canTake ||
+      progress?.language_test_status !== "in_progress" ||
+      resumeCheckedRef.current
+    ) {
+      return;
+    }
+
+    resumeCheckedRef.current = true;
+    setAttemptLoading(true);
+    void startAssessmentAttempt("pimsleur", PIMSLEUR_DURATION_SEC)
+      .then(applyAttempt)
+      .catch((attemptError) => {
+        setError(attemptError instanceof Error ? attemptError.message : "Sesi tes gagal dipulihkan.");
+      })
+      .finally(() => setAttemptLoading(false));
+  }, [applyAttempt, canTake, progress?.language_test_status, user]);
 
   const finishTest = useCallback(async () => {
     if (!user || finishingRef.current) return;
@@ -91,14 +134,25 @@ export function PimsleurTestPage() {
       completed_at: new Date().toISOString(),
     });
 
-    if (insertError) {
+    if (insertError && insertError.code !== "23505") {
       finishingRef.current = false;
       setSubmitting(false);
       setError(insertError.message);
       return;
     }
 
-    await supabase
+    if (attemptId) {
+      try {
+        await finishAssessmentAttempt(attemptId, answers as Json, sectionIndex);
+      } catch (attemptError) {
+        finishingRef.current = false;
+        setSubmitting(false);
+        setError(attemptError instanceof Error ? attemptError.message : "Sesi tes belum berhasil ditutup.");
+        return;
+      }
+    }
+
+    const { error: progressError } = await supabase
       .from("user_progress")
       .update({
         language_test_status: "completed",
@@ -107,30 +161,66 @@ export function PimsleurTestPage() {
       })
       .eq("user_id", user.id);
 
+    if (progressError) {
+      finishingRef.current = false;
+      setSubmitting(false);
+      setError(progressError.message);
+      return;
+    }
+
     await refreshProfile();
     setSubmitting(false);
     navigate("/result/pimsleur", { replace: true });
-  }, [user, answers, remaining, refreshProfile, navigate]);
+  }, [attemptId, answers, navigate, refreshProfile, remaining, sectionIndex, user]);
 
   useEffect(() => {
-    if (!started || submitting) return;
-    if (remaining <= 0) {
-      void finishTest();
-      return;
-    }
-    const t = window.setTimeout(() => setRemaining((s) => s - 1), 1000);
-    return () => window.clearTimeout(t);
-  }, [started, remaining, submitting, finishTest]);
+    if (!started || !deadlineAt || submitting) return;
+
+    const tick = () => {
+      const nextRemaining = getRemainingSeconds(deadlineAt);
+      setRemaining(nextRemaining);
+      if (nextRemaining <= 0) void finishTest();
+    };
+
+    tick();
+    const timer = window.setInterval(tick, 1000);
+    return () => window.clearInterval(timer);
+  }, [deadlineAt, finishTest, started, submitting]);
+
+  useEffect(() => {
+    if (!started || !attemptId || submitting || attemptLoading) return;
+
+    const timer = window.setTimeout(() => {
+      void saveAssessmentAttempt(attemptId, answers as Json, sectionIndex).catch((saveError) => {
+        setError(saveError instanceof Error ? saveError.message : "Jawaban belum tersimpan.");
+      });
+    }, 500);
+
+    return () => window.clearTimeout(timer);
+  }, [answers, attemptId, attemptLoading, sectionIndex, started, submitting]);
 
   async function handleStart() {
     if (!user) return;
-    startedAtRef.current = new Date().toISOString();
-    await supabase
+    setSubmitting(true);
+    setAttemptLoading(true);
+    setError("");
+
+    try {
+      const attempt = await startAssessmentAttempt("pimsleur", PIMSLEUR_DURATION_SEC);
+      const { error: progressError } = await supabase
       .from("user_progress")
       .update({ language_test_status: "in_progress" })
       .eq("user_id", user.id);
-    await refreshProfile();
-    setStarted(true);
+
+      if (progressError) throw progressError;
+      applyAttempt(attempt);
+      await refreshProfile();
+    } catch (startError) {
+      setError(startError instanceof Error ? startError.message : "Sesi tes belum berhasil dibuat.");
+    } finally {
+      setAttemptLoading(false);
+      setSubmitting(false);
+    }
   }
 
   function onSelect(questionId: string, value: string) {
@@ -173,6 +263,14 @@ export function PimsleurTestPage() {
         <Link to="/payment" className="mt-4 inline-block text-sm font-semibold text-brand-red">
           Ke halaman pembayaran
         </Link>
+      </div>
+    );
+  }
+
+  if (attemptLoading) {
+    return (
+      <div className="mx-auto max-w-lg py-12 text-center">
+        <p className="text-sm text-brand-navy/60">Memulihkan sesi tes...</p>
       </div>
     );
   }

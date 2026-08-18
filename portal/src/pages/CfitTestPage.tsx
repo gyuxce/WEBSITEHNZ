@@ -6,12 +6,21 @@ import {
   CFIT_GENERAL_INSTRUCTIONS,
   CFIT_SUBTESTS,
   CFIT_SUBTEST_GUIDE,
+  CFIT_TOTAL_DURATION_SECONDS,
   CFIT_TOTAL_QUESTIONS,
   calculateCfitRawScores,
   type CfitAnswers,
   type CfitQuestion,
 } from "../data/cfitQuestions";
 import { calculateCfitIq } from "../data/cfitScoring";
+import {
+  advanceAssessmentAttempt,
+  finishAssessmentAttempt,
+  getJsonRecord,
+  getRemainingSeconds,
+  saveAssessmentAttempt,
+  startAssessmentAttempt,
+} from "../lib/assessmentAttempts";
 import { supabase } from "../lib/supabase";
 import type { Json } from "../lib/database.types";
 
@@ -38,9 +47,14 @@ export function CfitTestPage() {
   const [birthDate, setBirthDate] = useState(profile?.birth_date ?? "");
   const [remaining, setRemaining] = useState(CFIT_SUBTESTS[0].durationSeconds);
   const [submitting, setSubmitting] = useState(false);
+  const [attemptId, setAttemptId] = useState<string | null>(null);
+  const [deadlineAt, setDeadlineAt] = useState<string | null>(null);
+  const [stepDeadlineAt, setStepDeadlineAt] = useState<string | null>(null);
+  const [attemptLoading, setAttemptLoading] = useState(false);
   const [error, setError] = useState("");
   const startedAtRef = useRef<string | null>(null);
   const finishingRef = useRef(false);
+  const resumeCheckedRef = useRef(false);
 
   const currentSubtest = CFIT_SUBTESTS[subtestIndex];
   const pimsleurDone = progress?.language_test_status === "completed";
@@ -60,6 +74,43 @@ export function CfitTestPage() {
   const currentSubtestComplete = currentSubtest.questions.every((question) =>
     hasAnswer(question, answers),
   );
+
+  const applyAttempt = useCallback((attempt: Awaited<ReturnType<typeof startAssessmentAttempt>>) => {
+    resumeCheckedRef.current = true;
+    const nextIndex = Math.min(Math.max(attempt.current_step, 0), CFIT_SUBTESTS.length - 1);
+    setAttemptId(attempt.id);
+    setDeadlineAt(attempt.deadline_at);
+    setStepDeadlineAt(attempt.step_deadline_at);
+    setSubtestIndex(nextIndex);
+    setRemaining(getRemainingSeconds(attempt.step_deadline_at ?? attempt.deadline_at));
+    setAnswers(getJsonRecord(attempt.answers) as CfitAnswers);
+    startedAtRef.current = attempt.started_at;
+    setStarted(true);
+  }, []);
+
+  useEffect(() => {
+    if (
+      !user ||
+      !canTake ||
+      progress?.cfit_test_status !== "in_progress" ||
+      resumeCheckedRef.current
+    ) {
+      return;
+    }
+
+    resumeCheckedRef.current = true;
+    setAttemptLoading(true);
+    void startAssessmentAttempt(
+      "cfit",
+      CFIT_TOTAL_DURATION_SECONDS,
+      CFIT_SUBTESTS[0].durationSeconds,
+    )
+      .then(applyAttempt)
+      .catch((attemptError) => {
+        setError(attemptError instanceof Error ? attemptError.message : "Sesi CFIT gagal dipulihkan.");
+      })
+      .finally(() => setAttemptLoading(false));
+  }, [applyAttempt, canTake, progress?.cfit_test_status, user]);
 
   const finishCfit = useCallback(async () => {
     if (!user || finishingRef.current) return;
@@ -92,11 +143,22 @@ export function CfitTestPage() {
       completed_at: completedAt.toISOString(),
     });
 
-    if (insertError) {
+    if (insertError && insertError.code !== "23505") {
       finishingRef.current = false;
       setSubmitting(false);
       setError(insertError.message);
       return;
+    }
+
+    if (attemptId) {
+      try {
+        await finishAssessmentAttempt(attemptId, answers as Json, subtestIndex);
+      } catch (attemptError) {
+        finishingRef.current = false;
+        setSubmitting(false);
+        setError(attemptError instanceof Error ? attemptError.message : "Sesi CFIT belum berhasil ditutup.");
+        return;
+      }
     }
 
     const { error: progressError } = await supabase
@@ -117,10 +179,10 @@ export function CfitTestPage() {
     await refreshProfile();
     setSubmitting(false);
     navigate("/dashboard", { replace: true });
-  }, [answers, navigate, refreshProfile, user]);
+  }, [answers, attemptId, birthDate, navigate, profile?.birth_date, refreshProfile, subtestIndex, user]);
 
   const goNextSubtest = useCallback(
-    (force = false) => {
+    async (force = false) => {
       if (!force && !currentSubtestComplete) {
         setError(
           currentSubtest.answerMode === "multiple"
@@ -133,27 +195,67 @@ export function CfitTestPage() {
       setError("");
       if (subtestIndex < CFIT_SUBTESTS.length - 1) {
         const nextIndex = subtestIndex + 1;
-        setSubtestIndex(nextIndex);
-        setRemaining(CFIT_SUBTESTS[nextIndex].durationSeconds);
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        if (!attemptId) {
+          setError("Sesi CFIT belum tersedia. Silakan muat ulang halaman.");
+          return;
+        }
+
+        setSubmitting(true);
+        try {
+          await saveAssessmentAttempt(attemptId, answers as Json, subtestIndex);
+          const attempt = await advanceAssessmentAttempt(
+            attemptId,
+            nextIndex,
+            CFIT_SUBTESTS[nextIndex].durationSeconds,
+          );
+          setSubtestIndex(nextIndex);
+          setDeadlineAt(attempt.deadline_at);
+          setStepDeadlineAt(attempt.step_deadline_at);
+          setRemaining(getRemainingSeconds(attempt.step_deadline_at ?? attempt.deadline_at));
+          setError("");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        } catch (advanceError) {
+          setError(
+            advanceError instanceof Error
+              ? advanceError.message
+              : "Subtes berikutnya belum berhasil dibuka.",
+          );
+        } finally {
+          setSubmitting(false);
+        }
         return;
       }
 
       void finishCfit();
     },
-    [currentSubtest.answerMode, currentSubtestComplete, finishCfit, subtestIndex],
+    [answers, attemptId, currentSubtest.answerMode, currentSubtestComplete, finishCfit, subtestIndex],
   );
 
   useEffect(() => {
     if (!started || submitting) return;
-    if (remaining <= 0) {
-      goNextSubtest(true);
-      return;
-    }
 
-    const timer = window.setTimeout(() => setRemaining((value) => value - 1), 1000);
+    const tick = () => {
+      const nextRemaining = getRemainingSeconds(stepDeadlineAt ?? deadlineAt);
+      setRemaining(nextRemaining);
+      if (nextRemaining <= 0) void goNextSubtest(true);
+    };
+
+    tick();
+    const timer = window.setInterval(tick, 1000);
+    return () => window.clearInterval(timer);
+  }, [deadlineAt, goNextSubtest, started, stepDeadlineAt, submitting]);
+
+  useEffect(() => {
+    if (!started || !attemptId || submitting || attemptLoading) return;
+
+    const timer = window.setTimeout(() => {
+      void saveAssessmentAttempt(attemptId, answers as Json, subtestIndex).catch((saveError) => {
+        setError(saveError instanceof Error ? saveError.message : "Jawaban belum tersimpan.");
+      });
+    }, 500);
+
     return () => window.clearTimeout(timer);
-  }, [goNextSubtest, remaining, started, submitting]);
+  }, [answers, attemptId, attemptLoading, started, subtestIndex, submitting]);
 
   async function handleStart() {
     if (!user) return;
@@ -163,37 +265,39 @@ export function CfitTestPage() {
     }
 
     setSubmitting(true);
+    setAttemptLoading(true);
     setError("");
-    startedAtRef.current = new Date().toISOString();
 
-    if (birthDate !== profile?.birth_date) {
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({ birth_date: birthDate })
-        .eq("id", user.id);
+    try {
+      if (birthDate !== profile?.birth_date) {
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .update({ birth_date: birthDate })
+          .eq("id", user.id);
 
-      if (profileError) {
-        setSubmitting(false);
-        setError(profileError.message);
-        return;
+        if (profileError) throw profileError;
       }
-    }
 
-    const { error: progressError } = await supabase
-      .from("user_progress")
-      .update({ cfit_test_status: "in_progress" })
-      .eq("user_id", user.id);
+      const attempt = await startAssessmentAttempt(
+        "cfit",
+        CFIT_TOTAL_DURATION_SECONDS,
+        CFIT_SUBTESTS[0].durationSeconds,
+      );
+      const { error: progressError } = await supabase
+        .from("user_progress")
+        .update({ cfit_test_status: "in_progress" })
+        .eq("user_id", user.id);
 
-    if (progressError) {
+      if (progressError) throw progressError;
+
+      applyAttempt(attempt);
+      await refreshProfile();
+    } catch (startError) {
+      setError(startError instanceof Error ? startError.message : "Sesi CFIT belum berhasil dibuat.");
+    } finally {
+      setAttemptLoading(false);
       setSubmitting(false);
-      setError(progressError.message);
-      return;
     }
-
-    await refreshProfile();
-    setRemaining(CFIT_SUBTESTS[0].durationSeconds);
-    setStarted(true);
-    setSubmitting(false);
   }
 
   function selectSingle(questionId: string, value: string) {
@@ -234,6 +338,14 @@ export function CfitTestPage() {
         <Link to="/dashboard" className="mt-4 inline-block text-sm font-semibold text-brand-red">
           Kembali ke dashboard
         </Link>
+      </div>
+    );
+  }
+
+  if (attemptLoading) {
+    return (
+      <div className="mx-auto max-w-lg py-12 text-center">
+        <p className="text-sm text-brand-navy/60">Memulihkan sesi CFIT...</p>
       </div>
     );
   }

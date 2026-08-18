@@ -115,6 +115,11 @@ export const CFIT_TOTAL_QUESTIONS = CFIT_SUBTESTS.reduce(
   0,
 );
 
+export const CFIT_TOTAL_DURATION_SECONDS = CFIT_SUBTESTS.reduce(
+  (total, subtest) => total + subtest.durationSeconds,
+  0,
+);
+
 export const CFIT_ANSWER_KEYS: Partial<Record<string, CfitAnswerValue>> = {
   "cfit-s1-1": "B",
   "cfit-s1-2": "C",
