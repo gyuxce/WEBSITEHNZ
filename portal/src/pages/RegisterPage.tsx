@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { AuthLayout } from "../components/PortalLayout";
@@ -24,6 +25,7 @@ export function RegisterPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,14 +109,25 @@ export function RegisterPage() {
           </label>
           <label className="flex flex-col gap-1.5">
             <span className="text-xs font-bold uppercase tracking-wide text-brand-navy/50">Password</span>
-            <input
-              type="password"
-              required
-              minLength={8}
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              className="rounded-xl border border-brand-navy/12 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-red/30"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                minLength={8}
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                className="w-full rounded-xl border border-brand-navy/12 px-4 py-3 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-brand-red/30"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((visible) => !visible)}
+                aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                aria-pressed={showPassword}
+                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-brand-navy/45 transition-colors hover:text-brand-red"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </label>
           <label className="flex flex-col gap-1.5">
             <span className="text-xs font-bold uppercase tracking-wide text-brand-navy/50">WhatsApp</span>
