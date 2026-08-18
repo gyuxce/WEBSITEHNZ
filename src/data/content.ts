@@ -44,6 +44,10 @@ export const soloKfiProgram = {
       key: "walking" as const,
       alt: "Tim operasional logistik Jepang di area distribusi",
     },
+    {
+      key: "cab" as const,
+      alt: "Pengemudi truk logistik sedang bersiap menjalankan kendaraan",
+    },
   ],
 };
 

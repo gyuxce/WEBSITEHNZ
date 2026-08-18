@@ -1,4 +1,5 @@
-import { ArrowUpRight } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { Reveal } from "../components/Reveal";
 import { instagramUrl, soloKfiProgram } from "../data/content";
 import logoHarunokaze from "../assets/images/solo-kfi/logo-harunokaze.png";
@@ -6,15 +7,42 @@ import logoKasuga from "../assets/images/solo-kfi/logo-kasuga-farm.png";
 import workerImg from "../assets/images/solo-kfi/solo-warehouse-worker.jpg";
 import trucksImg from "../assets/images/solo-kfi/solo-logistics-trucks.jpg";
 import walkingImg from "../assets/images/solo-kfi/solo-drivers-walking.jpg";
+import driverCabImg from "../assets/images/solo-kfi/solo-driver-cab.jpg";
 
 const galleryImages = {
   worker: workerImg,
   trucks: trucksImg,
   walking: walkingImg,
+  cab: driverCabImg,
+} as const;
+
+const galleryPositions = {
+  worker: "50% 48%",
+  trucks: "50% 50%",
+  walking: "50% 52%",
+  cab: "50% 50%",
 } as const;
 
 export function SoloKfi() {
-  const [worker, trucks, walking] = soloKfiProgram.gallery;
+  const galleryItems = soloKfiProgram.gallery.map((item) => ({
+    ...item,
+    src: galleryImages[item.key],
+  }));
+  const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setActiveGalleryIndex((current) => (current + 1) % galleryItems.length);
+    }, 5000);
+
+    return () => window.clearInterval(timer);
+  }, [galleryItems.length]);
+
+  function moveGallery(step: number) {
+    setActiveGalleryIndex(
+      (current) => (current + step + galleryItems.length) % galleryItems.length,
+    );
+  }
 
   return (
     <section id="hnz-solo" className="py-20 md:py-28 bg-white relative overflow-hidden">
@@ -97,44 +125,78 @@ export function SoloKfi() {
                 </span>
               </div>
 
-              <div className="relative grid grid-cols-5 grid-rows-2 gap-1.5 p-1.5 bg-white min-h-[280px] sm:min-h-[320px]">
-                <div className="relative col-span-3 row-span-2 overflow-hidden rounded-xl">
-                  <img
-                    src={galleryImages[worker.key]}
-                    alt={worker.alt}
-                    className="h-full w-full object-cover object-[center_20%]"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-brand-navy-deep/50 via-transparent to-transparent" />
-                  <div className="absolute bottom-3 left-3 right-3 flex flex-wrap items-end justify-between gap-2">
-                    <p className="text-sm font-semibold text-white drop-shadow-sm max-w-[14rem] leading-snug">
-                      Jalur persiapan karier Driver di Jepang
-                    </p>
-                    <span className="sm:hidden inline-flex rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-navy">
-                      {soloKfiProgram.badge}
-                    </span>
+              <div className="bg-white p-1.5">
+                <div className="hidden grid-cols-2 gap-1.5 sm:grid">
+                  {galleryItems.map((item, index) => (
+                    <div key={item.key} className="relative aspect-[4/3] overflow-hidden rounded-xl">
+                      <img
+                        src={item.src}
+                        alt={item.alt}
+                        className="h-full w-full object-cover"
+                        style={{ objectPosition: galleryPositions[item.key] }}
+                        loading={index === 0 ? "eager" : "lazy"}
+                        decoding="async"
+                      />
+                      {index === 0 ? (
+                        <div className="absolute inset-0 bg-gradient-to-t from-brand-navy-deep/55 via-transparent to-transparent" />
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="relative aspect-[4/3] overflow-hidden rounded-xl sm:hidden">
+                  <div
+                    className="flex h-full transition-transform duration-700 ease-out"
+                    style={{ transform: `translateX(-${activeGalleryIndex * 100}%)` }}
+                  >
+                    {galleryItems.map((item, index) => (
+                      <div key={item.key} className="relative h-full w-full shrink-0">
+                        <img
+                          src={item.src}
+                          alt={item.alt}
+                          className="h-full w-full object-cover"
+                          style={{ objectPosition: galleryPositions[item.key] }}
+                          loading={index === 0 ? "eager" : "lazy"}
+                          decoding="async"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-brand-navy-deep/65 via-transparent to-transparent" />
+                        <p className="absolute bottom-4 left-4 right-4 text-sm font-semibold leading-snug text-white drop-shadow-sm">
+                          {item.alt}
+                        </p>
+                      </div>
+                    ))}
                   </div>
-                </div>
 
-                <div className="relative col-span-2 overflow-hidden rounded-xl">
-                  <img
-                    src={galleryImages[trucks.key]}
-                    alt={trucks.alt}
-                    className="h-full w-full object-cover object-center"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                </div>
-
-                <div className="relative col-span-2 overflow-hidden rounded-xl">
-                  <img
-                    src={galleryImages[walking.key]}
-                    alt={walking.alt}
-                    className="h-full w-full object-cover object-[center_30%]"
-                    loading="lazy"
-                    decoding="async"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => moveGallery(-1)}
+                    aria-label="Foto sebelumnya"
+                    className="absolute left-3 top-1/2 inline-flex -translate-y-1/2 rounded-full bg-white/90 p-2 text-brand-navy shadow-sm transition hover:bg-white"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveGallery(1)}
+                    aria-label="Foto berikutnya"
+                    className="absolute right-3 top-1/2 inline-flex -translate-y-1/2 rounded-full bg-white/90 p-2 text-brand-navy shadow-sm transition hover:bg-white"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+                  <div className="absolute bottom-3 right-4 flex gap-1.5" aria-label="Pilih foto">
+                    {galleryItems.map((item, index) => (
+                      <button
+                        key={item.key}
+                        type="button"
+                        onClick={() => setActiveGalleryIndex(index)}
+                        aria-label={`Tampilkan foto ${index + 1}`}
+                        aria-current={activeGalleryIndex === index ? "true" : undefined}
+                        className={`h-1.5 rounded-full transition-all ${
+                          activeGalleryIndex === index ? "w-5 bg-white" : "w-1.5 bg-white/60"
+                        }`}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
             </figure>
