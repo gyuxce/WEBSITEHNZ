@@ -65,7 +65,7 @@ export function RegisterPage() {
           <h1 className="font-display font-extrabold text-2xl text-brand-navy">Cek email kamu</h1>
           <p className="mt-3 text-sm text-brand-navy/60 leading-relaxed">
             Kami sudah mengirim link verifikasi ke <strong>{form.email}</strong>. Setelah verifikasi,
-            kamu bisa masuk dan mulai pemetaan.
+            kamu bisa masuk dan langsung membayar biaya pemetaan Rp99.000.
           </p>
           <Link
             to="/login"

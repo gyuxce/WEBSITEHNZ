@@ -16,7 +16,7 @@ import { supabase } from "../lib/supabase";
 
 type RedirectStatus = "success" | "failure" | "expired" | null;
 type ParticipantInvoice =
-  Database["public"]["Functions"]["get_own_assessment_invoice"]["Returns"][number];
+  Database["public"]["Functions"]["ensure_own_assessment_invoice"]["Returns"][number];
 
 const POLL_INTERVAL_MS = 2500;
 const POLL_MAX_MS = 60000;
@@ -66,7 +66,7 @@ export function PaymentPage() {
       if (showLoader) setInvoiceLoading(true);
 
       const { data, error: invoiceError } = await supabase.rpc(
-        "get_own_assessment_invoice",
+        "ensure_own_assessment_invoice",
       );
       if (invoiceError) {
         setError(invoiceError.message);
@@ -234,7 +234,7 @@ export function PaymentPage() {
             <h1 className="font-display text-xl font-extrabold text-brand-navy">
               Pembayaran Pemetaan
             </h1>
-            <p className="text-xs text-brand-navy/50">Tagihan akses rangkaian tes</p>
+            <p className="text-xs text-brand-navy/50">Biaya pemetaan ditetapkan Rp99.000</p>
           </div>
         </div>
 
@@ -286,7 +286,7 @@ export function PaymentPage() {
             <ReceiptText className="mx-auto text-brand-navy/35" size={30} />
             <p className="mt-3 text-sm font-bold text-brand-navy">Tagihan belum tersedia</p>
             <p className="mt-1 text-xs leading-relaxed text-brand-navy/50">
-              Admin akan menetapkan nominal pembayaran untuk akun ini.
+              Tagihan Rp99.000 akan dibuat otomatis. Coba muat ulang halaman beberapa saat lagi.
             </p>
           </div>
         ) : confirmTimedOut ? (

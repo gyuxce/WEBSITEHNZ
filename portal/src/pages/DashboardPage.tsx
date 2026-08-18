@@ -180,7 +180,7 @@ function ParticipantHome({
           <ActionCard
             icon={<CreditCard size={20} />}
             title="Pembayaran Pemetaan"
-            description="Bayar biaya pemetaan untuk membuka tes"
+            description="Bayar Rp99.000 untuk membuka tes"
             href="/payment"
             disabled={paymentDone}
             cta={paymentDone ? "Sudah dibayar" : "Bayar sekarang"}

@@ -19,6 +19,7 @@ type InvoiceAdminRow =
   Database["public"]["Functions"]["admin_list_assessment_invoices"]["Returns"][number];
 
 const DEFAULT_DESCRIPTION = "Pemetaan Potensi Harunokaze";
+const DEFAULT_ASSESSMENT_AMOUNT = 99000;
 
 const formatPrice = (amount: number) =>
   new Intl.NumberFormat("id-ID", {
@@ -42,7 +43,6 @@ export function AdminPaymentsPage() {
   const [notice, setNotice] = useState("");
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<InvoiceAdminRow | null>(null);
-  const [amountInput, setAmountInput] = useState("");
   const [description, setDescription] = useState(DEFAULT_DESCRIPTION);
   const [dueDate, setDueDate] = useState("");
   const [formError, setFormError] = useState("");
@@ -92,7 +92,6 @@ export function AdminPaymentsPage() {
 
   const openEditor = (row: InvoiceAdminRow) => {
     setEditing(row);
-    setAmountInput(row.amount ? String(row.amount) : "");
     setDescription(row.description || DEFAULT_DESCRIPTION);
     setDueDate(row.due_date || "");
     setFormError("");
@@ -107,11 +106,7 @@ export function AdminPaymentsPage() {
 
   const handleSave = async () => {
     if (!editing) return;
-    const amount = Number(amountInput);
-    if (!Number.isInteger(amount) || amount <= 0) {
-      setFormError("Nominal harus berupa angka bulat lebih dari 0.");
-      return;
-    }
+    const amount = DEFAULT_ASSESSMENT_AMOUNT;
 
     setSaving(true);
     setFormError("");
@@ -156,7 +151,7 @@ export function AdminPaymentsPage() {
             Tagihan peserta
           </h1>
           <p className="mt-1 text-sm text-brand-navy/50">
-            Tetapkan nominal dan jatuh tempo sebelum peserta membuka pembayaran.
+            Nominal peserta otomatis Rp99.000. Admin cukup memantau status dan mengatur detail tagihan.
           </p>
         </div>
         <div className="flex flex-wrap gap-2 text-xs font-bold">
@@ -357,19 +352,19 @@ export function AdminPaymentsPage() {
                   <input
                     type="number"
                     inputMode="numeric"
-                    min="1"
-                    step="1"
-                    value={amountInput}
-                    onChange={(event) => setAmountInput(event.target.value)}
-                    className="w-full bg-transparent px-2 py-3 text-sm font-bold text-brand-navy outline-none"
-                    placeholder="0"
+                    min={DEFAULT_ASSESSMENT_AMOUNT}
+                    max={DEFAULT_ASSESSMENT_AMOUNT}
+                    step={DEFAULT_ASSESSMENT_AMOUNT}
+                    value={String(DEFAULT_ASSESSMENT_AMOUNT)}
+                    readOnly
+                    disabled
+                    aria-describedby="fixed-assessment-amount"
+                    className="w-full cursor-not-allowed bg-transparent px-2 py-3 text-sm font-bold text-brand-navy outline-none disabled:opacity-70"
                   />
                 </div>
-                {Number(amountInput) > 0 ? (
-                  <span className="mt-1.5 block text-xs text-brand-navy/45">
-                    {formatPrice(Number(amountInput))}
-                  </span>
-                ) : null}
+                <span id="fixed-assessment-amount" className="mt-1.5 block text-xs text-brand-navy/45">
+                  Nominal dikunci sementara pada {formatPrice(DEFAULT_ASSESSMENT_AMOUNT)}.
+                </span>
               </label>
 
               <label className="block">

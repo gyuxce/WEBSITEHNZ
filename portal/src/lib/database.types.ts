@@ -471,6 +471,20 @@ export interface Database {
         };
         Returns: Database["public"]["Tables"]["assessment_invoices"]["Row"];
       };
+      ensure_own_assessment_invoice: {
+        Args: Record<string, never>;
+        Returns: {
+          id: string;
+          invoice_number: string;
+          amount: number;
+          currency: "IDR";
+          description: string;
+          status: "issued" | "paid";
+          due_date: string | null;
+          issued_at: string;
+          paid_at: string | null;
+        }[];
+      };
       get_own_assessment_invoice: {
         Args: Record<string, never>;
         Returns: {

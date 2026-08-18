@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { AuthLayout } from "../components/PortalLayout";
 
 export function LoginPage() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -20,8 +21,20 @@ export function LoginPage() {
       return;
     }
 
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
-    if (authError) setError(authError.message);
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (authError) {
+      setError(authError.message);
+    } else if (authData.user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", authData.user.id)
+        .maybeSingle();
+      navigate(profile?.role === "admin" ? "/dashboard" : "/payment", { replace: true });
+    }
     setLoading(false);
   };
 
