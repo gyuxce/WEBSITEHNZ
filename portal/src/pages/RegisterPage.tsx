@@ -7,6 +7,7 @@ const PROGRAMS = [
   "Pelatihan Bahasa & Karakter",
   "Program Bidang Konstruksi",
   "Program Perawatan & Jasa (Kaigo)",
+  "Program Driver Jepang",
   "Belum yakin — butuh konsultasi",
 ];
 
