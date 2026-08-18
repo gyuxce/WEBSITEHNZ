@@ -2,16 +2,24 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   CheckCircle2,
+  Download,
   Loader2,
   Pencil,
   Plus,
   ReceiptText,
+  RefreshCw,
   Save,
   Search,
   X,
 } from "lucide-react";
 import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import {
+  downloadCsv,
+  formatAdminDateTime,
+  isAdminToday,
+  isWithinAdminDateRange,
+} from "../lib/adminTools";
 import type { Database } from "../lib/database.types";
 import { supabase } from "../lib/supabase";
 
@@ -44,24 +52,6 @@ const formatDate = (value: string) =>
     year: "numeric",
   });
 
-const formatDateTime = (value: string | null) =>
-  value
-    ? new Date(value).toLocaleString("id-ID", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "-";
-
-const isToday = (value: string | null) => {
-  if (!value) return false;
-  const date = new Date(value);
-  const today = new Date();
-  return date.toDateString() === today.toDateString();
-};
-
 const isWithinLastHours = (value: string | null, hours: number) => {
   if (!value) return false;
   const elapsed = Date.now() - new Date(value).getTime();
@@ -79,7 +69,12 @@ export function AdminPaymentsPage() {
   const [notice, setNotice] = useState("");
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<PaymentFilter>("all");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
   const [editing, setEditing] = useState<InvoiceAdminRow | null>(null);
+  const [amount, setAmount] = useState(String(DEFAULT_ASSESSMENT_AMOUNT));
   const [description, setDescription] = useState(DEFAULT_DESCRIPTION);
   const [dueDate, setDueDate] = useState("");
   const [formError, setFormError] = useState("");
@@ -96,6 +91,7 @@ export function AdminPaymentsPage() {
       setError(responseError.message);
     } else {
       setRows(data ?? []);
+      setLastUpdatedAt(new Date().toISOString());
     }
     if (showLoader) setLoading(false);
   }, []);
@@ -105,6 +101,41 @@ export function AdminPaymentsPage() {
     void loadRows();
   }, [authLoading, loadRows, profile?.role]);
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadRows(false);
+    setRefreshing(false);
+  };
+
+  const handleExport = () => {
+    downloadCsv(
+      `harunokaze-pembayaran-${new Date().toISOString().slice(0, 10)}.csv`,
+      [
+        "Nama",
+        "Email",
+        "WhatsApp",
+        "Terdaftar",
+        "Nomor Tagihan",
+        "Nominal",
+        "Status Tagihan",
+        "Status Pembayaran",
+        "Waktu Pembayaran",
+      ],
+      filteredRows.map((row) => [
+        row.full_name,
+        row.email ?? "",
+        row.whatsapp ?? "",
+        formatAdminDateTime(row.registered_at),
+        row.invoice_number ?? "",
+        row.amount ? formatPrice(row.amount) : "",
+        row.invoice_status ?? "Belum dibuat",
+        row.last_payment_status ?? (isPaidRow(row) ? "settlement" : ""),
+        formatAdminDateTime(row.paid_at),
+      ]),
+    );
+    setNotice(`${filteredRows.length} data pembayaran berhasil diekspor.`);
+  };
+
   const filteredRows = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     return rows
@@ -112,9 +143,16 @@ export function AdminPaymentsPage() {
         if (filter === "new") return isWithinLastHours(row.registered_at, 24);
         if (filter === "pending") return row.invoice_status === "issued";
         if (filter === "paid") return isPaidRow(row);
-        if (filter === "paid_today") return isPaidRow(row) && isToday(row.paid_at);
+         if (filter === "paid_today") return isPaidRow(row) && isAdminToday(row.paid_at);
         return true;
       })
+      .filter((row) =>
+        isWithinAdminDateRange(
+          row.paid_at ?? row.last_payment_at ?? row.registered_at,
+          fromDate,
+          toDate,
+        ),
+      )
       .filter((row) =>
         [row.full_name, row.email, row.whatsapp, row.invoice_number]
           .filter(Boolean)
@@ -129,13 +167,13 @@ export function AdminPaymentsPage() {
         ).getTime();
         return rightDate - leftDate;
       });
-  }, [filter, query, rows]);
+  }, [filter, fromDate, query, rows, toDate]);
 
   const totals = useMemo(
     () => ({
-      registeredToday: rows.filter((row) => isToday(row.registered_at)).length,
+      registeredToday: rows.filter((row) => isAdminToday(row.registered_at)).length,
       issued: rows.filter((row) => row.invoice_status === "issued").length,
-      paidToday: rows.filter((row) => isPaidRow(row) && isToday(row.paid_at)).length,
+      paidToday: rows.filter((row) => isPaidRow(row) && isAdminToday(row.paid_at)).length,
       paid: rows.filter((row) => isPaidRow(row)).length,
       legacy: rows.filter((row) => hasLegacyPaymentAccess(row)).length,
       missing: rows.filter(
@@ -147,6 +185,7 @@ export function AdminPaymentsPage() {
 
   const openEditor = (row: InvoiceAdminRow) => {
     setEditing(row);
+    setAmount(String(row.amount ?? DEFAULT_ASSESSMENT_AMOUNT));
     setDescription(row.description || DEFAULT_DESCRIPTION);
     setDueDate(row.due_date || "");
     setFormError("");
@@ -161,13 +200,17 @@ export function AdminPaymentsPage() {
 
   const handleSave = async () => {
     if (!editing) return;
-    const amount = DEFAULT_ASSESSMENT_AMOUNT;
+    const amountValue = Number.parseInt(amount, 10);
+    if (!Number.isInteger(amountValue) || amountValue < 1000 || amountValue > 100000000) {
+      setFormError("Nominal harus berupa angka antara Rp1.000 dan Rp100.000.000.");
+      return;
+    }
 
     setSaving(true);
     setFormError("");
     const { error: saveError } = await supabase.rpc("admin_upsert_assessment_invoice", {
       p_user_id: editing.user_id,
-      p_amount: amount,
+      p_amount: amountValue,
       p_description: description.trim() || DEFAULT_DESCRIPTION,
       p_due_date: dueDate || null,
     });
@@ -189,7 +232,7 @@ export function AdminPaymentsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-7xl">
       <Link
         to="/dashboard"
         className="mb-6 inline-flex items-center gap-1.5 text-sm text-brand-navy/50 hover:text-brand-red"
@@ -235,6 +278,29 @@ export function AdminPaymentsPage() {
         </div>
       </div>
 
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => void handleRefresh()}
+          disabled={refreshing || loading}
+          className="inline-flex items-center gap-2 rounded-lg border border-brand-navy/12 bg-white px-3 py-2 text-xs font-bold text-brand-navy transition-colors hover:border-brand-red/30 hover:text-brand-red disabled:opacity-50"
+        >
+          <RefreshCw size={15} className={refreshing ? "animate-spin" : ""} />
+          {refreshing ? "Memuat" : "Refresh"}
+        </button>
+        <button
+          type="button"
+          onClick={handleExport}
+          disabled={filteredRows.length === 0}
+          className="inline-flex items-center gap-2 rounded-lg border border-brand-navy/12 bg-white px-3 py-2 text-xs font-bold text-brand-navy transition-colors hover:border-brand-red/30 hover:text-brand-red disabled:opacity-50"
+        >
+          <Download size={15} /> Export CSV
+        </button>
+        <span className="text-xs text-brand-navy/40">
+          {lastUpdatedAt ? `Diperbarui ${formatAdminDateTime(lastUpdatedAt)} WIB` : "Belum dimuat"}
+        </span>
+      </div>
+
       <div className="relative mt-6">
         <Search
           size={17}
@@ -264,6 +330,42 @@ export function AdminPaymentsPage() {
             {option.label}
           </button>
         ))}
+      </div>
+
+      <div className="mt-4 grid gap-3 rounded-xl border border-brand-navy/8 bg-white p-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+        <label className="block">
+          <span className="text-xs font-bold uppercase tracking-wide text-brand-navy/45">
+            Aktivitas dari
+          </span>
+          <input
+            type="date"
+            value={fromDate}
+            onChange={(event) => setFromDate(event.target.value)}
+            className="mt-1.5 w-full rounded-lg border border-brand-navy/12 px-3 py-2.5 text-sm text-brand-navy outline-none focus:border-brand-red/40 focus:ring-2 focus:ring-brand-red/10"
+          />
+        </label>
+        <label className="block">
+          <span className="text-xs font-bold uppercase tracking-wide text-brand-navy/45">
+            Aktivitas sampai
+          </span>
+          <input
+            type="date"
+            value={toDate}
+            onChange={(event) => setToDate(event.target.value)}
+            className="mt-1.5 w-full rounded-lg border border-brand-navy/12 px-3 py-2.5 text-sm text-brand-navy outline-none focus:border-brand-red/40 focus:ring-2 focus:ring-brand-red/10"
+          />
+        </label>
+        <button
+          type="button"
+          onClick={() => {
+            setFromDate("");
+            setToDate("");
+          }}
+          disabled={!fromDate && !toDate}
+          className="rounded-lg border border-brand-navy/12 px-3 py-2.5 text-xs font-bold text-brand-navy/65 hover:bg-brand-bg disabled:opacity-40"
+        >
+          Hapus tanggal
+        </button>
       </div>
 
       {notice ? (
@@ -307,7 +409,7 @@ export function AdminPaymentsPage() {
                       <p className="mt-0.5 text-xs text-brand-navy/45">{row.whatsapp}</p>
                     ) : null}
                     <p className="mt-0.5 text-xs text-brand-navy/45">
-                      Terdaftar {formatDateTime(row.registered_at)}
+                      Terdaftar {formatAdminDateTime(row.registered_at)}
                     </p>
                   </div>
                   <InvoiceStatus
@@ -369,7 +471,7 @@ export function AdminPaymentsPage() {
                       ) : null}
                     </td>
                     <td className="px-4 py-4 text-xs text-brand-navy/55">
-                      {formatDateTime(row.registered_at)}
+                      {formatAdminDateTime(row.registered_at)}
                     </td>
                     <td className="px-4 py-4">
                       <p className="font-mono text-xs font-semibold text-brand-navy/70">
@@ -437,24 +539,23 @@ export function AdminPaymentsPage() {
 
             <div className="mt-6 space-y-4">
               <label className="block">
-                <span className="text-xs font-bold uppercase text-brand-navy/45">Nominal</span>
+                <span className="text-xs font-bold uppercase text-brand-navy/45">Nominal event</span>
                 <div className="mt-1.5 flex items-center rounded-lg border border-brand-navy/12 px-3 focus-within:border-brand-red/40 focus-within:ring-2 focus-within:ring-brand-red/10">
                   <span className="text-sm font-bold text-brand-navy/45">Rp</span>
                   <input
                     type="number"
                     inputMode="numeric"
-                    min={DEFAULT_ASSESSMENT_AMOUNT}
-                    max={DEFAULT_ASSESSMENT_AMOUNT}
-                    step={DEFAULT_ASSESSMENT_AMOUNT}
-                    value={String(DEFAULT_ASSESSMENT_AMOUNT)}
-                    readOnly
-                    disabled
-                    aria-describedby="fixed-assessment-amount"
-                    className="w-full cursor-not-allowed bg-transparent px-2 py-3 text-sm font-bold text-brand-navy outline-none disabled:opacity-70"
+                    min={1000}
+                    max={100000000}
+                    step={1000}
+                    value={amount}
+                    onChange={(event) => setAmount(event.target.value)}
+                    aria-describedby="custom-assessment-amount"
+                    className="w-full bg-transparent px-2 py-3 text-sm font-bold text-brand-navy outline-none"
                   />
                 </div>
-                <span id="fixed-assessment-amount" className="mt-1.5 block text-xs text-brand-navy/45">
-                  Nominal dikunci sementara pada {formatPrice(DEFAULT_ASSESSMENT_AMOUNT)}.
+                <span id="custom-assessment-amount" className="mt-1.5 block text-xs text-brand-navy/45">
+                  Default {formatPrice(DEFAULT_ASSESSMENT_AMOUNT)}. Bisa disesuaikan admin untuk event atau promo tertentu.
                 </span>
               </label>
 
@@ -534,7 +635,7 @@ function PaymentTiming({ row }: { row: InvoiceAdminRow }) {
         ) : (
           <p className="text-xs font-semibold text-emerald-700">Berhasil</p>
         )}
-        <p className="mt-1 text-xs text-brand-navy/55">{formatDateTime(row.paid_at)}</p>
+        <p className="mt-1 text-xs text-brand-navy/55">{formatAdminDateTime(row.paid_at)}</p>
       </div>
     );
   }
@@ -547,7 +648,7 @@ function PaymentTiming({ row }: { row: InvoiceAdminRow }) {
         </p>
         {row.last_payment_at ? (
           <p className="mt-1 text-xs text-brand-navy/45">
-            Dibuat {formatDateTime(row.last_payment_at)}
+            Dibuat {formatAdminDateTime(row.last_payment_at)}
           </p>
         ) : null}
       </div>

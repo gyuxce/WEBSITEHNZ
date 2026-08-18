@@ -14,6 +14,7 @@ import {
 import { supabase } from "../lib/supabase";
 import type { Json } from "../lib/database.types";
 import { PapiProfileChart } from "../components/PapiProfileChart";
+import { formatAdminDateTime } from "../lib/adminTools";
 
 type PapikostikDetail = {
   id: string;
@@ -192,7 +193,7 @@ export function AdminPapikostikDetailPage() {
         <p className="mt-1 text-sm text-brand-navy/50">
           {row.email ? `${row.email} · ` : ""}
           {row.whatsapp ? `${row.whatsapp} · ` : ""}
-          Selesai {new Date(row.completed_at).toLocaleString("id-ID")}
+          Selesai {formatAdminDateTime(row.completed_at)} WIB
         </p>
       </div>
 
@@ -314,7 +315,7 @@ export function AdminPapikostikDetailPage() {
                   {row.review_status === "reviewed" ? "Review tersimpan" : "Belum direview"}
                 </span>
                 {row.reviewed_at ? (
-                  <span>Terakhir disimpan {new Date(row.reviewed_at).toLocaleString("id-ID")}</span>
+                  <span>Terakhir disimpan {formatAdminDateTime(row.reviewed_at)} WIB</span>
                 ) : null}
               </div>
             </div>

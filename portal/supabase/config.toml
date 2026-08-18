@@ -1,0 +1,5 @@
+# Pivot payment callback authenticates itself with the configured callback API key.
+# All user-facing functions keep Supabase JWT verification enabled by default.
+
+[functions.pivot-webhook]
+verify_jwt = false

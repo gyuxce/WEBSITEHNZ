@@ -215,7 +215,17 @@ serve(async (req) => {
     if (invoice.due_date && invoice.due_date < currentJakartaDate()) {
       return jsonResponse({ error: "Tagihan sudah melewati tanggal jatuh tempo" }, 409);
     }
-    if (!Number.isInteger(invoice.amount) || invoice.amount <= 0 || invoice.currency !== "IDR") {
+    if (
+      !Number.isInteger(invoice.amount) ||
+      invoice.amount < 1000 ||
+      invoice.amount > 100000000 ||
+      invoice.currency !== "IDR"
+    ) {
+      console.error("pivot-create invoice mismatch", {
+        invoiceId: invoice.id,
+        amount: invoice.amount,
+        currency: invoice.currency,
+      });
       return jsonResponse({ error: "Nominal atau mata uang tagihan tidak valid" }, 500);
     }
 

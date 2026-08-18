@@ -1,8 +1,10 @@
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
   Award,
+  CheckCircle2,
+  Clock3,
   ClipboardList,
   CreditCard,
   FileCheck,
@@ -13,8 +15,9 @@ import {
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { ProgressSteps } from "../components/ProgressSteps";
-import { LANDING_URL } from "../lib/supabase";
+import { LANDING_URL, supabase } from "../lib/supabase";
 import { isPsychologistRole } from "../lib/access";
+import { formatAdminDateTime } from "../lib/adminTools";
 
 const WHATSAPP_URL = "https://wa.me/message/DWVTJESHI2RQC1";
 
@@ -34,6 +37,34 @@ export function DashboardPage() {
 }
 
 function PsychologistHome({ name }: { name: string }) {
+  const [queueRows, setQueueRows] = useState<
+    Array<{ review_status: "pending" | "reviewed"; completed_at: string }>
+  >([]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadQueue() {
+      const { data } = await supabase.rpc("psychologist_list_review_queue");
+      if (active && data) {
+        setQueueRows(
+          data as Array<{ review_status: "pending" | "reviewed"; completed_at: string }>,
+        );
+      }
+    }
+
+    void loadQueue();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const pendingCount = queueRows.filter((row) => row.review_status === "pending").length;
+  const reviewedCount = queueRows.filter((row) => row.review_status === "reviewed").length;
+  const latestPending = queueRows
+    .filter((row) => row.review_status === "pending")
+    .sort((left, right) => new Date(right.completed_at).getTime() - new Date(left.completed_at).getTime())[0];
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
@@ -47,6 +78,17 @@ function PsychologistHome({ name }: { name: string }) {
           Kelola pembacaan hasil asesmen peserta dan tulis interpretasi psikolog. Menu pembayaran dan
           persetujuan sertifikat tidak tersedia di area ini.
         </p>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <HomeStat icon={<Clock3 size={18} />} label="Menunggu review" value={pendingCount} tone="amber" />
+        <HomeStat icon={<CheckCircle2 size={18} />} label="Sudah direview" value={reviewedCount} tone="green" />
+        <HomeStat
+          icon={<Clock3 size={18} />}
+          label="Peserta pending terakhir"
+          value={latestPending ? formatAdminDateTime(latestPending.completed_at) : "-"}
+          tone="blue"
+        />
       </div>
 
       <Link
@@ -108,6 +150,32 @@ function PsychologistHome({ name }: { name: string }) {
       >
         ← Kembali ke website Harunokaze
       </a>
+    </div>
+  );
+}
+
+function HomeStat({
+  icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: number | string;
+  tone: "amber" | "green" | "blue";
+}) {
+  const toneClass = {
+    amber: "bg-amber-50 text-amber-700",
+    green: "bg-emerald-50 text-emerald-700",
+    blue: "bg-blue-50 text-blue-700",
+  }[tone];
+
+  return (
+    <div className="rounded-2xl border border-brand-navy/8 bg-white p-4">
+      <div className={`mb-3 flex h-9 w-9 items-center justify-center rounded-xl ${toneClass}`}>{icon}</div>
+      <p className="text-xs font-bold uppercase tracking-wide text-brand-navy/45">{label}</p>
+      <p className="mt-1 text-lg font-extrabold text-brand-navy">{value}</p>
     </div>
   );
 }

@@ -1,8 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Clock, Search } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ArrowLeft, Clock, Download, RefreshCw, Search } from "lucide-react";
 import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { PIMSLEUR_MAX_SCORE } from "../data/pimsleurQuestions";
+import {
+  downloadCsv,
+  formatAdminDateTime,
+  isAdminToday,
+  isWithinAdminDateRange,
+} from "../lib/adminTools";
 import { supabase } from "../lib/supabase";
 import { isAssessmentStaffRole, isPsychologistRole } from "../lib/access";
 
@@ -62,22 +68,6 @@ const FILTER_OPTIONS: Array<{ value: RecapFilter; label: string }> = [
   { value: "complete", label: "Lengkap" },
 ];
 
-const formatDateTime = (value: string | null) =>
-  value
-    ? new Date(value).toLocaleString("id-ID", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "-";
-
-const isToday = (value: string | null) => {
-  if (!value) return false;
-  return new Date(value).toDateString() === new Date().toDateString();
-};
-
 const isWithinLastHours = (value: string | null, hours: number) => {
   if (!value) return false;
   const elapsed = Date.now() - new Date(value).getTime();
@@ -98,7 +88,7 @@ function getLatestCompletedAt(row: RecapRow) {
 }
 
 function hasActivityToday(row: RecapRow) {
-  return getCompletedAtValues(row).some((value) => isToday(value));
+  return getCompletedAtValues(row).some((value) => isAdminToday(value));
 }
 
 function hasRecentActivity(row: RecapRow) {
@@ -116,68 +106,108 @@ export function AdminRecapPage() {
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<RecapFilter>("all");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
   const isPsychologist = isPsychologistRole(profile?.role);
   const detailBasePath = isPsychologist ? "/psychologist" : "/admin";
 
-  useEffect(() => {
-    if (authLoading || !isAssessmentStaffRole(profile?.role)) return;
+  const loadRows = useCallback(async (showLoader = true) => {
+    if (showLoader) setLoading(true);
+    setError("");
 
-    async function load() {
-      const [pimsleurResponse, cfitResponse, papikostikResponse] = await Promise.all([
-        supabase.rpc("admin_list_pimsleur_results"),
-        supabase.rpc("admin_list_cfit_results"),
-        supabase.rpc("admin_list_papikostik_results"),
-      ]);
+    const [pimsleurResponse, cfitResponse, papikostikResponse] = await Promise.all([
+      supabase.rpc("admin_list_pimsleur_results"),
+      supabase.rpc("admin_list_cfit_results"),
+      supabase.rpc("admin_list_papikostik_results"),
+    ]);
 
-      const responseError =
-        pimsleurResponse.error ?? cfitResponse.error ?? papikostikResponse.error;
-      if (responseError) {
-        setError(responseError.message);
-        setLoading(false);
-        return;
-      }
-
-      const recapMap = new Map<string, RecapRow>();
-      const getRow = (value: {
-        user_id: string;
-        full_name: string;
-        email: string | null;
-        whatsapp: string | null;
-        city: string | null;
-      }) => {
-        const existing = recapMap.get(value.user_id);
-        if (existing) return existing;
-
-        const newRow: RecapRow = {
-          userId: value.user_id,
-          fullName: value.full_name || "Peserta",
-          email: value.email,
-          whatsapp: value.whatsapp,
-          city: value.city,
-          pimsleur: null,
-          cfit: null,
-          papikostik: null,
-        };
-        recapMap.set(value.user_id, newRow);
-        return newRow;
-      };
-
-      for (const result of (pimsleurResponse.data as PimsleurRow[] | null) ?? []) {
-        getRow(result).pimsleur = result;
-      }
-      for (const result of (cfitResponse.data as CfitRow[] | null) ?? []) {
-        getRow(result).cfit = result;
-      }
-      for (const result of (papikostikResponse.data as PapikostikRow[] | null) ?? []) {
-        getRow(result).papikostik = result;
-      }
-
-      setRows([...recapMap.values()]);
-      setLoading(false);
+    const responseError = pimsleurResponse.error ?? cfitResponse.error ?? papikostikResponse.error;
+    if (responseError) {
+      setError(responseError.message);
+      if (showLoader) setLoading(false);
+      return;
     }
 
-    void load();
-  }, [authLoading, profile?.role]);
+    const recapMap = new Map<string, RecapRow>();
+    const getRow = (value: {
+      user_id: string;
+      full_name: string;
+      email: string | null;
+      whatsapp: string | null;
+      city: string | null;
+    }) => {
+      const existing = recapMap.get(value.user_id);
+      if (existing) return existing;
+
+      const newRow: RecapRow = {
+        userId: value.user_id,
+        fullName: value.full_name || "Peserta",
+        email: value.email,
+        whatsapp: value.whatsapp,
+        city: value.city,
+        pimsleur: null,
+        cfit: null,
+        papikostik: null,
+      };
+      recapMap.set(value.user_id, newRow);
+      return newRow;
+    };
+
+    for (const result of (pimsleurResponse.data as PimsleurRow[] | null) ?? []) {
+      getRow(result).pimsleur = result;
+    }
+    for (const result of (cfitResponse.data as CfitRow[] | null) ?? []) {
+      getRow(result).cfit = result;
+    }
+    for (const result of (papikostikResponse.data as PapikostikRow[] | null) ?? []) {
+      getRow(result).papikostik = result;
+    }
+
+    setRows([...recapMap.values()]);
+    setLastUpdatedAt(new Date().toISOString());
+    if (showLoader) setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (authLoading || !isAssessmentStaffRole(profile?.role)) return;
+    void loadRows();
+  }, [authLoading, loadRows, profile?.role]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadRows(false);
+    setRefreshing(false);
+  };
+
+  const handleExport = () => {
+    downloadCsv(
+      `harunokaze-rekap-asesmen-${new Date().toISOString().slice(0, 10)}.csv`,
+      [
+        "Nama",
+        "Email",
+        "WhatsApp",
+        "Kota",
+        "Pimsleur selesai",
+        "CFIT selesai",
+        "PAPI selesai",
+        "Aktivitas terakhir",
+        "Status",
+      ],
+      filteredRows.map((row) => [
+        row.fullName,
+        row.email ?? "",
+        row.whatsapp ?? "",
+        row.city ?? "",
+        formatAdminDateTime(row.pimsleur?.completed_at ?? null),
+        formatAdminDateTime(row.cfit?.completed_at ?? null),
+        formatAdminDateTime(row.papikostik?.completed_at ?? null),
+        formatAdminDateTime(getLatestCompletedAt(row)),
+        isComplete(row) ? "Lengkap" : "Belum lengkap",
+      ]),
+    );
+  };
 
   const filteredRows = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -190,6 +220,7 @@ export function AdminRecapPage() {
         if (filter === "incomplete") return !isComplete(row);
         return true;
       })
+      .filter((row) => isWithinAdminDateRange(getLatestCompletedAt(row), fromDate, toDate))
       .filter((row) =>
         [row.fullName, row.email, row.whatsapp, row.city]
           .filter(Boolean)
@@ -203,7 +234,7 @@ export function AdminRecapPage() {
           (leftDate ? new Date(leftDate).getTime() : 0)
         );
       });
-  }, [filter, query, rows]);
+  }, [filter, fromDate, query, rows, toDate]);
 
   const completedCount = useMemo(() => rows.filter(isComplete).length, [rows]);
   const activityTodayCount = useMemo(() => rows.filter(hasActivityToday).length, [rows]);
@@ -251,6 +282,29 @@ export function AdminRecapPage() {
         </div>
       </div>
 
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => void handleRefresh()}
+          disabled={refreshing || loading}
+          className="inline-flex items-center gap-2 rounded-lg border border-brand-navy/12 bg-white px-3 py-2 text-xs font-bold text-brand-navy transition-colors hover:border-brand-red/30 hover:text-brand-red disabled:opacity-50"
+        >
+          <RefreshCw size={15} className={refreshing ? "animate-spin" : ""} />
+          {refreshing ? "Memuat" : "Refresh"}
+        </button>
+        <button
+          type="button"
+          onClick={handleExport}
+          disabled={filteredRows.length === 0}
+          className="inline-flex items-center gap-2 rounded-lg border border-brand-navy/12 bg-white px-3 py-2 text-xs font-bold text-brand-navy transition-colors hover:border-brand-red/30 hover:text-brand-red disabled:opacity-50"
+        >
+          <Download size={15} /> Export CSV
+        </button>
+        <span className="text-xs text-brand-navy/40">
+          {lastUpdatedAt ? `Diperbarui ${formatAdminDateTime(lastUpdatedAt)} WIB` : "Belum dimuat"}
+        </span>
+      </div>
+
       <div className="relative mt-6">
         <Search
           size={17}
@@ -280,6 +334,42 @@ export function AdminRecapPage() {
             {option.label}
           </button>
         ))}
+      </div>
+
+      <div className="mt-4 grid gap-3 rounded-xl border border-brand-navy/8 bg-white p-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+        <label className="block">
+          <span className="text-xs font-bold uppercase tracking-wide text-brand-navy/45">
+            Aktivitas tes dari
+          </span>
+          <input
+            type="date"
+            value={fromDate}
+            onChange={(event) => setFromDate(event.target.value)}
+            className="mt-1.5 w-full rounded-lg border border-brand-navy/12 px-3 py-2.5 text-sm text-brand-navy outline-none focus:border-brand-red/40 focus:ring-2 focus:ring-brand-red/10"
+          />
+        </label>
+        <label className="block">
+          <span className="text-xs font-bold uppercase tracking-wide text-brand-navy/45">
+            Aktivitas tes sampai
+          </span>
+          <input
+            type="date"
+            value={toDate}
+            onChange={(event) => setToDate(event.target.value)}
+            className="mt-1.5 w-full rounded-lg border border-brand-navy/12 px-3 py-2.5 text-sm text-brand-navy outline-none focus:border-brand-red/40 focus:ring-2 focus:ring-brand-red/10"
+          />
+        </label>
+        <button
+          type="button"
+          onClick={() => {
+            setFromDate("");
+            setToDate("");
+          }}
+          disabled={!fromDate && !toDate}
+          className="rounded-lg border border-brand-navy/12 px-3 py-2.5 text-xs font-bold text-brand-navy/65 hover:bg-brand-bg disabled:opacity-40"
+        >
+          Hapus tanggal
+        </button>
       </div>
 
       {loading || authLoading ? (
@@ -314,7 +404,12 @@ export function AdminRecapPage() {
             </thead>
             <tbody>
               {filteredRows.map((row) => (
-                <tr key={row.userId} className="border-b border-brand-navy/5 align-top last:border-0">
+                <tr
+                  key={row.userId}
+                  className={`border-b border-brand-navy/5 align-top last:border-0 ${
+                    isWithinLastHours(getLatestCompletedAt(row), 1) ? "bg-sky-50/60" : ""
+                  }`}
+                >
                   <td className="px-4 py-4">
                     <p className="font-semibold text-brand-navy">{row.fullName}</p>
                     <div className="mt-1 space-y-0.5 text-xs leading-relaxed text-brand-navy/45">
@@ -324,6 +419,11 @@ export function AdminRecapPage() {
                     </div>
                   </td>
                   <td className="px-4 py-4">
+                    {isWithinLastHours(getLatestCompletedAt(row), 1) ? (
+                      <span className="inline-flex rounded-full bg-sky-100 px-2 py-1 text-[11px] font-bold text-sky-700">
+                        Baru selesai
+                      </span>
+                    ) : null}
                     <CompletionTime value={getLatestCompletedAt(row)} />
                   </td>
                   <td className="px-4 py-4">
@@ -399,7 +499,7 @@ function CompletionTime({ value }: { value: string | null }) {
   return (
     <p className="mt-2 inline-flex items-start gap-1 text-[11px] leading-relaxed text-brand-navy/45">
       <Clock size={12} className="mt-0.5 shrink-0" />
-      {formatDateTime(value)}
+      {formatAdminDateTime(value)}
     </p>
   );
 }

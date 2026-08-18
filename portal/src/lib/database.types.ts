@@ -765,6 +765,25 @@ export interface Database {
           city: string | null;
         }[];
       };
+      psychologist_list_review_queue: {
+        Args: Record<string, never>;
+        Returns: {
+          id: string;
+          user_id: string;
+          total_top: number | null;
+          total_bottom: number | null;
+          total_all: number | null;
+          is_complete_pattern: boolean | null;
+          review_status: "pending" | "reviewed";
+          completed_at: string;
+          reviewed_at: string | null;
+          final_review_status: string | null;
+          full_name: string;
+          email: string | null;
+          whatsapp: string | null;
+          city: string | null;
+        }[];
+      };
       admin_get_final_assessment: {
         Args: { p_user_id: string };
         Returns: {
