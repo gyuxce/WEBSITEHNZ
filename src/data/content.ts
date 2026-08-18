@@ -70,7 +70,7 @@ export const heroSteps = [
   { label: "Job matching & interview", active: false },
   { label: "Persiapan keberangkatan", active: false },
   { label: "Pendampingan selama bekerja", active: false },
-  { label: "Purna kerja & langkah lanjut", active: false },
+  { label: "Kembali ke Indonesia & langkah berikutnya", active: false },
 ];
 
 export const ecosystemRoles = [
@@ -122,7 +122,7 @@ export const journeyStages = [
   },
   {
     num: "06",
-    title: "Purna & Reintegrasi",
+    title: "Kembali & Langkah Berikutnya",
     description: "Transisi karier & jaringan alumni sepulang ke Indonesia.",
   },
 ];
@@ -262,7 +262,7 @@ export const alumniStories = [
 export const faqs = [
   {
     q: "Apakah Harunokaze sama dengan LPK & SO Wiwitan Baru?",
-    a: "Tidak persis sama. Harunokaze adalah ekosistem yang mendampingi peserta dari awal hingga purna kerja, sementara LPK & SO Wiwitan Baru adalah lembaga yang menjalankan pendidikan dan pelatihannya secara resmi dan terdaftar di Kemenaker RI.",
+    a: "Tidak persis sama. Harunokaze adalah ekosistem yang mendampingi peserta dari awal hingga kembali ke Indonesia, sementara LPK & SO Wiwitan Baru adalah lembaga yang menjalankan pendidikan dan pelatihannya secara resmi dan terdaftar di Kemenaker RI.",
   },
   {
     q: "Apakah program ini lowongan kerja langsung?",

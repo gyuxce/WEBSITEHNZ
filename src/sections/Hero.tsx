@@ -24,7 +24,7 @@ export function Hero() {
             className="inline-flex items-center gap-2 rounded-full bg-brand-red-soft px-3.5 py-1 text-[11px] font-bold uppercase tracking-widest text-brand-red mb-4"
           >
             <Sparkles size={12} />
-            Ekosistem Karier Jepang · Harunokaze
+            Ekosistem Karier Jepang | Harunokaze
           </motion.div>
 
           <motion.h1
@@ -33,8 +33,8 @@ export function Hero() {
             transition={{ duration: 0.7, delay: 0.05 }}
             className="font-display font-extrabold text-[2.1rem] sm:text-4xl lg:text-[2.75rem] leading-[1.1] tracking-tight text-brand-navy text-balance"
           >
-            Menyiapkan langkahmu ke Jepang,{" "}
-            <span className="text-brand-red">dari niat sampai pulang.</span>
+            Mimpi ke Jepang?{" "}
+            <span className="text-brand-red">Kita Siapkan Bareng.</span>
           </motion.h1>
 
           <motion.p
@@ -43,9 +43,8 @@ export function Hero() {
             transition={{ duration: 0.7, delay: 0.12 }}
             className="mt-4 text-[0.95rem] md:text-base text-brand-navy/60 max-w-xl leading-relaxed"
           >
-            Harunokaze mendampingi perjalanan kariermu sejak persiapan, pendidikan &amp; pelatihan, job
-            matching, keberangkatan, selama bekerja di Jepang, hingga kembali ke Indonesia — satu
-            ekosistem, bukan sekadar pendaftaran LPK.
+            Harunokaze menemani kamu dari mengenali kesiapan, belajar bahasa, mempersiapkan kerja,
+            sampai berangkat dan menjalani pengalaman di Jepang.
           </motion.p>
 
           <motion.div
@@ -58,14 +57,14 @@ export function Hero() {
               href={`${portalUrl}/register`}
               className="group inline-flex items-center gap-2 rounded-full bg-brand-red px-6 py-3 text-sm font-bold text-white shadow-lg shadow-brand-red/25 transition-all hover:bg-brand-red-hover hover:-translate-y-0.5 hover:shadow-xl hover:shadow-brand-red/30"
             >
-              Mulai Pemetaan Potensi
+              Cek Kesiapanmu
               <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
             </a>
             <a
               href="#kontak"
               className="inline-flex items-center gap-2 rounded-full border border-brand-navy/15 px-6 py-3 text-sm font-bold text-brand-navy transition-all hover:border-brand-navy hover:bg-brand-navy hover:text-white"
             >
-              Konsultasi Gratis
+              Tanya Dulu
             </a>
           </motion.div>
 
