@@ -179,7 +179,7 @@ begin
       now_at,
       first_step_deadline
     )
-    on conflict (user_id, assessment_type) do nothing
+    on conflict on constraint assessment_attempts_user_type_unique do nothing
     returning * into created_attempt;
 
     if created_attempt.id is null then
