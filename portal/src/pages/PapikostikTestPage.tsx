@@ -212,6 +212,18 @@ export function PapikostikTestPage() {
       return;
     }
 
+    // Notification failure must never block a participant who has completed the test.
+    void supabase.functions
+      .invoke("notify-papikostik-completed", { body: {} })
+      .then(({ error: notificationError }) => {
+        if (notificationError) {
+          console.error("PAPI psychologist notification failed:", notificationError.message);
+        }
+      })
+      .catch((notificationError: unknown) => {
+        console.error("PAPI psychologist notification failed:", notificationError);
+      });
+
     await refreshProfile();
     setSubmitting(false);
     navigate("/result/papikostik", { replace: true });

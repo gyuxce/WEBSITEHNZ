@@ -3,3 +3,7 @@
 
 [functions.pivot-webhook]
 verify_jwt = false
+
+# Called only by an authenticated participant after PAPI Kostick is completed.
+[functions.notify-papikostik-completed]
+verify_jwt = true

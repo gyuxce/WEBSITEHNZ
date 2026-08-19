@@ -117,6 +117,7 @@ Deploy ke Supabase:
 supabase functions deploy pivot-create
 supabase functions deploy pivot-status
 supabase functions deploy pivot-webhook --no-verify-jwt
+supabase functions deploy notify-papikostik-completed
 ```
 
 Set secrets di Supabase Dashboard → Edge Functions:
@@ -170,6 +171,11 @@ PIVOT_CALLBACK_API_KEY=<Callback API Key Production>
 PIVOT_SUCCESS_URL=https://portal.harunokaze.id/payment?payment=success
 PIVOT_FAILURE_URL=https://portal.harunokaze.id/payment?payment=failure
 PIVOT_EXPIRATION_URL=https://portal.harunokaze.id/payment?payment=expired
+RESEND_API_KEY=<Resend API Key>
+RESEND_FROM_EMAIL=Harunokaze <notifikasi@harunokaze.id>
+PSYCHOLOGIST_NOTIFICATION_EMAIL=psikolog@harunokaze.id
+# Optional (default sudah https://portal.harunokaze.id)
+PORTAL_URL=https://portal.harunokaze.id
 ```
 
 Callback URL yang didaftarkan di Pivot Dashboard → Settings → Developer Settings → Callbacks:
