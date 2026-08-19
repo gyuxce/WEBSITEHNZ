@@ -9,16 +9,16 @@ const RENDER_WIDTH_PX = 900;
 const CERTIFICATE_FONT_HREF =
   "https://fonts.googleapis.com/css2?family=Great+Vibes&family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap";
 
-async function ensureCertificateFonts(): Promise<void> {
-  const existing = document.querySelector<HTMLLinkElement>(
+async function ensureCertificateFonts(targetDocument: Document): Promise<void> {
+  const existing = targetDocument.querySelector<HTMLLinkElement>(
     `link[data-certificate-fonts="true"]`,
   );
   if (!existing) {
-    const link = document.createElement("link");
+    const link = targetDocument.createElement("link");
     link.rel = "stylesheet";
     link.href = CERTIFICATE_FONT_HREF;
     link.dataset.certificateFonts = "true";
-    document.head.appendChild(link);
+    targetDocument.head.appendChild(link);
     await new Promise<void>((resolve) => {
       link.onload = () => resolve();
       link.onerror = () => resolve();
@@ -27,15 +27,15 @@ async function ensureCertificateFonts(): Promise<void> {
     });
   }
 
-  if (document.fonts?.load) {
+  if (targetDocument.fonts?.load) {
     await Promise.all([
-      document.fonts.load("800 34px Outfit"),
-      document.fonts.load("400 56px 'Great Vibes'"),
-      document.fonts.load("400 14px 'Plus Jakarta Sans'"),
+      targetDocument.fonts.load("800 34px Outfit"),
+      targetDocument.fonts.load("400 56px 'Great Vibes'"),
+      targetDocument.fonts.load("400 14px 'Plus Jakarta Sans'"),
     ]).catch(() => undefined);
   }
-  if (document.fonts?.ready) {
-    await document.fonts.ready;
+  if (targetDocument.fonts?.ready) {
+    await targetDocument.fonts.ready;
   }
 }
 
@@ -56,38 +56,45 @@ function waitForImages(root: ParentNode): Promise<void> {
   ).then(() => undefined);
 }
 
-function mountCertificateDocument(html: string): {
-  host: HTMLDivElement;
+async function mountCertificateDocument(html: string): Promise<{
+  certificateDocument: Document;
   pages: HTMLElement[];
   cleanup: () => void;
-} {
-  const host = document.createElement("div");
-  host.setAttribute("aria-hidden", "true");
-  host.style.cssText = [
+}> {
+  const frame = document.createElement("iframe");
+  frame.setAttribute("aria-hidden", "true");
+  frame.tabIndex = -1;
+  frame.style.cssText = [
     "position:fixed",
     "left:-10000px",
     "top:0",
     "width:" + RENDER_WIDTH_PX + "px",
+    "height:" + Math.round((A4_HEIGHT_MM / A4_WIDTH_MM) * RENDER_WIDTH_PX) + "px",
     "opacity:0",
     "pointer-events:none",
+    "border:0",
     "z-index:-1",
   ].join(";");
 
-  const doc = new DOMParser().parseFromString(html, "text/html");
-  const styleTags = Array.from(doc.head.querySelectorAll("style"));
-  for (const style of styleTags) {
-    host.appendChild(style.cloneNode(true));
+  const loaded = new Promise<void>((resolve) => {
+    frame.addEventListener("load", () => resolve(), { once: true });
+  });
+  frame.srcdoc = html;
+  document.body.appendChild(frame);
+  await loaded;
+
+  const certificateDocument = frame.contentDocument;
+  if (!certificateDocument) {
+    frame.remove();
+    throw new Error("Dokumen sertifikat tidak dapat dibuat.");
   }
 
-  const bodyClone = doc.body.cloneNode(true) as HTMLElement;
-  // Capture layout must stay light/consistent for html2canvas.
-  bodyClone.style.background = "#ffffff";
-  bodyClone.style.padding = "0";
-  bodyClone.style.margin = "0";
-  host.appendChild(bodyClone);
-  document.body.appendChild(host);
+  // The certificate CSS stays inside this frame so it never overrides the portal UI.
+  certificateDocument.body.style.background = "#ffffff";
+  certificateDocument.body.style.padding = "0";
+  certificateDocument.body.style.margin = "0";
 
-  const pages = Array.from(host.querySelectorAll<HTMLElement>(".page"));
+  const pages = Array.from(certificateDocument.querySelectorAll<HTMLElement>(".page"));
   for (const page of pages) {
     page.style.boxShadow = "none";
     page.style.borderRadius = "0";
@@ -98,10 +105,10 @@ function mountCertificateDocument(html: string): {
   }
 
   return {
-    host,
+    certificateDocument,
     pages,
     cleanup: () => {
-      host.remove();
+      frame.remove();
     },
   };
 }
@@ -110,13 +117,13 @@ export async function downloadCertificatePdf(
   data: CertificateData,
   fileName: string,
 ): Promise<void> {
-  await ensureCertificateFonts();
   const assets = await loadCertificateAssetDataUrls();
   const html = buildCertificateHtml(data, assets);
-  const { host, pages, cleanup } = mountCertificateDocument(html);
+  const { certificateDocument, pages, cleanup } = await mountCertificateDocument(html);
 
   try {
-    await waitForImages(host);
+    await ensureCertificateFonts(certificateDocument);
+    await waitForImages(certificateDocument);
     // Give layout a tick after images/fonts settle.
     await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
 

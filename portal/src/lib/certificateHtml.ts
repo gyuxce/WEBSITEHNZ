@@ -58,7 +58,7 @@ export function buildCertificateHtml(
 <head>
   <meta charset="utf-8" />
   <title>Sertifikasi Pemetaan Talenta — ${name}</title>
-  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link data-certificate-fonts="true" href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
