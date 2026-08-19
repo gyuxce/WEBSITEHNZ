@@ -37,6 +37,13 @@ const FILTER_OPTIONS: Array<{ value: PaymentFilter; label: string }> = [
 
 const DEFAULT_DESCRIPTION = "Pemetaan Potensi Harunokaze";
 const DEFAULT_ASSESSMENT_AMOUNT = 99000;
+const PROGRAM_OPTIONS = [
+  "Pelatihan Bahasa & Karakter",
+  "Program Bidang Konstruksi",
+  "Program Perawatan & Jasa (Kaigo)",
+  "Program Driver Jepang",
+  "Belum yakin — butuh konsultasi",
+];
 
 const formatPrice = (amount: number) =>
   new Intl.NumberFormat("id-ID", {
@@ -79,6 +86,10 @@ export function AdminPaymentsPage() {
   const [dueDate, setDueDate] = useState("");
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [programEditing, setProgramEditing] = useState<InvoiceAdminRow | null>(null);
+  const [programInterest, setProgramInterest] = useState(PROGRAM_OPTIONS[0]);
+  const [programError, setProgramError] = useState("");
+  const [programSaving, setProgramSaving] = useState(false);
 
   const loadRows = useCallback(async (showLoader = true) => {
     if (showLoader) setLoading(true);
@@ -198,6 +209,23 @@ export function AdminPaymentsPage() {
     setFormError("");
   };
 
+  const openProgramEditor = (row: InvoiceAdminRow) => {
+    setProgramEditing(row);
+    setProgramInterest(
+      PROGRAM_OPTIONS.includes(row.program_interest ?? "")
+        ? row.program_interest ?? PROGRAM_OPTIONS[0]
+        : PROGRAM_OPTIONS[0],
+    );
+    setProgramError("");
+    setNotice("");
+  };
+
+  const closeProgramEditor = () => {
+    if (programSaving) return;
+    setProgramEditing(null);
+    setProgramError("");
+  };
+
   const handleSave = async () => {
     if (!editing) return;
     const amountValue = Number.parseInt(amount, 10);
@@ -224,6 +252,31 @@ export function AdminPaymentsPage() {
     setSaving(false);
     setEditing(null);
     setNotice(`Tagihan ${editing.full_name} berhasil disimpan.`);
+    await loadRows(false);
+  };
+
+  const handleProgramSave = async () => {
+    if (!programEditing) return;
+
+    setProgramSaving(true);
+    setProgramError("");
+    const { error: saveError } = await supabase.rpc(
+      "admin_update_participant_program_interest",
+      {
+        p_user_id: programEditing.user_id,
+        p_program_interest: programInterest,
+      },
+    );
+
+    if (saveError) {
+      setProgramError(saveError.message);
+      setProgramSaving(false);
+      return;
+    }
+
+    setProgramSaving(false);
+    setProgramEditing(null);
+    setNotice(`Program minat ${programEditing.full_name} berhasil diperbarui.`);
     await loadRows(false);
   };
 
@@ -408,6 +461,7 @@ export function AdminPaymentsPage() {
                     {row.whatsapp ? (
                       <p className="mt-0.5 text-xs text-brand-navy/45">{row.whatsapp}</p>
                     ) : null}
+                    <ProgramInterestControl row={row} onOpen={openProgramEditor} />
                     <p className="mt-0.5 text-xs text-brand-navy/45">
                       Terdaftar {formatAdminDateTime(row.registered_at)}
                     </p>
@@ -469,6 +523,7 @@ export function AdminPaymentsPage() {
                       {row.whatsapp ? (
                         <p className="mt-0.5 text-xs text-brand-navy/45">{row.whatsapp}</p>
                       ) : null}
+                      <ProgramInterestControl row={row} onOpen={openProgramEditor} />
                     </td>
                     <td className="px-4 py-4 text-xs text-brand-navy/55">
                       {formatAdminDateTime(row.registered_at)}
@@ -611,6 +666,108 @@ export function AdminPaymentsPage() {
           </div>
         </div>
       ) : null}
+
+      {programEditing ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-brand-navy/35 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="program-dialog-title"
+        >
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase text-brand-red">Data peserta</p>
+                <h2
+                  id="program-dialog-title"
+                  className="mt-1 font-display text-xl font-extrabold text-brand-navy"
+                >
+                  Ubah program minat
+                </h2>
+                <p className="mt-2 text-sm font-semibold text-brand-navy">
+                  {programEditing.full_name}
+                </p>
+                <p className="mt-1 text-xs text-brand-navy/45">{programEditing.email}</p>
+              </div>
+              <button
+                type="button"
+                onClick={closeProgramEditor}
+                disabled={programSaving}
+                title="Tutup"
+                aria-label="Tutup"
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-brand-navy/45 hover:bg-brand-bg hover:text-brand-navy disabled:opacity-40"
+              >
+                <X size={19} />
+              </button>
+            </div>
+
+            <label className="mt-6 block">
+              <span className="text-xs font-bold uppercase text-brand-navy/45">Program minat</span>
+              <select
+                value={programInterest}
+                onChange={(event) => setProgramInterest(event.target.value)}
+                disabled={programSaving}
+                className="mt-1.5 w-full rounded-lg border border-brand-navy/12 bg-white px-3 py-3 text-sm text-brand-navy outline-none focus:border-brand-red/40 focus:ring-2 focus:ring-brand-red/10 disabled:opacity-50"
+              >
+                {PROGRAM_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {programError ? (
+              <p className="mt-4 rounded-lg bg-brand-red-soft px-3 py-2 text-sm text-brand-red">
+                {programError}
+              </p>
+            ) : null}
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeProgramEditor}
+                disabled={programSaving}
+                className="rounded-lg border border-brand-navy/12 px-4 py-2.5 text-sm font-bold text-brand-navy hover:bg-brand-bg disabled:opacity-50"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleProgramSave()}
+                disabled={programSaving}
+                className="inline-flex min-w-28 items-center justify-center gap-2 rounded-lg bg-brand-red px-4 py-2.5 text-sm font-bold text-white hover:bg-brand-red-hover disabled:opacity-50"
+              >
+                {programSaving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+                {programSaving ? "Menyimpan" : "Simpan"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function ProgramInterestControl({
+  row,
+  onOpen,
+}: {
+  row: InvoiceAdminRow;
+  onOpen: (row: InvoiceAdminRow) => void;
+}) {
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs">
+      <span className="font-semibold text-brand-navy/65">
+        {row.program_interest ?? "Program belum dipilih"}
+      </span>
+      <button
+        type="button"
+        onClick={() => onOpen(row)}
+        className="inline-flex items-center gap-1 font-bold text-brand-red hover:text-brand-red-hover"
+      >
+        <Pencil size={12} /> Ubah
+      </button>
     </div>
   );
 }

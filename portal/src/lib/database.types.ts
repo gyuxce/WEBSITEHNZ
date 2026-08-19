@@ -571,6 +571,7 @@ export interface Database {
           email: string | null;
           whatsapp: string | null;
           city: string | null;
+          program_interest: string | null;
           registered_at: string;
           invoice_id: string | null;
           invoice_number: string | null;
@@ -584,6 +585,16 @@ export interface Database {
           progress_payment_status: "pending" | "paid" | "verified";
           last_payment_status: string | null;
           last_payment_at: string | null;
+        }[];
+      };
+      admin_update_participant_program_interest: {
+        Args: {
+          p_user_id: string;
+          p_program_interest: string;
+        };
+        Returns: {
+          user_id: string;
+          program_interest: string;
         }[];
       };
       admin_upsert_assessment_invoice: {
