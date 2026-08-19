@@ -1,13 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { ArrowLeft, Award, CheckCircle2, Save, Sparkles } from "lucide-react";
+import { ArrowLeft, Award, CheckCircle2, Download, Save, Sparkles } from "lucide-react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { formatAdminDateTime } from "../lib/adminTools";
+import type { CertificateData } from "../lib/certificateHtml";
 import { supabase } from "../lib/supabase";
 import type { Database } from "../lib/database.types";
 
 type FinalAssessment =
   Database["public"]["Functions"]["admin_get_final_assessment"]["Returns"][number];
+type CertificateRecord = Pick<
+  Database["public"]["Tables"]["certificates"]["Row"],
+  "certificate_code" | "issued_at"
+>;
 
 async function readEdgeFunctionError(error: { message?: string; context?: unknown }) {
   if (error.context instanceof Response) {
@@ -28,6 +34,7 @@ export function AdminFinalReviewPage() {
   const { userId } = useParams<{ userId: string }>();
   const { profile, loading: authLoading, refreshProfile } = useAuth();
   const [assessment, setAssessment] = useState<FinalAssessment | null>(null);
+  const [certificate, setCertificate] = useState<CertificateRecord | null>(null);
   const [psychologistInterpretation, setPsychologistInterpretation] = useState("");
   const [participantSummary, setParticipantSummary] = useState("");
   const [qcNotes, setQcNotes] = useState("");
@@ -35,6 +42,8 @@ export function AdminFinalReviewPage() {
   const [saving, setSaving] = useState(false);
   const [refining, setRefining] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [downloadingCertificate, setDownloadingCertificate] = useState(false);
+  const [publishConfirmationOpen, setPublishConfirmationOpen] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
@@ -42,18 +51,29 @@ export function AdminFinalReviewPage() {
     if (!userId || authLoading || profile?.role !== "admin") return;
 
     async function load() {
-      const { data, error: queryError } = await supabase.rpc("admin_get_final_assessment", {
-        p_user_id: userId!,
-      });
+      const [assessmentResponse, certificateResponse] = await Promise.all([
+        supabase.rpc("admin_get_final_assessment", { p_user_id: userId! }),
+        supabase
+          .from("certificates")
+          .select("certificate_code, issued_at")
+          .eq("user_id", userId!)
+          .maybeSingle(),
+      ]);
+      const { data, error: queryError } = assessmentResponse;
       const first = data?.[0] ?? null;
 
-      if (queryError || !first) {
-        setError(queryError?.message ?? "Data asesmen final tidak ditemukan.");
+      if (queryError || certificateResponse.error || !first) {
+        setError(
+          queryError?.message ??
+            certificateResponse.error?.message ??
+            "Data asesmen final tidak ditemukan.",
+        );
         setLoading(false);
         return;
       }
 
       setAssessment(first);
+      setCertificate(certificateResponse.data);
       setPsychologistInterpretation(first.psychologist_interpretation ?? "");
       setParticipantSummary(first.participant_summary ?? "");
       setQcNotes(first.qc_notes ?? "");
@@ -148,13 +168,18 @@ export function AdminFinalReviewPage() {
     setSaving(false);
   }
 
-  async function publishAssessment() {
+  function requestPublish() {
     if (!userId || !assessment) return;
     if (!psychologistInterpretation.trim() || !participantSummary.trim()) {
       setError("Isi interpretasi psikolog dan narasi peserta sebelum menerbitkan sertifikat.");
       return;
     }
-    if (!window.confirm("Setujui hasil final dan terbitkan sertifikat peserta ini?")) return;
+    setError("");
+    setPublishConfirmationOpen(true);
+  }
+
+  async function publishAssessment() {
+    if (!userId || !assessment) return;
 
     setPublishing(true);
     setError("");
@@ -169,6 +194,7 @@ export function AdminFinalReviewPage() {
     if (draftError) {
       setError(draftError.message);
       setPublishing(false);
+      setPublishConfirmationOpen(false);
       return;
     }
 
@@ -179,6 +205,7 @@ export function AdminFinalReviewPage() {
     if (publishError) {
       setError(publishError.message);
       setPublishing(false);
+      setPublishConfirmationOpen(false);
       return;
     }
 
@@ -188,9 +215,55 @@ export function AdminFinalReviewPage() {
       approved_at: new Date().toISOString(),
       certificate_code: data?.[0]?.certificate_code ?? assessment.certificate_code,
     });
+    if (data?.[0]?.certificate_code) {
+      setCertificate({
+        certificate_code: data[0].certificate_code,
+        issued_at: new Date().toISOString(),
+      });
+    }
     setMessage(`Sertifikat berhasil diterbitkan: ${data?.[0]?.certificate_code ?? "-"}`);
     await refreshProfile();
     setPublishing(false);
+    setPublishConfirmationOpen(false);
+  }
+
+  async function downloadCertificate() {
+    if (!assessment || !certificate || downloadingCertificate) return;
+
+    setDownloadingCertificate(true);
+    setError("");
+    try {
+      const { downloadCertificatePdf } = await import("../lib/certificatePdf");
+      const participantSummary = assessment.participant_summary ?? "";
+      const payload: CertificateData = {
+        fullName: assessment.full_name,
+        certificateCode: certificate.certificate_code,
+        issuedAt: certificate.issued_at,
+        cfitRawTotal: assessment.cfit_raw_total,
+        cfitIq: assessment.cfit_iq,
+        cfitCategory: assessment.cfit_category,
+        papiHasil: participantSummary
+          ? participantSummary.split("\n")[0].slice(0, 120)
+          : "Telah direview psikolog dan disetujui admin",
+        papiCatatan: participantSummary || null,
+        pimsleurScore: assessment.pimsleur_score_total,
+        pimsleurGrade: assessment.pimsleur_grade,
+        pimsleurStatusLabel: null,
+        pimsleurRecommendation: participantSummary || null,
+      };
+      await downloadCertificatePdf(
+        payload,
+        `sertifikat-pemetaan-${certificate.certificate_code}.pdf`,
+      );
+    } catch (downloadError) {
+      setError(
+        downloadError instanceof Error
+          ? downloadError.message
+          : "Gagal mengunduh sertifikat PDF.",
+      );
+    } finally {
+      setDownloadingCertificate(false);
+    }
   }
 
   if (!authLoading && profile?.role !== "admin") {
@@ -316,7 +389,7 @@ export function AdminFinalReviewPage() {
             </button>
             <button
               type="button"
-              onClick={() => void publishAssessment()}
+              onClick={requestPublish}
               disabled={saving || refining || publishing || !allTestsComplete}
               className="inline-flex items-center gap-2 rounded-xl bg-brand-red px-5 py-3 text-sm font-bold text-white disabled:opacity-50"
             >
@@ -325,11 +398,69 @@ export function AdminFinalReviewPage() {
             </button>
           </>
         ) : (
-          <div className="inline-flex items-center gap-2 rounded-xl bg-emerald-50 px-5 py-3 text-sm font-bold text-emerald-700">
-            <Award size={18} /> Sertifikat {assessment.certificate_code ?? "sudah diterbitkan"}
+          <div className="flex flex-wrap items-center gap-3 rounded-xl bg-emerald-50 px-5 py-3 text-sm text-emerald-800">
+            <div>
+              <p className="inline-flex items-center gap-2 font-bold text-emerald-700">
+                <Award size={18} /> Sertifikat {certificate?.certificate_code ?? assessment.certificate_code ?? "sudah diterbitkan"}
+              </p>
+              {certificate ? (
+                <p className="mt-1 text-xs text-emerald-700/75">
+                  Diterbitkan {formatAdminDateTime(certificate.issued_at)} WIB
+                </p>
+              ) : null}
+            </div>
+            {certificate ? (
+              <button
+                type="button"
+                onClick={() => void downloadCertificate()}
+                disabled={downloadingCertificate}
+                className="inline-flex items-center gap-2 rounded-lg border border-emerald-700/25 bg-white px-3 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-100 disabled:opacity-50"
+              >
+                <Download size={15} />
+                {downloadingCertificate ? "Menyiapkan PDF..." : "Unduh PDF"}
+              </button>
+            ) : null}
           </div>
         )}
       </div>
+
+      {publishConfirmationOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-brand-navy/45 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="publish-certificate-title"
+        >
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <p className="text-xs font-bold uppercase tracking-widest text-brand-red">Konfirmasi penerbitan</p>
+            <h2 id="publish-certificate-title" className="mt-2 font-display text-xl font-extrabold text-brand-navy">
+              Terbitkan sertifikat peserta?
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-brand-navy/60">
+              Hasil final akan disetujui dan sertifikat untuk <strong className="text-brand-navy">{assessment.full_name}</strong> akan diterbitkan.
+              Tindakan ini tidak dapat dibatalkan dari halaman ini.
+            </p>
+            <div className="mt-6 flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setPublishConfirmationOpen(false)}
+                disabled={publishing}
+                className="rounded-xl border border-brand-navy/15 px-4 py-2.5 text-sm font-bold text-brand-navy disabled:opacity-50"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={() => void publishAssessment()}
+                disabled={publishing}
+                className="rounded-xl bg-brand-red px-4 py-2.5 text-sm font-bold text-white hover:bg-brand-red-hover disabled:opacity-50"
+              >
+                {publishing ? "Menerbitkan..." : "Ya, terbitkan"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

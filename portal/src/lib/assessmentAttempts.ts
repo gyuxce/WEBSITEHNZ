@@ -21,7 +21,7 @@ export async function startAssessmentAttempt(
     p_duration_seconds: durationSeconds,
     p_step_duration_seconds: stepDurationSeconds ?? null,
   });
-  if (error) throw error;
+  if (error) throw new Error(error.message);
   return firstRow(data, "Sesi asesmen belum tersedia.");
 }
 
@@ -35,7 +35,7 @@ export async function saveAssessmentAttempt(
     p_answers: answers,
     p_current_step: currentStep,
   });
-  if (error) throw error;
+  if (error) throw new Error(error.message);
   return firstRow(data, "Jawaban belum berhasil disimpan.");
 }
 
@@ -49,7 +49,7 @@ export async function advanceAssessmentAttempt(
     p_current_step: currentStep,
     p_step_duration_seconds: stepDurationSeconds,
   });
-  if (error) throw error;
+  if (error) throw new Error(error.message);
   return firstRow(data, "Sesi asesmen belum berhasil dilanjutkan.");
 }
 
@@ -63,7 +63,7 @@ export async function finishAssessmentAttempt(
     p_answers: answers,
     p_current_step: currentStep,
   });
-  if (error) throw error;
+  if (error) throw new Error(error.message);
   return firstRow(data, "Sesi asesmen belum berhasil ditutup.");
 }
 

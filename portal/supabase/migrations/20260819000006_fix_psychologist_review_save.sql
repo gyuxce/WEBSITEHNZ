@@ -1,67 +1,5 @@
--- Psychologist work queue: save the PAPI interpretation and hand the case to admin QC.
+-- Fix PL/pgSQL output-column ambiguity while a psychologist saves a PAPI review.
 
-create or replace function public.psychologist_list_review_queue()
-returns table (
-  id uuid,
-  user_id uuid,
-  total_top integer,
-  total_bottom integer,
-  total_all integer,
-  is_complete_pattern boolean,
-  review_status text,
-  completed_at timestamptz,
-  reviewed_at timestamptz,
-  final_review_status text,
-  full_name text,
-  email text,
-  whatsapp text,
-  city text
-)
-language plpgsql
-stable
-security definer
-set search_path = public
-as $$
-begin
-  if not public.is_psychologist() then
-    raise exception 'not authorized';
-  end if;
-
-  return query
-  select
-    r.id,
-    r.user_id,
-    r.total_top,
-    r.total_bottom,
-    r.total_all,
-    r.is_complete_pattern,
-    r.review_status,
-    r.completed_at,
-    r.reviewed_at,
-    pgr.final_review_status,
-    coalesce(
-      nullif(nullif(trim(p.full_name), ''), 'Peserta'),
-      split_part(u.email, '@', 1),
-      'Peserta'
-    ) as full_name,
-    u.email::text,
-    p.whatsapp,
-    p.city
-  from public.papikostik_results r
-  left join public.profiles p on p.id = r.user_id
-  left join auth.users u on u.id = r.user_id
-  left join public.user_progress pgr on pgr.user_id = r.user_id
-  order by
-    case when r.review_status = 'pending' then 0 else 1 end,
-    r.completed_at desc;
-end;
-$$;
-
-revoke all on function public.psychologist_list_review_queue() from public;
-grant execute on function public.psychologist_list_review_queue() to authenticated;
-
--- Keep the existing write path, while also creating/updating the final-review
--- draft so the admin QC screen can continue the same case without copying notes.
 create or replace function public.psychologist_save_papikostik_review(
   p_user_id uuid,
   p_notes text
@@ -100,7 +38,6 @@ begin
     raise exception 'PAPI Kostick result not found';
   end if;
 
-  -- Only move a participant into QC once all three assessment results exist.
   if exists (
     select 1
     from public.pimsleur_results ps
@@ -167,3 +104,5 @@ $$;
 
 revoke all on function public.psychologist_save_papikostik_review(uuid, text) from public;
 grant execute on function public.psychologist_save_papikostik_review(uuid, text) to authenticated;
+
+notify pgrst, 'reload schema';

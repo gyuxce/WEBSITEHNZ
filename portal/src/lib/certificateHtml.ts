@@ -86,6 +86,11 @@ export function buildCertificateHtml(
       background: linear-gradient(180deg, #e61935 0%, #0f2240 55%, #0f2240 100%);
     }
     .content { padding: 44px 56px 48px 64px; }
+    .cover-content {
+      min-height: 1100px;
+      display: flex;
+      flex-direction: column;
+    }
     .logos {
       display: flex;
       align-items: center;
@@ -119,7 +124,7 @@ export function buildCertificateHtml(
       text-align: center;
       color: #0f2240;
       letter-spacing: 0.02em;
-      margin-bottom: 22px;
+      margin-bottom: 18px;
     }
     .badge {
       display: inline-block;
@@ -129,23 +134,24 @@ export function buildCertificateHtml(
       font-weight: 700;
       padding: 8px 22px;
       border-radius: 999px;
-      margin: 0 auto 28px;
+      margin: 0 auto 10px;
     }
     .badge-wrap { text-align: center; }
+    .recipient-block { margin-top: -4px; }
     .name {
       font-family: 'Great Vibes', cursive;
       font-size: 56px;
       text-align: center;
       color: #c41e3a;
-      line-height: 1.15;
-      margin: 8px 0 12px;
+      line-height: 1;
+      margin: 0 0 10px;
     }
     .role {
       text-align: center;
       font-size: 14px;
       font-weight: 600;
       color: #0f2240;
-      margin-bottom: 28px;
+      margin-bottom: 24px;
       line-height: 1.55;
     }
     .body-text {
@@ -154,15 +160,15 @@ export function buildCertificateHtml(
       line-height: 1.75;
       color: rgba(15,34,64,0.72);
       max-width: 620px;
-      margin: 0 auto 48px;
+      margin: 0 auto;
     }
     .meta-row {
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
       gap: 24px;
-      margin-top: 40px;
-      padding-top: 8px;
+      margin-top: auto;
+      padding-top: 48px;
     }
     .meta-left {
       font-size: 12px;
@@ -259,7 +265,7 @@ export function buildCertificateHtml(
   <!-- PAGE 1: Cover -->
   <div class="page">
     <div class="side-bar"></div>
-    <div class="content">
+    <div class="content cover-content">
       <div class="logos">
         <div>
           <div class="logo-text">wiwitan</div>
@@ -275,17 +281,19 @@ export function buildCertificateHtml(
       </div>
 
       <h1 class="title">SERTIFIKASI PEMETAAN TALENTA</h1>
-      <div class="badge-wrap"><span class="badge">Dengan Bangga Diberikan Kepada :</span></div>
-      <p class="name">${name}</p>
-      <p class="role">
-        Sebagai peserta Seleksi Awal Program Pelatihan ke Jepang di LPK<br/>
-        Wiwitan Baru Sukabumi
-      </p>
-      <p class="body-text">
-        Berdasarkan hasil tersebut, peserta dinyatakan telah menyelesaikan seluruh tahapan seleksi awal.
-        Semoga hasil ini bisa menjadi bahan evaluasi dan pengembangan diri dalam mengikuti
-        pelatihan di LPK Wiwitan Baru Sukabumi.
-      </p>
+      <div class="recipient-block">
+        <div class="badge-wrap"><span class="badge">Dengan Bangga Diberikan Kepada :</span></div>
+        <p class="name">${name}</p>
+        <p class="role">
+          Sebagai peserta Seleksi Awal Program Pelatihan ke Jepang di LPK<br/>
+          Wiwitan Baru Sukabumi
+        </p>
+        <p class="body-text">
+          Berdasarkan hasil tersebut, peserta dinyatakan telah menyelesaikan seluruh tahapan seleksi awal.
+          Semoga hasil ini bisa menjadi bahan evaluasi dan pengembangan diri dalam mengikuti
+          pelatihan di LPK Wiwitan Baru Sukabumi.
+        </p>
+      </div>
 
       <div class="meta-row">
         <div class="meta-left">

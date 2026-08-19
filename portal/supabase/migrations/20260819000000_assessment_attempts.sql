@@ -343,19 +343,19 @@ begin
     raise exception 'invalid cfit step duration';
   end if;
 
-  update public.assessment_attempts
+  update public.assessment_attempts as attempt
   set
     current_step = p_current_step,
     step_started_at = now_at,
     step_deadline_at = least(
-      deadline_at,
+      attempt.deadline_at,
       now_at + (p_step_duration_seconds * interval '1 second')
     ),
     last_saved_at = now_at
-  where assessment_attempts.id = p_attempt_id
-    and assessment_attempts.user_id = auth.uid()
-    and assessment_attempts.status = 'in_progress'
-    and deadline_at > now_at
+  where attempt.id = p_attempt_id
+    and attempt.user_id = auth.uid()
+    and attempt.status = 'in_progress'
+    and attempt.deadline_at > now_at
   returning * into advanced_attempt;
 
   if advanced_attempt.id is null then
@@ -417,17 +417,17 @@ begin
     raise exception 'invalid current step';
   end if;
 
-  update public.assessment_attempts
+  update public.assessment_attempts as attempt
   set
     status = 'completed',
     answers = p_answers,
     current_step = p_current_step,
     last_saved_at = now(),
-    completed_at = coalesce(completed_at, now()),
-    timed_out = deadline_at <= now()
-  where assessment_attempts.id = p_attempt_id
-    and assessment_attempts.user_id = auth.uid()
-    and assessment_attempts.status = 'in_progress'
+    completed_at = coalesce(attempt.completed_at, now()),
+    timed_out = attempt.deadline_at <= now()
+  where attempt.id = p_attempt_id
+    and attempt.user_id = auth.uid()
+    and attempt.status = 'in_progress'
   returning * into finished_attempt;
 
   if finished_attempt.id is null then
