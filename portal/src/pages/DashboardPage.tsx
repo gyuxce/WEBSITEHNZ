@@ -38,11 +38,8 @@ export function DashboardPage() {
   return <ParticipantHome profileName={profile?.full_name?.split(" ")[0] ?? "Peserta"} progress={progress} />;
 }
 
-function PsychologistHome({ name }: { name: string }) {
+function PapiNotificationInboxForm({ description }: { description: string }) {
   const { profile, refreshProfile } = useAuth();
-  const [queueRows, setQueueRows] = useState<
-    Array<{ review_status: "pending" | "reviewed"; completed_at: string }>
-  >([]);
   const [notificationEmail, setNotificationEmail] = useState(profile?.notification_email ?? "");
   const [savingInbox, setSavingInbox] = useState(false);
   const [inboxMessage, setInboxMessage] = useState("");
@@ -50,6 +47,73 @@ function PsychologistHome({ name }: { name: string }) {
   useEffect(() => {
     setNotificationEmail(profile?.notification_email ?? "");
   }, [profile?.notification_email]);
+
+  async function saveNotificationEmail() {
+    if (!profile?.id || savingInbox) return;
+    const nextEmail = notificationEmail.trim();
+    setSavingInbox(true);
+    setInboxMessage("");
+    const { error } = await supabase
+      .from("profiles")
+      .update({ notification_email: nextEmail || null })
+      .eq("id", profile.id);
+    setSavingInbox(false);
+    if (error) {
+      setInboxMessage(error.message);
+      return;
+    }
+    await refreshProfile();
+    setInboxMessage(
+      nextEmail
+        ? "Notifikasi PAPI akan dikirim ke alamat ini (bisa lebih dari satu)."
+        : "Email notifikasi dikosongkan.",
+    );
+  }
+
+  return (
+    <form
+      className="rounded-2xl border border-brand-navy/8 bg-white p-5"
+      onSubmit={(event) => {
+        event.preventDefault();
+        void saveNotificationEmail();
+      }}
+    >
+      <div className="flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-red-soft text-brand-red">
+          <Mail size={18} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="font-display font-bold text-brand-navy">Email notifikasi PAPI</p>
+          <p className="mt-1 text-sm text-brand-navy/50">{description}</p>
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+            <input
+              type="text"
+              value={notificationEmail}
+              onChange={(event) => setNotificationEmail(event.target.value)}
+              placeholder="gmail.psikolog@gmail.com, tester@gmail.com"
+              className="w-full rounded-xl border border-brand-navy/12 bg-brand-bg px-3 py-2.5 text-sm text-brand-navy outline-none focus:border-brand-red"
+            />
+            <button
+              type="submit"
+              disabled={savingInbox}
+              className="inline-flex shrink-0 items-center justify-center rounded-xl bg-brand-navy px-4 py-2.5 text-sm font-bold text-white hover:bg-brand-navy-light disabled:opacity-60"
+            >
+              {savingInbox ? "Menyimpan…" : "Simpan"}
+            </button>
+          </div>
+          {inboxMessage ? (
+            <p className="mt-2 text-xs font-semibold text-brand-navy/55">{inboxMessage}</p>
+          ) : null}
+        </div>
+      </div>
+    </form>
+  );
+}
+
+function PsychologistHome({ name }: { name: string }) {
+  const [queueRows, setQueueRows] = useState<
+    Array<{ review_status: "pending" | "reviewed"; completed_at: string }>
+  >([]);
 
   useEffect(() => {
     let active = true;
@@ -74,28 +138,6 @@ function PsychologistHome({ name }: { name: string }) {
   const latestPending = queueRows
     .filter((row) => row.review_status === "pending")
     .sort((left, right) => new Date(right.completed_at).getTime() - new Date(left.completed_at).getTime())[0];
-
-  async function saveNotificationEmail() {
-    if (!profile?.id || savingInbox) return;
-    const nextEmail = notificationEmail.trim();
-    setSavingInbox(true);
-    setInboxMessage("");
-    const { error } = await supabase
-      .from("profiles")
-      .update({ notification_email: nextEmail || null })
-      .eq("id", profile.id);
-    setSavingInbox(false);
-    if (error) {
-      setInboxMessage(error.message);
-      return;
-    }
-    await refreshProfile();
-    setInboxMessage(
-      nextEmail
-        ? "Notifikasi PAPI akan dikirim ke Gmail ini, bukan ke email login."
-        : "Email notifikasi dikosongkan. Sistem memakai email login.",
-    );
-  }
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -123,44 +165,7 @@ function PsychologistHome({ name }: { name: string }) {
         />
       </div>
 
-      <form
-        className="rounded-2xl border border-brand-navy/8 bg-white p-5"
-        onSubmit={(event) => {
-          event.preventDefault();
-          void saveNotificationEmail();
-        }}
-      >
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-red-soft text-brand-red">
-            <Mail size={18} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="font-display font-bold text-brand-navy">Email notifikasi PAPI</p>
-            <p className="mt-1 text-sm text-brand-navy/50">
-              Isi Gmail yang dibaca sehari-hari. Email login bisa tetap format acak.
-            </p>
-            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-              <input
-                type="email"
-                value={notificationEmail}
-                onChange={(event) => setNotificationEmail(event.target.value)}
-                placeholder="gmail.psikolog@gmail.com"
-                className="w-full rounded-xl border border-brand-navy/12 bg-brand-bg px-3 py-2.5 text-sm text-brand-navy outline-none focus:border-brand-red"
-              />
-              <button
-                type="submit"
-                disabled={savingInbox}
-                className="inline-flex shrink-0 items-center justify-center rounded-xl bg-brand-navy px-4 py-2.5 text-sm font-bold text-white hover:bg-brand-navy-light disabled:opacity-60"
-              >
-                {savingInbox ? "Menyimpan…" : "Simpan"}
-              </button>
-            </div>
-            {inboxMessage ? (
-              <p className="mt-2 text-xs font-semibold text-brand-navy/55">{inboxMessage}</p>
-            ) : null}
-          </div>
-        </div>
-      </form>
+      <PapiNotificationInboxForm description="Isi Gmail psikolog, lalu email tester, dipisah koma. Email login bisa tetap acak." />
 
       <Link
         to="/psychologist/papikostik"
@@ -264,6 +269,8 @@ function AdminHome({ name }: { name: string }) {
           di sini agar tidak bentrok.
         </p>
       </div>
+
+      <PapiNotificationInboxForm description="Untuk tes, isi Gmailmu di sini. Bisa lebih dari satu, dipisah koma. Psikolog tetap bisa punya inbox sendiri." />
 
       <Link
         to="/admin/payments"

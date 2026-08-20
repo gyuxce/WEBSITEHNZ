@@ -62,17 +62,20 @@ function uniqueEmails(emails: string[]) {
 async function psychologistAccountEmails(supabaseAdmin: SupabaseClient) {
   const { data: profiles, error } = await supabaseAdmin
     .from("profiles")
-    .select("id, notification_email")
-    .eq("role", "psychologist");
+    .select("id, role, notification_email")
+    .in("role", ["psychologist", "admin"]);
   if (error) throw new Error(error.message);
 
   const emails: string[] = [];
   for (const profile of profiles ?? []) {
-    const inbox = typeof profile.notification_email === "string" ? profile.notification_email.trim() : "";
-    if (inbox) {
-      emails.push(inbox);
+    const inboxes = recipientList(
+      typeof profile.notification_email === "string" ? profile.notification_email : "",
+    );
+    if (inboxes.length > 0) {
+      emails.push(...inboxes);
       continue;
     }
+    if (profile.role !== "psychologist") continue;
     const { data, error: userError } = await supabaseAdmin.auth.admin.getUserById(profile.id);
     if (userError || !data.user?.email) continue;
     emails.push(data.user.email);

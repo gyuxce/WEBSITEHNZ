@@ -188,16 +188,22 @@ supabase functions deploy notify-papikostik-completed
 ```
 
 Tujuan email, urutan:
-1. `profiles.notification_email` (Gmail yang dibaca psikolog; bisa beda dari email login)
-2. email akun login kalau kolom itu kosong
+1. `profiles.notification_email` pada akun **psikolog** dan **admin** (bisa beberapa alamat, dipisah koma)
+2. email login psikolog kalau kolom itu kosong
 3. `PSYCHOLOGIST_NOTIFICATION_EMAIL` sebagai alamat tambahan
 
-Jalankan migration `20260820000000_psychologist_notification_email.sql`, lalu set Gmail:
+Jalankan migration `20260820000000_psychologist_notification_email.sql`, lalu set inbox:
 
 ```sql
+-- Gmail psikolog + Gmail tester, dipisah koma
 update public.profiles
-set notification_email = 'gmail.asli@gmail.com'
+set notification_email = 'gmail.psikolog@gmail.com, tester@gmail.com'
 where role = 'psychologist';
+
+-- atau isi Gmail tester di akun admin:
+update public.profiles
+set notification_email = 'tester@gmail.com'
+where role = 'admin';
 ```
 
 Callback URL yang didaftarkan di Pivot Dashboard → Settings → Developer Settings → Callbacks:
