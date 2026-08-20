@@ -11,6 +11,16 @@ import {
 } from "../lib/adminTools";
 import { supabase } from "../lib/supabase";
 import { isAssessmentStaffRole, isPsychologistRole } from "../lib/access";
+import type { CertificateData } from "../lib/certificateHtml";
+import type { Database } from "../lib/database.types";
+
+type CertificateRow = Pick<
+  Database["public"]["Tables"]["certificates"]["Row"],
+  "user_id" | "certificate_code" | "issued_at"
+>;
+
+type FinalAssessment =
+  Database["public"]["Functions"]["admin_get_final_assessment"]["Returns"][number];
 
 type PimsleurRow = {
   user_id: string;
@@ -56,6 +66,7 @@ type RecapRow = {
   pimsleur: PimsleurRow | null;
   cfit: CfitRow | null;
   papikostik: PapikostikRow | null;
+  certificate: CertificateRow | null;
 };
 
 type RecapFilter = "all" | "today" | "recent" | "complete" | "incomplete";
@@ -110,6 +121,7 @@ export function AdminRecapPage() {
   const [toDate, setToDate] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
+  const [downloadingCertificateId, setDownloadingCertificateId] = useState<string | null>(null);
   const isPsychologist = isPsychologistRole(profile?.role);
   const detailBasePath = isPsychologist ? "/psychologist" : "/admin";
 
@@ -117,13 +129,20 @@ export function AdminRecapPage() {
     if (showLoader) setLoading(true);
     setError("");
 
-    const [pimsleurResponse, cfitResponse, papikostikResponse] = await Promise.all([
+    const [pimsleurResponse, cfitResponse, papikostikResponse, certificateResponse] = await Promise.all([
       supabase.rpc("admin_list_pimsleur_results"),
       supabase.rpc("admin_list_cfit_results"),
       supabase.rpc("admin_list_papikostik_results"),
+      isPsychologist
+        ? Promise.resolve({ data: [] as CertificateRow[], error: null })
+        : supabase.from("certificates").select("user_id, certificate_code, issued_at"),
     ]);
 
-    const responseError = pimsleurResponse.error ?? cfitResponse.error ?? papikostikResponse.error;
+    const responseError =
+      pimsleurResponse.error ??
+      cfitResponse.error ??
+      papikostikResponse.error ??
+      certificateResponse.error;
     if (responseError) {
       setError(responseError.message);
       if (showLoader) setLoading(false);
@@ -150,6 +169,7 @@ export function AdminRecapPage() {
         pimsleur: null,
         cfit: null,
         papikostik: null,
+        certificate: null,
       };
       recapMap.set(value.user_id, newRow);
       return newRow;
@@ -164,11 +184,15 @@ export function AdminRecapPage() {
     for (const result of (papikostikResponse.data as PapikostikRow[] | null) ?? []) {
       getRow(result).papikostik = result;
     }
+    for (const certificate of (certificateResponse.data as CertificateRow[] | null) ?? []) {
+      const row = recapMap.get(certificate.user_id);
+      if (row) row.certificate = certificate;
+    }
 
     setRows([...recapMap.values()]);
     setLastUpdatedAt(new Date().toISOString());
     if (showLoader) setLoading(false);
-  }, []);
+  }, [isPsychologist]);
 
   useEffect(() => {
     if (authLoading || !isAssessmentStaffRole(profile?.role)) return;
@@ -179,6 +203,53 @@ export function AdminRecapPage() {
     setRefreshing(true);
     await loadRows(false);
     setRefreshing(false);
+  };
+
+  const handleDownloadCertificate = async (row: RecapRow) => {
+    if (!row.certificate || downloadingCertificateId) return;
+
+    setDownloadingCertificateId(row.userId);
+    setError("");
+    try {
+      const { data, error: assessmentError } = await supabase.rpc("admin_get_final_assessment", {
+        p_user_id: row.userId,
+      });
+      const assessment = data?.[0] as FinalAssessment | undefined;
+      if (assessmentError || !assessment) {
+        throw new Error(assessmentError?.message ?? "Data sertifikat peserta tidak ditemukan.");
+      }
+
+      const { downloadCertificatePdf } = await import("../lib/certificatePdf");
+      const participantSummary = assessment.participant_summary ?? "";
+      const payload: CertificateData = {
+        fullName: assessment.full_name,
+        certificateCode: row.certificate.certificate_code,
+        issuedAt: row.certificate.issued_at,
+        cfitRawTotal: assessment.cfit_raw_total,
+        cfitIq: assessment.cfit_iq,
+        cfitCategory: assessment.cfit_category,
+        papiHasil: participantSummary
+          ? participantSummary.split("\n")[0].slice(0, 120)
+          : "Telah direview psikolog dan disetujui admin",
+        papiCatatan: participantSummary || null,
+        pimsleurScore: assessment.pimsleur_score_total,
+        pimsleurGrade: assessment.pimsleur_grade,
+        pimsleurStatusLabel: null,
+        pimsleurRecommendation: participantSummary || null,
+      };
+      await downloadCertificatePdf(
+        payload,
+        `sertifikat-pemetaan-${row.certificate.certificate_code}.pdf`,
+      );
+    } catch (downloadError) {
+      setError(
+        downloadError instanceof Error
+          ? downloadError.message
+          : "Gagal mengunduh sertifikat PDF.",
+      );
+    } finally {
+      setDownloadingCertificateId(null);
+    }
   };
 
   const handleExport = () => {
@@ -399,6 +470,7 @@ export function AdminRecapPage() {
                 <th className="px-4 py-3 font-bold">Pimsleur</th>
                 <th className="px-4 py-3 font-bold">CFIT</th>
                 <th className="px-4 py-3 font-bold">PAPI Kostick</th>
+                {!isPsychologist ? <th className="px-4 py-3 font-bold">Sertifikat</th> : null}
                 <th className="px-4 py-3 font-bold">Detail</th>
               </tr>
             </thead>
@@ -437,6 +509,15 @@ export function AdminRecapPage() {
                       </>
                     ) : null}
                   </td>
+                  {!isPsychologist ? (
+                    <td className="px-4 py-4">
+                      <CertificateStatus
+                        certificate={row.certificate}
+                        downloading={downloadingCertificateId === row.userId}
+                        onDownload={() => void handleDownloadCertificate(row)}
+                      />
+                    </td>
+                  ) : null}
                   <td className="px-4 py-4">
                     <Status done={Boolean(row.cfit)} />
                     {row.cfit ? (
@@ -522,5 +603,44 @@ function DetailLink({ href, label }: { href: string | null; label: string }) {
     <Link to={href} className="text-brand-red hover:underline">
       {label}
     </Link>
+  );
+}
+
+function CertificateStatus({
+  certificate,
+  downloading,
+  onDownload,
+}: {
+  certificate: CertificateRow | null;
+  downloading: boolean;
+  onDownload: () => void;
+}) {
+  if (!certificate) {
+    return (
+      <span className="rounded-full bg-brand-bg px-2.5 py-1 text-xs font-bold text-brand-navy/45">
+        Belum terbit
+      </span>
+    );
+  }
+
+  return (
+    <div className="min-w-40">
+      <span className="inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
+        Sudah terbit
+      </span>
+      <p className="mt-2 font-mono text-[11px] font-semibold text-brand-navy/65">
+        {certificate.certificate_code}
+      </p>
+      <CompletionTime value={certificate.issued_at} />
+      <button
+        type="button"
+        onClick={onDownload}
+        disabled={downloading}
+        className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-emerald-700/25 px-2.5 py-2 text-[11px] font-bold text-emerald-800 hover:bg-emerald-50 disabled:opacity-50"
+      >
+        <Download size={13} />
+        {downloading ? "Menyiapkan..." : "Unduh PDF"}
+      </button>
+    </div>
   );
 }

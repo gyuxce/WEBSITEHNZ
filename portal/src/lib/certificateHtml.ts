@@ -27,6 +27,25 @@ function esc(value: string | number | null | undefined): string {
     .replace(/"/g, "&quot;");
 }
 
+function splitTextIntoChunks(value: string, maxCharacters: number): string[] {
+  const words = value.trim().split(/\s+/).filter(Boolean);
+  const chunks: string[] = [];
+  let current = "";
+
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (current && candidate.length > maxCharacters) {
+      chunks.push(current);
+      current = word;
+    } else {
+      current = candidate;
+    }
+  }
+
+  if (current) chunks.push(current);
+  return chunks;
+}
+
 export function buildCertificateHtml(
   data: CertificateData,
   assets: CertificateAssetUrls,
@@ -45,13 +64,26 @@ export function buildCertificateHtml(
   const cfitIq = data.cfitIq !== null ? String(data.cfitIq) : "-";
   const cfitKat = esc(data.cfitCategory ?? "Belum tersedia");
   const papiHasil = esc(data.papiHasil ?? "Menunggu review");
-  const papiCatatan = esc(data.papiCatatan ?? "Belum ada catatan psikolog.");
+  const narrativeText = data.papiCatatan?.trim() || "Belum ada catatan psikolog.";
+  const narrativeChunks =
+    narrativeText.length > 900 ? splitTextIntoChunks(narrativeText, 2200) : [];
+  const papiCatatan = esc(
+    narrativeChunks.length > 0
+      ? "Narasi lengkap dilanjutkan di halaman berikutnya."
+      : narrativeText,
+  );
   const pimsleurNilai =
     data.pimsleurScore !== null
       ? `${data.pimsleurScore}${data.pimsleurGrade ? ` / ${data.pimsleurGrade}` : ""}`
       : "-";
   const pimsleurLevel = esc(data.pimsleurStatusLabel ?? "Belum tersedia");
-  const pimsleurCatatan = esc(data.pimsleurRecommendation ?? "Belum ada catatan evaluasi.");
+  const pimsleurCatatan = esc(
+    narrativeChunks.length > 0
+      ? "Narasi lengkap dilanjutkan di halaman berikutnya."
+      : data.pimsleurRecommendation ?? "Belum ada catatan evaluasi.",
+  );
+  const nameLength = data.fullName.trim().length;
+  const nameFontSize = nameLength > 32 ? 42 : nameLength > 24 ? 48 : 56;
 
   return `<!DOCTYPE html>
 <html lang="id">
@@ -140,11 +172,17 @@ export function buildCertificateHtml(
     .recipient-block { margin-top: -4px; }
     .name {
       font-family: 'Great Vibes', cursive;
-      font-size: 56px;
+      font-size: var(--certificate-name-size, 56px);
       text-align: center;
       color: #c41e3a;
-      line-height: 1;
-      margin: 0 0 10px;
+      line-height: 1.22;
+      min-height: 78px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 18px;
+      margin: 0 0 4px;
+      overflow-wrap: anywhere;
     }
     .role {
       text-align: center;
@@ -250,6 +288,15 @@ export function buildCertificateHtml(
       color: rgba(15,34,64,0.45);
       margin-bottom: 20px;
     }
+    .narrative-content {
+      min-height: 1000px;
+    }
+    .narrative-body {
+      color: rgba(15,34,64,0.78);
+      font-size: 14px;
+      line-height: 1.8;
+      white-space: pre-wrap;
+    }
     @media print {
       body { background: #fff; padding: 0; }
       .page {
@@ -283,7 +330,7 @@ export function buildCertificateHtml(
       <h1 class="title">SERTIFIKASI PEMETAAN TALENTA</h1>
       <div class="recipient-block">
         <div class="badge-wrap"><span class="badge">Dengan Bangga Diberikan Kepada :</span></div>
-        <p class="name">${name}</p>
+        <p class="name" style="--certificate-name-size: ${nameFontSize}px">${name}</p>
         <p class="role">
           Sebagai peserta Seleksi Awal Program Pelatihan ke Jepang di LPK<br/>
           Wiwitan Baru Sukabumi
@@ -338,6 +385,19 @@ export function buildCertificateHtml(
       </table>
     </div>
   </div>
+  ${narrativeChunks
+    .map(
+      (chunk, index) => `
+  <div class="page">
+    <div class="side-bar"></div>
+    <div class="content narrative-content">
+      <p class="page2-header">Narasi Hasil Asesmen</p>
+      <p class="page2-sub">${name} · ${code} · Bagian ${index + 1}</p>
+      <div class="narrative-body">${esc(chunk)}</div>
+    </div>
+  </div>`,
+    )
+    .join("")}
 </body>
 </html>`;
 }
