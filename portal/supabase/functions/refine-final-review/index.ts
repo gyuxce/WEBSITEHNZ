@@ -8,7 +8,6 @@ const corsHeaders = {
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const DEFAULT_MODEL = "deepseek/deepseek-v4-flash-0731";
-const MAX_SUMMARY_WORDS = 1000;
 
 type AnyRecord = Record<string, unknown>;
 
@@ -75,12 +74,6 @@ function factorSummary(scores: unknown, analyses: unknown): string {
     .join("\n");
 }
 
-function limitWords(value: string, maxWords: number): string {
-  const words = value.trim().split(/\s+/).filter(Boolean);
-  if (words.length <= maxWords) return value.trim();
-  return `${words.slice(0, maxWords).join(" ")}…`;
-}
-
 function buildPrompt(data: {
   psychologistInterpretation: string;
   participantSummary: string;
@@ -97,8 +90,8 @@ Jangan menyebut ChatGPT, AI, prompt, atau proses internal.
 Gunakan istilah "peserta" dan bahasa Indonesia profesional yang tidak menghakimi.
 Interpretasi psikolog adalah sumber utama. Data skor hanya dipakai untuk menjaga konsistensi fakta.
 Jika ada kekurangan atau konflik data, jangan mengarang; tambahkan peringatan singkat di qc_flags.
-Narasi harus berupa 2-5 paragraf, fokus pada kekuatan, area pengembangan, dan saran praktis yang wajar.
-Narasi peserta maksimal 1000 kata; usahakan tetap ringkas dan jangan mengisi batas secara paksa.
+Narasi harus berupa beberapa paragraf yang terstruktur, fokus pada kekuatan, area pengembangan, dan saran praktis yang wajar.
+Buat penjelasan selengkap yang diperlukan agar hasil asesmen mudah dipahami; jangan memotong informasi penting hanya demi menjadi singkat.
 Hasil ini selalu memerlukan pemeriksaan dan persetujuan manusia sebelum diterbitkan.
 Kembalikan JSON sesuai schema, tanpa markdown.`;
 
@@ -137,7 +130,7 @@ function requestBody(model: string, messages: Array<{ role: string; content: str
     model,
     messages,
     temperature: 0.2,
-    max_tokens: 1400,
+    max_tokens: 3000,
     reasoning: { effort: "none" },
   };
 
@@ -304,10 +297,7 @@ serve(async (req) => {
     const message = isRecord(firstChoice.message) ? firstChoice.message : {};
     const content = messageContent(message.content);
     const parsed = parseJsonCandidate(content);
-    const refinedSummary = limitWords(
-      textValue(parsed?.participant_summary ?? content, 12000),
-      MAX_SUMMARY_WORDS,
-    );
+    const refinedSummary = textValue(parsed?.participant_summary ?? content, 30000);
     if (!refinedSummary) {
       const finishReason = textValue(firstChoice.finish_reason, 120);
       const messageFields = Object.keys(message).join(", ") || "tidak ada";

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Clock, Download, RefreshCw, Search } from "lucide-react";
+import { Award, ArrowLeft, Clock, Download, RefreshCw, Search } from "lucide-react";
 import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { PIMSLEUR_MAX_SCORE } from "../data/pimsleurQuestions";
@@ -462,16 +462,31 @@ export function AdminRecapPage() {
         </p>
       ) : (
         <div className="mt-6 overflow-x-auto rounded-2xl border border-brand-navy/8 bg-white">
-          <table className="min-w-[1160px] w-full text-left text-sm">
+          <table className="min-w-[1280px] w-full text-left text-sm">
             <thead className="border-b border-brand-navy/8 bg-brand-bg text-xs uppercase tracking-wide text-brand-navy/45">
               <tr>
-                <th className="px-4 py-3 font-bold">Peserta</th>
-                <th className="px-4 py-3 font-bold">Aktivitas terakhir</th>
-                <th className="px-4 py-3 font-bold">Pimsleur</th>
+                <th rowSpan={2} className="px-4 py-3 font-bold align-middle">Peserta</th>
+                <th rowSpan={2} className="px-4 py-3 font-bold align-middle">Aktivitas terakhir</th>
+                <th colSpan={3} className="border-l border-brand-navy/8 px-4 py-2 text-center font-bold">
+                  Hasil asesmen
+                </th>
+                <th
+                  colSpan={isPsychologist ? 1 : 2}
+                  className="border-l border-emerald-100 px-4 py-2 text-center font-bold text-emerald-700"
+                >
+                  Output akhir
+                </th>
+              </tr>
+              <tr>
+                <th className="border-l border-brand-navy/8 px-4 py-3 font-bold">Pimsleur</th>
                 <th className="px-4 py-3 font-bold">CFIT</th>
                 <th className="px-4 py-3 font-bold">PAPI Kostick</th>
-                {!isPsychologist ? <th className="px-4 py-3 font-bold">Sertifikat</th> : null}
-                <th className="px-4 py-3 font-bold">Detail</th>
+                {!isPsychologist ? (
+                  <th className="border-l border-emerald-100 px-4 py-3 font-bold text-emerald-700">
+                    Sertifikat Pemetaan
+                  </th>
+                ) : null}
+                <th className="px-4 py-3 font-bold">Detail tes</th>
               </tr>
             </thead>
             <tbody>
@@ -509,15 +524,6 @@ export function AdminRecapPage() {
                       </>
                     ) : null}
                   </td>
-                  {!isPsychologist ? (
-                    <td className="px-4 py-4">
-                      <CertificateStatus
-                        certificate={row.certificate}
-                        downloading={downloadingCertificateId === row.userId}
-                        onDownload={() => void handleDownloadCertificate(row)}
-                      />
-                    </td>
-                  ) : null}
                   <td className="px-4 py-4">
                     <Status done={Boolean(row.cfit)} />
                     {row.cfit ? (
@@ -545,6 +551,15 @@ export function AdminRecapPage() {
                       </>
                     ) : null}
                   </td>
+                  {!isPsychologist ? (
+                    <td className="border-l border-emerald-100 bg-emerald-50/20 px-4 py-4">
+                      <CertificateStatus
+                        certificate={row.certificate}
+                        downloading={downloadingCertificateId === row.userId}
+                        onDownload={() => void handleDownloadCertificate(row)}
+                      />
+                    </td>
+                  ) : null}
                   <td className="px-4 py-4">
                     <div className="flex flex-col items-start gap-1.5 text-xs font-bold">
                       <DetailLink
@@ -625,8 +640,8 @@ function CertificateStatus({
 
   return (
     <div className="min-w-40">
-      <span className="inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
-        Sudah terbit
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-700">
+        <Award size={13} /> Sertifikat terbit
       </span>
       <p className="mt-2 font-mono text-[11px] font-semibold text-brand-navy/65">
         {certificate.certificate_code}
