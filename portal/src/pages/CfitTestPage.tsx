@@ -178,7 +178,7 @@ export function CfitTestPage() {
 
     await refreshProfile();
     setSubmitting(false);
-    navigate("/dashboard", { replace: true });
+    navigate("/result/cfit", { replace: true });
   }, [answers, attemptId, birthDate, navigate, profile?.birth_date, refreshProfile, subtestIndex, user]);
 
   const goNextSubtest = useCallback(

@@ -1,8 +1,10 @@
 import { Check, Clock, Lock, Sparkles } from "lucide-react";
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
 import clsx from "clsx";
 import type { UserProgress } from "../lib/database.types";
 import { PROGRESS_STEPS } from "../lib/database.types";
+import { getParticipantNextStep, getProgressStepHref } from "../lib/nextStep";
 
 type StepStatus = "done" | "active" | "pending" | "locked" | "optional";
 
@@ -89,31 +91,55 @@ const statusConfig: Record<StepStatus, { label: string; className: string; icon:
 };
 
 export function ProgressSteps({ progress }: { progress: UserProgress | null }) {
+  const nextStep = getParticipantNextStep(progress);
+
   return (
     <div className="rounded-2xl border border-brand-navy/8 bg-white p-6 shadow-sm">
-      <h2 className="font-display font-bold text-lg text-brand-navy mb-4">Progress Pemetaan</h2>
+      <h2 className="mb-1 font-display text-lg font-bold text-brand-navy">Progress Pemetaan</h2>
+      <p className="mb-4 text-xs leading-relaxed text-brand-navy/45">
+        Semua langkah tetap tampil. Yang sudah terbuka bisa diklik.
+      </p>
       <div className="flex flex-col">
         {PROGRESS_STEPS.map((step, i) => {
           const status = getStepStatus(step.key, progress);
           const style = statusConfig[status];
-          return (
-            <div
-              key={step.key}
-              className={clsx(
-                "flex items-center justify-between py-3.5 text-sm",
-                i !== PROGRESS_STEPS.length - 1 && "border-b border-brand-navy/8",
-              )}
-            >
-              <span className="text-brand-navy/75 font-medium">{step.label}</span>
+          const href = getProgressStepHref(step.key, progress, status);
+          const isNext = step.key === nextStep.key;
+          const rowClass = clsx(
+            "flex items-center justify-between py-3.5 text-sm",
+            i !== PROGRESS_STEPS.length - 1 && "border-b border-brand-navy/8",
+            isNext && "rounded-xl bg-brand-red-soft/60 px-2 -mx-2",
+            href && "transition-colors hover:text-brand-red",
+          );
+
+          const content = (
+            <>
+              <span className={clsx("font-medium", isNext ? "text-brand-navy" : "text-brand-navy/75")}>
+                {step.label}
+              </span>
               <span
                 className={clsx(
-                  "inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide rounded-full px-3 py-1",
+                  "inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide",
                   style.className,
                 )}
               >
                 {style.icon}
                 {style.label}
               </span>
+            </>
+          );
+
+          if (href) {
+            return (
+              <Link key={step.key} to={href} className={rowClass}>
+                {content}
+              </Link>
+            );
+          }
+
+          return (
+            <div key={step.key} className={rowClass}>
+              {content}
             </div>
           );
         })}
