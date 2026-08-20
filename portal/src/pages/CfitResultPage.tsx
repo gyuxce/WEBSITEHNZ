@@ -108,6 +108,22 @@ export function CfitResultPage() {
           Hasil CFIT adalah bagian dari pemetaan potensi. Interpretasi final tetap digabungkan
           dengan Pimsleur dan PAPI Kostick.
         </p>
+
+        {progress?.papikostik_test_status !== "completed" ? (
+          <Link
+            to="/test/papikostik"
+            className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-red px-5 py-3.5 text-sm font-bold text-white hover:bg-brand-red-hover"
+          >
+            Lanjut tes PAPI Kostick
+          </Link>
+        ) : (
+          <Link
+            to="/result/papikostik"
+            className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-navy px-5 py-3.5 text-sm font-bold text-white hover:bg-brand-navy-light"
+          >
+            Lihat status review
+          </Link>
+        )}
       </div>
     </div>
   );

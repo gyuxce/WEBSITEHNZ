@@ -18,6 +18,7 @@ import { ProgressSteps } from "../components/ProgressSteps";
 import { LANDING_URL, supabase } from "../lib/supabase";
 import { isPsychologistRole } from "../lib/access";
 import { formatAdminDateTime } from "../lib/adminTools";
+import { getParticipantNextStep } from "../lib/nextStep";
 
 const WHATSAPP_URL = "https://wa.me/message/DWVTJESHI2RQC1";
 
@@ -313,6 +314,27 @@ function ParticipantHome({
     progress?.result_status === "available" ||
     progress?.result_status === "completed" ||
     pimsleurDone;
+  const nextStep = getParticipantNextStep(progress);
+  const pimsleurCta =
+    pimsleurDone
+      ? "Selesai"
+      : progress?.language_test_status === "in_progress"
+        ? "Lanjutkan tes"
+        : "Mulai tes";
+  const cfitCta = cfitDone
+    ? "Selesai"
+    : !pimsleurDone
+      ? "Terkunci"
+      : progress?.cfit_test_status === "in_progress"
+        ? "Lanjutkan tes"
+        : "Mulai tes";
+  const papiCta = papikostikDone
+    ? "Selesai"
+    : !cfitDone
+      ? "Terkunci"
+      : progress?.papikostik_test_status === "in_progress"
+        ? "Lanjutkan tes"
+        : "Mulai tes";
 
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
@@ -323,10 +345,55 @@ function ParticipantHome({
             Halo, {profileName}
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-brand-navy/55">
-            Ikuti langkah pemetaan potensi. Setelah bayar, kerjakan Pimsleur dan lihat rekomendasi
-            awalmu.
+            Semua tes pemetaan ada di sini, berurutan: bayar, Pimsleur, CFIT, PAPI, lalu review dan
+            sertifikat. Kerjakan yang sedang terbuka dulu.
           </p>
         </div>
+
+        <Link
+          to={nextStep.href}
+          className={`flex items-center justify-between gap-4 rounded-2xl p-5 transition-all hover:-translate-y-0.5 hover:shadow-md ${
+            nextStep.tone === "done"
+              ? "border border-emerald-200 bg-emerald-50"
+              : nextStep.tone === "wait"
+                ? "border border-amber-200 bg-amber-50"
+                : "bg-brand-red text-white"
+          }`}
+        >
+          <div>
+            <p
+              className={`text-[11px] font-bold uppercase tracking-widest ${
+                nextStep.tone === "action" ? "text-white/70" : "text-brand-navy/45"
+              }`}
+            >
+              Langkah berikutnya
+            </p>
+            <p
+              className={`mt-1 font-display text-lg font-bold ${
+                nextStep.tone === "action" ? "text-white" : "text-brand-navy"
+              }`}
+            >
+              {nextStep.title}
+            </p>
+            <p
+              className={`mt-1 text-sm leading-relaxed ${
+                nextStep.tone === "action" ? "text-white/80" : "text-brand-navy/60"
+              }`}
+            >
+              {nextStep.description}
+            </p>
+          </div>
+          <span
+            className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold ${
+              nextStep.tone === "action"
+                ? "bg-white text-brand-red"
+                : "bg-brand-navy text-white"
+            }`}
+          >
+            {nextStep.cta}
+            <ArrowRight size={14} />
+          </span>
+        </Link>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <ActionCard
@@ -335,6 +402,7 @@ function ParticipantHome({
             description="Bayar Rp99.000 untuk membuka tes"
             href="/payment"
             disabled={paymentDone}
+            highlighted={nextStep.key === "payment"}
             cta={paymentDone ? "Sudah dibayar" : "Bayar sekarang"}
           />
           <ActionCard
@@ -343,7 +411,8 @@ function ParticipantHome({
             description="Aptitude bahasa · 30 menit · tahap 2–6"
             href="/test/pimsleur"
             disabled={!paymentDone || pimsleurDone}
-            cta={pimsleurDone ? "Selesai" : "Mulai tes"}
+            highlighted={nextStep.key === "language"}
+            cta={pimsleurCta}
           />
           <ActionCard
             icon={<TestTube size={20} />}
@@ -351,7 +420,8 @@ function ParticipantHome({
             description="Tes kognitif, aktif setelah Pimsleur"
             href="/test/cfit"
             disabled={!pimsleurDone || cfitDone}
-            cta={cfitDone ? "Selesai" : pimsleurDone ? "Mulai tes" : "Terkunci"}
+            highlighted={nextStep.key === "cfit"}
+            cta={cfitCta}
           />
           <ActionCard
             icon={<TestTube size={20} />}
@@ -359,7 +429,8 @@ function ParticipantHome({
             description="Tes preferensi kerja, aktif setelah CFIT"
             href="/test/papikostik"
             disabled={!cfitDone || papikostikDone}
-            cta={papikostikDone ? "Selesai" : cfitDone ? "Mulai tes" : "Terkunci"}
+            highlighted={nextStep.key === "papikostik"}
+            cta={papiCta}
           />
           <ActionCard
             icon={<FileCheck size={20} />}
@@ -383,6 +454,7 @@ function ParticipantHome({
             description="Status jawaban dan review psikolog/admin"
             href="/result/papikostik"
             disabled={!papikostikDone}
+            highlighted={nextStep.key === "result"}
             cta={papikostikDone ? "Lihat status" : "Belum tersedia"}
           />
           <ActionCard
@@ -391,6 +463,7 @@ function ParticipantHome({
             description="Tersedia setelah psikolog, QC, dan admin menyetujui hasil"
             href="/result/certificate"
             disabled={!finalApproved}
+            highlighted={nextStep.key === "certificate"}
             cta={finalApproved ? "Lihat sertifikat" : "Menunggu review"}
           />
         </div>
@@ -428,6 +501,7 @@ function ActionCard({
   href,
   disabled,
   cta,
+  highlighted,
 }: {
   icon: ReactNode;
   title: string;
@@ -435,6 +509,7 @@ function ActionCard({
   href: string;
   disabled?: boolean;
   cta: string;
+  highlighted?: boolean;
 }) {
   const inner = (
     <>
@@ -469,7 +544,9 @@ function ActionCard({
   return (
     <Link
       to={href}
-      className="rounded-2xl border border-brand-navy/8 bg-white p-5 transition-all hover:border-brand-red/20 hover:shadow-md"
+      className={`rounded-2xl border bg-white p-5 transition-all hover:border-brand-red/20 hover:shadow-md ${
+        highlighted ? "border-brand-red/40 ring-2 ring-brand-red/15" : "border-brand-navy/8"
+      }`}
     >
       {inner}
     </Link>
