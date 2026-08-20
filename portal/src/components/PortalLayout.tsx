@@ -16,7 +16,7 @@ export function PortalLayout() {
   return (
     <div className="min-h-screen bg-brand-bg">
       <header className="sticky top-0 z-40 border-b border-brand-navy/8 bg-white/90 backdrop-blur-md">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+        <div className={`${isStaff ? "max-w-[1440px]" : "max-w-5xl"} mx-auto px-4 sm:px-6 h-16 flex items-center justify-between`}>
           <Logo homeHref="/dashboard" />
           <div className="flex items-center gap-2 sm:gap-3">
             {isStaff ? (
@@ -92,7 +92,7 @@ export function PortalLayout() {
         </div>
       </header>
       <main
-        className={`${isStaff ? "max-w-7xl" : "max-w-5xl"} mx-auto px-4 py-8 sm:px-6`}
+        className={`${isStaff ? "max-w-[1440px]" : "max-w-5xl"} mx-auto px-4 py-8 sm:px-6`}
       >
         <Outlet />
       </main>
