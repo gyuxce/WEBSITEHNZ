@@ -20,6 +20,7 @@ import { LANDING_URL, supabase } from "../lib/supabase";
 import { isPsychologistRole } from "../lib/access";
 import { formatAdminDateTime } from "../lib/adminTools";
 import { getParticipantNextStep } from "../lib/nextStep";
+import { notifyPapikostikCompleted } from "../lib/papiNotifications";
 
 const WHATSAPP_URL = "https://wa.me/message/DWVTJESHI2RQC1";
 
@@ -42,6 +43,7 @@ function PapiNotificationInboxForm({ description }: { description: string }) {
   const { profile, refreshProfile } = useAuth();
   const [notificationEmail, setNotificationEmail] = useState(profile?.notification_email ?? "");
   const [savingInbox, setSavingInbox] = useState(false);
+  const [testingInbox, setTestingInbox] = useState(false);
   const [inboxMessage, setInboxMessage] = useState("");
 
   useEffect(() => {
@@ -49,7 +51,7 @@ function PapiNotificationInboxForm({ description }: { description: string }) {
   }, [profile?.notification_email]);
 
   async function saveNotificationEmail() {
-    if (!profile?.id || savingInbox) return;
+    if (!profile?.id || savingInbox) return false;
     const nextEmail = notificationEmail.trim();
     setSavingInbox(true);
     setInboxMessage("");
@@ -60,7 +62,7 @@ function PapiNotificationInboxForm({ description }: { description: string }) {
     setSavingInbox(false);
     if (error) {
       setInboxMessage(error.message);
-      return;
+      return false;
     }
     await refreshProfile();
     setInboxMessage(
@@ -68,6 +70,21 @@ function PapiNotificationInboxForm({ description }: { description: string }) {
         ? "Notifikasi PAPI akan dikirim ke alamat ini (bisa lebih dari satu)."
         : "Email notifikasi dikosongkan.",
     );
+    return true;
+  }
+
+  async function sendTestNotification() {
+    if (testingInbox) return;
+    setTestingInbox(true);
+    setInboxMessage("");
+    const saved = await saveNotificationEmail();
+    if (!saved) {
+      setTestingInbox(false);
+      return;
+    }
+    const result = await notifyPapikostikCompleted({ test: true });
+    setTestingInbox(false);
+    setInboxMessage(result.message);
   }
 
   return (
@@ -85,22 +102,30 @@ function PapiNotificationInboxForm({ description }: { description: string }) {
         <div className="min-w-0 flex-1">
           <p className="font-display font-bold text-brand-navy">Email notifikasi PAPI</p>
           <p className="mt-1 text-sm text-brand-navy/50">{description}</p>
-          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-            <input
-              type="text"
-              value={notificationEmail}
-              onChange={(event) => setNotificationEmail(event.target.value)}
-              placeholder="gmail.psikolog@gmail.com, tester@gmail.com"
-              className="w-full rounded-xl border border-brand-navy/12 bg-brand-bg px-3 py-2.5 text-sm text-brand-navy outline-none focus:border-brand-red"
-            />
-            <button
-              type="submit"
-              disabled={savingInbox}
-              className="inline-flex shrink-0 items-center justify-center rounded-xl bg-brand-navy px-4 py-2.5 text-sm font-bold text-white hover:bg-brand-navy-light disabled:opacity-60"
-            >
-              {savingInbox ? "Menyimpan…" : "Simpan"}
-            </button>
-          </div>
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+              <input
+                type="text"
+                value={notificationEmail}
+                onChange={(event) => setNotificationEmail(event.target.value)}
+                placeholder="gmail.psikolog@gmail.com, tester@gmail.com"
+                className="w-full rounded-xl border border-brand-navy/12 bg-brand-bg px-3 py-2.5 text-sm text-brand-navy outline-none focus:border-brand-red sm:flex-1"
+              />
+              <button
+                type="submit"
+                disabled={savingInbox || testingInbox}
+                className="inline-flex shrink-0 items-center justify-center rounded-xl bg-brand-navy px-4 py-2.5 text-sm font-bold text-white hover:bg-brand-navy-light disabled:opacity-60"
+              >
+                {savingInbox ? "Menyimpan…" : "Simpan"}
+              </button>
+              <button
+                type="button"
+                disabled={savingInbox || testingInbox}
+                onClick={() => void sendTestNotification()}
+                className="inline-flex shrink-0 items-center justify-center rounded-xl border border-brand-navy/12 px-4 py-2.5 text-sm font-bold text-brand-navy hover:border-brand-red/30 hover:text-brand-red disabled:opacity-60"
+              >
+                {testingInbox ? "Mengirim tes…" : "Kirim email tes"}
+              </button>
+            </div>
           {inboxMessage ? (
             <p className="mt-2 text-xs font-semibold text-brand-navy/55">{inboxMessage}</p>
           ) : null}

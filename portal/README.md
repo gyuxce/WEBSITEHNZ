@@ -206,6 +206,8 @@ set notification_email = 'tester@gmail.com'
 where role = 'admin';
 ```
 
+Tes tanpa mengulang Pimsleur/CFIT/PAPI: login admin atau psikolog, isi **Email notifikasi PAPI**, lalu klik **Kirim email tes**.
+
 Callback URL yang didaftarkan di Pivot Dashboard → Settings → Developer Settings → Callbacks:
 
 ```text
