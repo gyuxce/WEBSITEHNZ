@@ -2,6 +2,7 @@ import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import { loadCertificateAssetDataUrls } from "./certificateAssets";
 import { buildCertificateHtml, type CertificateData } from "./certificateHtml";
+import { replaceRecipientNameWithArt } from "./certificateNameArt";
 
 const A4_WIDTH_MM = 210;
 const A4_HEIGHT_MM = 297;
@@ -126,6 +127,8 @@ export async function downloadCertificatePdf(
 
   try {
     await ensureCertificateFonts(certificateDocument);
+    await waitForImages(certificateDocument);
+    await replaceRecipientNameWithArt(certificateDocument, data.fullName);
     await waitForImages(certificateDocument);
     // Give layout a tick after images/fonts settle.
     await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));

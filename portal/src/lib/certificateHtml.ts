@@ -1,4 +1,5 @@
 import type { CertificateAssetUrls } from "./certificateAssets";
+import { certificateNameFontSize } from "./certificateNameArt";
 
 export type CertificateData = {
   fullName: string;
@@ -82,8 +83,7 @@ export function buildCertificateHtml(
       ? "Narasi lengkap dilanjutkan di halaman berikutnya."
       : data.pimsleurRecommendation ?? "Belum ada catatan evaluasi.",
   );
-  const nameLength = data.fullName.trim().length;
-  const nameFontSize = nameLength > 32 ? 42 : nameLength > 24 ? 48 : 56;
+  const nameFontSize = certificateNameFontSize(data.fullName);
 
   return `<!DOCTYPE html>
 <html lang="id">
@@ -176,10 +176,15 @@ export function buildCertificateHtml(
       width: 100%;
       text-align: center;
     }
-    /* Block + text-align (not flex): html2canvas centers script fonts more reliably. */
-    .name {
+    /* Placeholder swapped for a pre-centered PNG before PDF capture. */
+    .name,
+    .name-art {
       display: block;
       width: 100%;
+      margin: 2px auto 16px;
+      padding: 0;
+    }
+    .name {
       font-family: 'Great Vibes', cursive;
       font-size: var(--certificate-name-size, 56px);
       font-weight: 400;
@@ -187,11 +192,9 @@ export function buildCertificateHtml(
       color: #c41e3a;
       line-height: 1.22;
       min-height: 78px;
-      padding: 8px 24px 0;
-      margin: 0 auto 4px;
-      overflow-wrap: anywhere;
-      /* Great Vibes glyph metrics sit slightly left; nudge for optical center. */
-      transform: translateX(0.04em);
+    }
+    .name-art {
+      height: auto;
     }
     .role {
       text-align: center;
