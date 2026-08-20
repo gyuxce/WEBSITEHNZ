@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, ClipboardCheck } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import { notifyPapikostikCompleted } from "../lib/papiNotifications";
 import { supabase } from "../lib/supabase";
 
 type PapiStatus = {
@@ -33,6 +34,9 @@ export function PapikostikResultPage() {
       if (qError) setError(qError.message);
       else setResult(data);
       setLoading(false);
+      if (!qError) {
+        void notifyPapikostikCompleted();
+      }
     }
 
     void load();

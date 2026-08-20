@@ -173,9 +173,37 @@ PIVOT_FAILURE_URL=https://portal.harunokaze.id/payment?payment=failure
 PIVOT_EXPIRATION_URL=https://portal.harunokaze.id/payment?payment=expired
 RESEND_API_KEY=<Resend API Key>
 RESEND_FROM_EMAIL=Harunokaze <notifikasi@harunokaze.id>
+# Optional extra address. Accounts with role psychologist are emailed automatically.
 PSYCHOLOGIST_NOTIFICATION_EMAIL=psikolog@harunokaze.id
 # Optional (default sudah https://portal.harunokaze.id)
 PORTAL_URL=https://portal.harunokaze.id
+```
+
+SMTP Custom di **Authentication** hanya untuk verifikasi daftar/login. Email “PAPI selesai”
+ke psikolog dikirim oleh Edge Function `notify-papikostik-completed`, jadi API Resend
+harus diisi di **Project Settings → Edge Functions → Secrets**, lalu function di-deploy:
+
+```bash
+supabase functions deploy notify-papikostik-completed
+```
+
+Tujuan email, urutan:
+1. `profiles.notification_email` pada akun **psikolog** dan **admin** (bisa beberapa alamat, dipisah koma)
+2. email login psikolog kalau kolom itu kosong
+3. `PSYCHOLOGIST_NOTIFICATION_EMAIL` sebagai alamat tambahan
+
+Jalankan migration `20260820000000_psychologist_notification_email.sql`, lalu set inbox:
+
+```sql
+-- Gmail psikolog + Gmail tester, dipisah koma
+update public.profiles
+set notification_email = 'gmail.psikolog@gmail.com, tester@gmail.com'
+where role = 'psychologist';
+
+-- atau isi Gmail tester di akun admin:
+update public.profiles
+set notification_email = 'tester@gmail.com'
+where role = 'admin';
 ```
 
 Callback URL yang didaftarkan di Pivot Dashboard → Settings → Developer Settings → Callbacks:

@@ -5,6 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabase";
 import { isAssessmentStaffRole, isPsychologistRole } from "../lib/access";
 import { formatAdminDateTime } from "../lib/adminTools";
+import { notifyPapikostikCompleted } from "../lib/papiNotifications";
 
 type AdminPapikostikRow = {
   id: string;
@@ -52,6 +53,7 @@ export function AdminPapikostikPage() {
     } else {
       setRows((result.data as AdminPapikostikRow[]) ?? []);
       setLastUpdatedAt(new Date().toISOString());
+      void notifyPapikostikCompleted({ backfill: true });
     }
     if (showLoader) setLoading(false);
   }, [isPsychologist]);
