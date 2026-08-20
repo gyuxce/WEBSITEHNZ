@@ -17,6 +17,7 @@ import {
   saveAssessmentAttempt,
   startAssessmentAttempt,
 } from "../lib/assessmentAttempts";
+import { notifyPapikostikCompleted } from "../lib/papiNotifications";
 import { supabase } from "../lib/supabase";
 import type { Json } from "../lib/database.types";
 
@@ -212,17 +213,15 @@ export function PapikostikTestPage() {
       return;
     }
 
-    // Notification failure must never block a participant who has completed the test.
-    void supabase.functions
-      .invoke("notify-papikostik-completed", { body: {} })
-      .then(({ error: notificationError }) => {
-        if (notificationError) {
-          console.error("PAPI psychologist notification failed:", notificationError.message);
-        }
-      })
-      .catch((notificationError: unknown) => {
-        console.error("PAPI psychologist notification failed:", notificationError);
-      });
+    // Wait briefly so navigation does not abort the request. Failure still must not block the participant.
+    try {
+      await Promise.race([
+        notifyPapikostikCompleted(),
+        new Promise((resolve) => window.setTimeout(resolve, 8000)),
+      ]);
+    } catch (notificationError) {
+      console.error("PAPI psychologist notification failed:", notificationError);
+    }
 
     await refreshProfile();
     setSubmitting(false);
