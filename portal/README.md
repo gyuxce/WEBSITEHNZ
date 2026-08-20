@@ -187,6 +187,19 @@ harus diisi di **Project Settings → Edge Functions → Secrets**, lalu functio
 supabase functions deploy notify-papikostik-completed
 ```
 
+Tujuan email, urutan:
+1. `profiles.notification_email` (Gmail yang dibaca psikolog; bisa beda dari email login)
+2. email akun login kalau kolom itu kosong
+3. `PSYCHOLOGIST_NOTIFICATION_EMAIL` sebagai alamat tambahan
+
+Jalankan migration `20260820000000_psychologist_notification_email.sql`, lalu set Gmail:
+
+```sql
+update public.profiles
+set notification_email = 'gmail.asli@gmail.com'
+where role = 'psychologist';
+```
+
 Callback URL yang didaftarkan di Pivot Dashboard → Settings → Developer Settings → Callbacks:
 
 ```text

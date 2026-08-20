@@ -18,6 +18,7 @@ export interface Database {
           program_interest: string | null;
           city: string | null;
           role: "participant" | "admin" | "psychologist";
+          notification_email: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -29,6 +30,7 @@ export interface Database {
           program_interest?: string | null;
           city?: string | null;
           role?: "participant" | "admin" | "psychologist";
+          notification_email?: string | null;
         };
         Update: {
           full_name?: string;
@@ -37,6 +39,7 @@ export interface Database {
           program_interest?: string | null;
           city?: string | null;
           role?: "participant" | "admin" | "psychologist";
+          notification_email?: string | null;
         };
         Relationships: [];
       };

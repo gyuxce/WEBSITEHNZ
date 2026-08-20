@@ -62,12 +62,17 @@ function uniqueEmails(emails: string[]) {
 async function psychologistAccountEmails(supabaseAdmin: SupabaseClient) {
   const { data: profiles, error } = await supabaseAdmin
     .from("profiles")
-    .select("id")
+    .select("id, notification_email")
     .eq("role", "psychologist");
   if (error) throw new Error(error.message);
 
   const emails: string[] = [];
   for (const profile of profiles ?? []) {
+    const inbox = typeof profile.notification_email === "string" ? profile.notification_email.trim() : "";
+    if (inbox) {
+      emails.push(inbox);
+      continue;
+    }
     const { data, error: userError } = await supabaseAdmin.auth.admin.getUserById(profile.id);
     if (userError || !data.user?.email) continue;
     emails.push(data.user.email);
@@ -238,7 +243,7 @@ serve(async (req) => {
     ]);
     if (recipients.length === 0) {
       return jsonResponse(
-        { error: "Tidak ada email psikolog. Set role psychologist di profil, atau isi PSYCHOLOGIST_NOTIFICATION_EMAIL." },
+        { error: "Tidak ada email psikolog. Isi Gmail notifikasi di profil psikolog, atau secret PSYCHOLOGIST_NOTIFICATION_EMAIL." },
         500,
       );
     }
