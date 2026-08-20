@@ -316,7 +316,7 @@ export function AdminRecapPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl">
+    <div className="w-full">
       <Link
         to="/dashboard"
         className="mb-6 inline-flex items-center gap-1.5 text-sm text-brand-navy/50 hover:text-brand-red"
@@ -462,97 +462,109 @@ export function AdminRecapPage() {
         </p>
       ) : (
         <div className="mt-6 overflow-x-auto rounded-2xl border border-brand-navy/8 bg-white">
-          <table className="min-w-[1280px] w-full text-left text-sm">
-            <thead className="border-b border-brand-navy/8 bg-brand-bg text-xs uppercase tracking-wide text-brand-navy/45">
+          <table className="w-full min-w-[1080px] table-fixed text-left text-sm">
+            <thead className="border-b border-brand-navy/8 bg-brand-bg text-[11px] uppercase tracking-wide text-brand-navy/45">
               <tr>
-                <th rowSpan={2} className="px-4 py-3 font-bold align-middle">Peserta</th>
-                <th rowSpan={2} className="px-4 py-3 font-bold align-middle">Aktivitas terakhir</th>
-                <th colSpan={3} className="border-l border-brand-navy/8 px-4 py-2 text-center font-bold">
+                <th rowSpan={2} className="w-[18%] px-4 py-3 align-middle font-bold">
+                  Peserta
+                </th>
+                <th rowSpan={2} className="w-[12%] px-3 py-3 align-middle font-bold">
+                  Aktivitas terakhir
+                </th>
+                <th colSpan={3} className="border-l border-brand-navy/8 px-3 py-2 text-center font-bold">
                   Hasil asesmen
                 </th>
                 <th
                   colSpan={isPsychologist ? 1 : 2}
-                  className="border-l border-emerald-100 px-4 py-2 text-center font-bold text-emerald-700"
+                  className="border-l border-emerald-100 px-3 py-2 text-center font-bold text-emerald-700"
                 >
                   Output akhir
                 </th>
               </tr>
               <tr>
-                <th className="border-l border-brand-navy/8 px-4 py-3 font-bold">Pimsleur</th>
-                <th className="px-4 py-3 font-bold">CFIT</th>
-                <th className="px-4 py-3 font-bold">PAPI Kostick</th>
+                <th className="w-[14%] border-l border-brand-navy/8 px-3 py-3 font-bold">Pimsleur</th>
+                <th className="w-[16%] px-3 py-3 font-bold">CFIT</th>
+                <th className="w-[14%] px-3 py-3 font-bold">PAPI Kostick</th>
                 {!isPsychologist ? (
-                  <th className="border-l border-emerald-100 px-4 py-3 font-bold text-emerald-700">
-                    Sertifikat Pemetaan
+                  <th className="w-[14%] border-l border-emerald-100 px-3 py-3 font-bold text-emerald-700">
+                    Sertifikat
                   </th>
                 ) : null}
-                <th className="px-4 py-3 font-bold">Detail tes</th>
+                <th className="sticky right-0 w-[14%] bg-brand-bg px-3 py-3 font-bold">Aksi</th>
               </tr>
             </thead>
             <tbody>
-              {filteredRows.map((row) => (
+              {filteredRows.map((row) => {
+                const recent = isWithinLastHours(getLatestCompletedAt(row), 1);
+                return (
                 <tr
                   key={row.userId}
                   className={`border-b border-brand-navy/5 align-top last:border-0 ${
-                    isWithinLastHours(getLatestCompletedAt(row), 1) ? "bg-sky-50/60" : ""
+                    recent ? "bg-sky-50/60" : ""
                   }`}
                 >
-                  <td className="px-4 py-4">
-                    <p className="font-semibold text-brand-navy">{row.fullName}</p>
+                  <td className="px-4 py-3.5">
+                    <p className="font-semibold leading-snug text-brand-navy">{row.fullName}</p>
                     <div className="mt-1 space-y-0.5 text-xs leading-relaxed text-brand-navy/45">
-                      <p className="break-all">{row.email ?? "Email belum tersedia"}</p>
-                      <p>WhatsApp: {row.whatsapp ?? "-"}</p>
-                      <p>Kota: {row.city ?? "-"}</p>
+                      <p className="truncate" title={row.email ?? undefined}>
+                        {row.email ?? "Email belum tersedia"}
+                      </p>
+                      <p>{row.whatsapp ?? "-"}</p>
+                      <p>{row.city ?? "-"}</p>
                     </div>
                   </td>
-                  <td className="px-4 py-4">
-                    {isWithinLastHours(getLatestCompletedAt(row), 1) ? (
-                      <span className="inline-flex rounded-full bg-sky-100 px-2 py-1 text-[11px] font-bold text-sky-700">
+                  <td className="px-3 py-3.5">
+                    {recent ? (
+                      <span className="mb-1.5 inline-flex rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold text-sky-700">
                         Baru selesai
                       </span>
                     ) : null}
                     <CompletionTime value={getLatestCompletedAt(row)} />
                   </td>
-                  <td className="px-4 py-4">
-                    <Status done={Boolean(row.pimsleur)} />
-                    {row.pimsleur ? (
-                      <>
-                        <p className="mt-2 text-xs text-brand-navy/65">
-                          {row.pimsleur.score_total}/{PIMSLEUR_MAX_SCORE} - Grade {row.pimsleur.grade}
-                        </p>
-                        <CompletionTime value={row.pimsleur.completed_at} />
-                      </>
-                    ) : null}
+                  <td className="px-3 py-3.5">
+                    <AssessmentSummary
+                      done={Boolean(row.pimsleur)}
+                      lines={
+                        row.pimsleur
+                          ? [`${row.pimsleur.score_total}/${PIMSLEUR_MAX_SCORE} · Grade ${row.pimsleur.grade}`]
+                          : []
+                      }
+                      completedAt={row.pimsleur?.completed_at ?? null}
+                    />
                   </td>
-                  <td className="px-4 py-4">
-                    <Status done={Boolean(row.cfit)} />
-                    {row.cfit ? (
-                      <>
-                        <p className="mt-2 text-xs text-brand-navy/65">
-                          Raw {row.cfit.raw_total ?? "-"}/50 - IQ {row.cfit.iq ?? "-"}
-                          <br />
-                          {row.cfit.category ?? "Kategori belum tersedia"}
-                        </p>
-                        <CompletionTime value={row.cfit.completed_at} />
-                      </>
-                    ) : null}
+                  <td className="px-3 py-3.5">
+                    <AssessmentSummary
+                      done={Boolean(row.cfit)}
+                      lines={
+                        row.cfit
+                          ? [
+                              `Raw ${row.cfit.raw_total ?? "-"}/50 · IQ ${row.cfit.iq ?? "-"}`,
+                              row.cfit.category ?? "Kategori belum tersedia",
+                            ]
+                          : []
+                      }
+                      completedAt={row.cfit?.completed_at ?? null}
+                    />
                   </td>
-                  <td className="px-4 py-4">
-                    <Status done={Boolean(row.papikostik)} />
-                    {row.papikostik ? (
-                      <>
-                        <p className="mt-2 text-xs text-brand-navy/65">
-                          {row.papikostik.total_all ?? 0}/90 - {" "}
-                          {row.papikostik.review_status === "reviewed"
-                            ? "Reviewed"
-                            : "Menunggu review"}
-                        </p>
-                        <CompletionTime value={row.papikostik.completed_at} />
-                      </>
-                    ) : null}
+                  <td className="px-3 py-3.5">
+                    <AssessmentSummary
+                      done={Boolean(row.papikostik)}
+                      lines={
+                        row.papikostik
+                          ? [
+                              `${row.papikostik.total_all ?? 0}/90 · ${
+                                row.papikostik.review_status === "reviewed"
+                                  ? "Reviewed"
+                                  : "Menunggu review"
+                              }`,
+                            ]
+                          : []
+                      }
+                      completedAt={row.papikostik?.completed_at ?? null}
+                    />
                   </td>
                   {!isPsychologist ? (
-                    <td className="border-l border-emerald-100 bg-emerald-50/20 px-4 py-4">
+                    <td className="border-l border-emerald-100 bg-emerald-50/20 px-3 py-3.5">
                       <CertificateStatus
                         certificate={row.certificate}
                         downloading={downloadingCertificateId === row.userId}
@@ -560,8 +572,12 @@ export function AdminRecapPage() {
                       />
                     </td>
                   ) : null}
-                  <td className="px-4 py-4">
-                    <div className="flex flex-col items-start gap-1.5 text-xs font-bold">
+                  <td
+                    className={`sticky right-0 px-3 py-3.5 shadow-[-8px_0_12px_-12px_rgba(15,34,64,0.25)] ${
+                      recent ? "bg-sky-50" : "bg-white"
+                    }`}
+                  >
+                    <div className="grid grid-cols-2 gap-1.5">
                       <DetailLink
                         href={row.pimsleur ? `${detailBasePath}/pimsleur/${row.userId}` : null}
                         label="Pimsleur"
@@ -574,13 +590,14 @@ export function AdminRecapPage() {
                       {!isPsychologist ? (
                         <DetailLink
                           href={isComplete(row) ? `/admin/review/${row.userId}` : null}
-                          label="Review final"
+                          label="Review"
                         />
                       ) : null}
                     </div>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -593,7 +610,7 @@ function CompletionTime({ value }: { value: string | null }) {
   if (!value) return null;
 
   return (
-    <p className="mt-2 inline-flex items-start gap-1 text-[11px] leading-relaxed text-brand-navy/45">
+    <p className="mt-1.5 inline-flex items-start gap-1 text-[11px] leading-snug text-brand-navy/45">
       <Clock size={12} className="mt-0.5 shrink-0" />
       {formatAdminDateTime(value)}
     </p>
@@ -603,19 +620,50 @@ function CompletionTime({ value }: { value: string | null }) {
 function Status({ done }: { done: boolean }) {
   return (
     <span
-      className={`rounded-full px-2.5 py-1 text-xs font-bold ${
+      className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${
         done ? "bg-emerald-50 text-emerald-700" : "bg-brand-bg text-brand-navy/45"
       }`}
     >
-      {done ? "Selesai" : "Belum selesai"}
+      {done ? "Selesai" : "Belum"}
     </span>
   );
 }
 
-function DetailLink({ href, label }: { href: string | null; label: string }) {
-  if (!href) return <span className="text-brand-navy/25">{label}</span>;
+function AssessmentSummary({
+  done,
+  lines,
+  completedAt,
+}: {
+  done: boolean;
+  lines: string[];
+  completedAt: string | null;
+}) {
   return (
-    <Link to={href} className="text-brand-red hover:underline">
+    <div>
+      <Status done={done} />
+      {lines.map((line) => (
+        <p key={line} className="mt-1.5 text-xs leading-snug text-brand-navy/65" title={line}>
+          {line}
+        </p>
+      ))}
+      <CompletionTime value={completedAt} />
+    </div>
+  );
+}
+
+function DetailLink({ href, label }: { href: string | null; label: string }) {
+  if (!href) {
+    return (
+      <span className="inline-flex items-center justify-center rounded-lg border border-brand-navy/8 bg-brand-bg px-2 py-1.5 text-center text-[11px] font-bold text-brand-navy/30">
+        {label}
+      </span>
+    );
+  }
+  return (
+    <Link
+      to={href}
+      className="inline-flex items-center justify-center rounded-lg border border-brand-red/20 bg-brand-red-soft px-2 py-1.5 text-center text-[11px] font-bold text-brand-red hover:bg-brand-red hover:text-white"
+    >
       {label}
     </Link>
   );
@@ -632,18 +680,18 @@ function CertificateStatus({
 }) {
   if (!certificate) {
     return (
-      <span className="rounded-full bg-brand-bg px-2.5 py-1 text-xs font-bold text-brand-navy/45">
+      <span className="inline-flex rounded-full bg-brand-bg px-2 py-0.5 text-[10px] font-bold text-brand-navy/45">
         Belum terbit
       </span>
     );
   }
 
   return (
-    <div className="min-w-40">
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-700">
-        <Award size={13} /> Sertifikat terbit
+    <div>
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+        <Award size={12} /> Terbit
       </span>
-      <p className="mt-2 font-mono text-[11px] font-semibold text-brand-navy/65">
+      <p className="mt-1.5 font-mono text-[11px] font-semibold text-brand-navy/65">
         {certificate.certificate_code}
       </p>
       <CompletionTime value={certificate.issued_at} />
@@ -651,9 +699,9 @@ function CertificateStatus({
         type="button"
         onClick={onDownload}
         disabled={downloading}
-        className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-emerald-700/25 px-2.5 py-2 text-[11px] font-bold text-emerald-800 hover:bg-emerald-50 disabled:opacity-50"
+        className="mt-2 inline-flex items-center gap-1 rounded-lg border border-emerald-700/25 px-2 py-1.5 text-[11px] font-bold text-emerald-800 hover:bg-emerald-50 disabled:opacity-50"
       >
-        <Download size={13} />
+        <Download size={12} />
         {downloading ? "Menyiapkan..." : "Unduh PDF"}
       </button>
     </div>
