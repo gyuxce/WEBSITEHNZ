@@ -117,7 +117,9 @@ export function buildCertificateHtml(
       width: 28px;
       background: linear-gradient(180deg, #e61935 0%, #0f2240 55%, #0f2240 100%);
     }
-    .content { padding: 44px 56px 48px 64px; }
+    /* Equal side padding so centered text aligns to the page visual center
+       (sidebar sits outside this box as decoration only). */
+    .content { padding: 44px 56px 48px 56px; }
     .cover-content {
       min-height: 1100px;
       display: flex;
@@ -169,20 +171,27 @@ export function buildCertificateHtml(
       margin: 0 auto 10px;
     }
     .badge-wrap { text-align: center; }
-    .recipient-block { margin-top: -4px; }
+    .recipient-block {
+      margin-top: -4px;
+      width: 100%;
+      text-align: center;
+    }
+    /* Block + text-align (not flex): html2canvas centers script fonts more reliably. */
     .name {
+      display: block;
+      width: 100%;
       font-family: 'Great Vibes', cursive;
       font-size: var(--certificate-name-size, 56px);
+      font-weight: 400;
       text-align: center;
       color: #c41e3a;
       line-height: 1.22;
       min-height: 78px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0 18px;
-      margin: 0 0 4px;
+      padding: 8px 24px 0;
+      margin: 0 auto 4px;
       overflow-wrap: anywhere;
+      /* Great Vibes glyph metrics sit slightly left; nudge for optical center. */
+      transform: translateX(0.04em);
     }
     .role {
       text-align: center;

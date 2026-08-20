@@ -31,12 +31,15 @@ async function ensureCertificateFonts(targetDocument: Document): Promise<void> {
     await Promise.all([
       targetDocument.fonts.load("800 34px Outfit"),
       targetDocument.fonts.load("400 56px 'Great Vibes'"),
+      targetDocument.fonts.load("700 56px 'Great Vibes'"),
       targetDocument.fonts.load("400 14px 'Plus Jakarta Sans'"),
     ]).catch(() => undefined);
   }
   if (targetDocument.fonts?.ready) {
     await targetDocument.fonts.ready;
   }
+  // Extra settle time so script-font metrics apply before html2canvas measures layout.
+  await new Promise((resolve) => window.setTimeout(resolve, 120));
 }
 
 function waitForImages(root: ParentNode): Promise<void> {
