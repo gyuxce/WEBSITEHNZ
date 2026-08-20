@@ -59,6 +59,37 @@ function uniqueEmails(emails: string[]) {
   return unique;
 }
 
+async function sendResendEmail(options: {
+  resendApiKey: string;
+  fromEmail: string;
+  recipients: string[];
+  subject: string;
+  html: string;
+}): Promise<{ ok: true; id: string | null } | { ok: false; error: string }> {
+  const resendResponse = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${options.resendApiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: options.fromEmail,
+      to: options.recipients,
+      subject: options.subject,
+      html: options.html,
+    }),
+  });
+  const resendPayload: unknown = await resendResponse.json().catch(() => null);
+  if (!resendResponse.ok) {
+    return { ok: false, error: JSON.stringify(resendPayload ?? {}).slice(0, 1000) };
+  }
+  const id =
+    resendPayload && typeof resendPayload === "object" && "id" in resendPayload
+      ? String(resendPayload.id)
+      : null;
+  return { ok: true, id };
+}
+
 async function psychologistAccountEmails(supabaseAdmin: SupabaseClient) {
   const { data: profiles, error } = await supabaseAdmin
     .from("profiles")
@@ -156,17 +187,12 @@ async function notifyParticipant(
   const safeName = escapeHtml(participantName);
   const safeReviewUrl = escapeHtml(reviewUrl);
 
-  const resendResponse = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${resendApiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: fromEmail,
-      to: recipients,
-      subject: `PAPI Kostick baru perlu direview — ${participantName}`,
-      html: `
+  const sent = await sendResendEmail({
+    resendApiKey,
+    fromEmail,
+    recipients,
+    subject: `PAPI Kostick baru perlu direview — ${participantName}`,
+    html: `
           <div style="font-family:Arial,sans-serif;color:#0f2240;line-height:1.6">
             <h2 style="margin:0 0 12px">PAPI Kostick siap direview</h2>
             <p><strong>${safeName}</strong> telah menyelesaikan PAPI Kostick pada ${escapeHtml(completedAt)} WIB.</p>
@@ -174,29 +200,22 @@ async function notifyParticipant(
             <p style="margin-top:24px"><a href="${safeReviewUrl}" style="display:inline-block;background:#e61935;color:#fff;padding:11px 16px;border-radius:8px;text-decoration:none;font-weight:700">Buka review PAPI Kostick</a></p>
           </div>
         `,
-    }),
   });
-  const resendPayload: unknown = await resendResponse.json().catch(() => null);
-  if (!resendResponse.ok) {
-    const errorMessage = JSON.stringify(resendPayload ?? {}).slice(0, 1000);
+  if (!sent.ok) {
     await supabaseAdmin
       .from("psychologist_notification_logs")
-      .update({ status: "failed", error_message: errorMessage })
+      .update({ status: "failed", error_message: sent.error })
       .eq("user_id", userId)
       .eq("notification_type", "papikostik_completed");
-    console.error("Resend failed for", userId, errorMessage);
+    console.error("Resend failed for", userId, sent.error);
     return "failed";
   }
 
-  const providerMessageId =
-    resendPayload && typeof resendPayload === "object" && "id" in resendPayload
-      ? String(resendPayload.id)
-      : null;
   const { error: updateError } = await supabaseAdmin
     .from("psychologist_notification_logs")
     .update({
       status: "sent",
-      provider_message_id: providerMessageId,
+      provider_message_id: sent.id,
       sent_at: new Date().toISOString(),
       error_message: null,
     })
@@ -229,7 +248,7 @@ serve(async (req) => {
   }
 
   try {
-    const payload = (await req.json().catch(() => ({}))) as { backfill?: boolean };
+    const payload = (await req.json().catch(() => ({}))) as { backfill?: boolean; test?: boolean };
     const supabaseUser = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -260,6 +279,27 @@ serve(async (req) => {
     if (actorError) return jsonResponse({ error: actorError.message }, 500);
 
     const isStaff = actorProfile?.role === "admin" || actorProfile?.role === "psychologist";
+    if (payload.test) {
+      if (!isStaff) return jsonResponse({ error: "Hanya staf yang dapat mengirim email tes" }, 403);
+      const sent = await sendResendEmail({
+        resendApiKey,
+        fromEmail,
+        recipients,
+        subject: "TES notifikasi PAPI Kostick — Harunokaze",
+        html: `
+          <div style="font-family:Arial,sans-serif;color:#0f2240;line-height:1.6">
+            <h2 style="margin:0 0 12px">Ini email tes</h2>
+            <p>Kalau kamu menerima ini, notifikasi PAPI sudah terhubung ke inbox:</p>
+            <p><strong>${escapeHtml(recipients.join(", "))}</strong></p>
+            <p>Peserta tidak perlu mengulang tes dari awal. Email berikutnya akan terkirim otomatis saat PAPI benar-benar selesai.</p>
+          </div>
+        `,
+      });
+      if (!sent.ok) {
+        return jsonResponse({ error: `Resend gagal: ${sent.error}` }, 502);
+      }
+      return jsonResponse({ notified: true, test: true, to: recipients });
+    }
     if (payload.backfill) {
       if (!isStaff) return jsonResponse({ error: "Hanya staf yang dapat mengirim ulang notifikasi" }, 403);
 
