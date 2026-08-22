@@ -12,6 +12,7 @@ import {
   Search,
   X,
 } from "lucide-react";
+import { FunctionsHttpError } from "@supabase/supabase-js";
 import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import {
@@ -90,6 +91,7 @@ export function AdminPaymentsPage() {
   const [programInterest, setProgramInterest] = useState(PROGRAM_OPTIONS[0]);
   const [programError, setProgramError] = useState("");
   const [programSaving, setProgramSaving] = useState(false);
+  const [reconcilingInvoiceId, setReconcilingInvoiceId] = useState<string | null>(null);
 
   const loadRows = useCallback(async (showLoader = true) => {
     if (showLoader) setLoading(true);
@@ -278,6 +280,48 @@ export function AdminPaymentsPage() {
     setProgramEditing(null);
     setNotice(`Program minat ${programEditing.full_name} berhasil diperbarui.`);
     await loadRows(false);
+  };
+
+  const handleReconcilePayment = async (row: InvoiceAdminRow) => {
+    if (!row.invoice_id || isPaidRow(row)) return;
+
+    setReconcilingInvoiceId(row.invoice_id);
+    setError("");
+    setNotice("");
+
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("pivot-reconcile", {
+        body: { invoice_id: row.invoice_id },
+      });
+
+      if (fnError instanceof FunctionsHttpError) {
+        let serverMessage = "Status Pivot belum dapat diperiksa";
+        try {
+          const body = await fnError.context.json();
+          serverMessage = body?.error ?? serverMessage;
+        } catch {
+          // The function may return an empty or already-consumed response body.
+        }
+        throw new Error(serverMessage);
+      }
+      if (fnError) throw fnError;
+
+      const status = String(data?.status ?? "pending");
+      if (status === "settlement") {
+        setNotice(`Pembayaran ${row.full_name} sudah dikonfirmasi Pivot dan portal diperbarui.`);
+      } else {
+        setNotice(`Status Pivot ${row.full_name} masih ${paymentStatusLabel(status)}.`);
+      }
+      await loadRows(false);
+    } catch (reconcileError) {
+      setError(
+        reconcileError instanceof Error
+          ? reconcileError.message
+          : "Status Pivot belum dapat diperiksa",
+      );
+    } finally {
+      setReconcilingInvoiceId(null);
+    }
   };
 
   if (!authLoading && profile?.role !== "admin") {
@@ -491,7 +535,15 @@ export function AdminPaymentsPage() {
                   </p>
                 ) : null}
                 <PaymentTiming row={row} />
-                <InvoiceActionButton row={row} onOpen={openEditor} fullWidth />
+                <div className="mt-4 space-y-2">
+                  <ReconcilePaymentButton
+                    row={row}
+                    reconcilingInvoiceId={reconcilingInvoiceId}
+                    onReconcile={handleReconcilePayment}
+                    fullWidth
+                  />
+                  <InvoiceActionButton row={row} onOpen={openEditor} fullWidth />
+                </div>
               </article>
             ))}
           </div>
@@ -551,7 +603,14 @@ export function AdminPaymentsPage() {
                       <PaymentTiming row={row} />
                     </td>
                     <td className="px-4 py-4 text-right">
-                      <InvoiceActionButton row={row} onOpen={openEditor} />
+                      <div className="flex flex-col items-end gap-2">
+                        <ReconcilePaymentButton
+                          row={row}
+                          reconcilingInvoiceId={reconcilingInvoiceId}
+                          onReconcile={handleReconcilePayment}
+                        />
+                        <InvoiceActionButton row={row} onOpen={openEditor} />
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -842,6 +901,35 @@ function InvoiceActionButton({
     >
       {locked ? <CheckCircle2 size={14} /> : row.invoice_id ? <Pencil size={14} /> : <Plus size={14} />}
       {label}
+    </button>
+  );
+}
+
+function ReconcilePaymentButton({
+  row,
+  reconcilingInvoiceId,
+  onReconcile,
+  fullWidth = false,
+}: {
+  row: InvoiceAdminRow;
+  reconcilingInvoiceId: string | null;
+  onReconcile: (row: InvoiceAdminRow) => void;
+  fullWidth?: boolean;
+}) {
+  if (!row.invoice_id || isPaidRow(row)) return null;
+
+  const loading = reconcilingInvoiceId === row.invoice_id;
+  return (
+    <button
+      type="button"
+      onClick={() => void onReconcile(row)}
+      disabled={reconcilingInvoiceId !== null}
+      className={`inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 transition-colors hover:border-emerald-300 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50 ${
+        fullWidth ? "w-full justify-center py-2.5" : ""
+      }`}
+    >
+      <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+      {loading ? "Mengecek Pivot..." : "Cek status Pivot"}
     </button>
   );
 }

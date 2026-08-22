@@ -4,6 +4,10 @@
 [functions.pivot-webhook]
 verify_jwt = false
 
+# Called by an authenticated admin to reconcile one selected Pivot invoice.
+[functions.pivot-reconcile]
+verify_jwt = true
+
 # Called only by an authenticated participant after PAPI Kostick is completed.
 [functions.notify-papikostik-completed]
 verify_jwt = true
